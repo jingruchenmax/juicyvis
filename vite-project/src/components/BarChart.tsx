@@ -261,41 +261,34 @@ function BarChart({ data }: BarChartProps) {
     }))
   }
 
+  const sortOptions: Array<{ type: SortConfig['type']; label: string; color: string }> = [
+    { type: 'total', label: 'Total Energy', color: '#666666' },
+    ...ENERGY_SOURCES.map(source => ({
+      type: source,
+      label: source,
+      color: COLORS[source]
+    }))
+  ]
+
   const latestYear = Math.max(...data.map(d => d.Year))
 
   return (
     <div className="bar-chart-container">
-      <div className="controls">
-        <div className="control-group">
-          <label>Sort by:</label>
-          <select 
-            value={sortConfig.type}
-            onChange={(e) => handleSortChange(e.target.value as any)}
-            className="sort-select"
-          >
-            <option value="total">Total Energy</option>
-            {ENERGY_SOURCES.map(source => (
-              <option key={source} value={source}>{source}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="control-group">
-          <label>Order:</label>
-          <button 
-            onClick={() => handleSortChange(sortConfig.type, sortConfig.direction === 'asc' ? 'desc' : 'asc')}
-            className={`order-btn ${sortConfig.direction}`}
-          >
-            {sortConfig.direction === 'asc' ? '↑ Low to High' : '↓ High to Low'}
-          </button>
-        </div>
-      </div>
-
       <div className="chart-info">
         Data from {latestYear} | Sorted by {sortConfig.type === 'total' ? 'Total Energy' : sortConfig.type}
       </div>
       
-      <div className="chart-wrapper" style={{ position: 'relative' }}>
+      <div
+        className="chart-wrapper"
+        style={{ position: 'relative' }}
+        onMouseMove={(event) => {
+          const target = event.target as Element
+          if (!target.closest('rect')) {
+            setTooltip(null)
+          }
+        }}
+        onMouseLeave={() => setTooltip(null)}
+      >
         <svg ref={svgRef} className="bar-svg"></svg>
         
         {tooltip && (
@@ -329,6 +322,36 @@ function BarChart({ data }: BarChartProps) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="controls">
+        <div className="control-group">
+          <label>Sort by:</label>
+          <div className="sort-buttons" role="group" aria-label="Sort by energy source">
+            {sortOptions.map(option => (
+              <button
+                key={option.type}
+                type="button"
+                className={`sort-btn ${sortConfig.type === option.type ? 'active' : ''}`}
+                onClick={() => handleSortChange(option.type)}
+                aria-pressed={sortConfig.type === option.type}
+              >
+                <span className="color-swatch" style={{ backgroundColor: option.color }} />
+                <span className="sort-label">{option.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="control-group">
+          <label>Order:</label>
+          <button 
+            onClick={() => handleSortChange(sortConfig.type, sortConfig.direction === 'asc' ? 'desc' : 'asc')}
+            className={`order-btn ${sortConfig.direction}`}
+          >
+            {sortConfig.direction === 'asc' ? '↑ Low to High' : '↓ High to Low'}
+          </button>
+        </div>
       </div>
     </div>
   )

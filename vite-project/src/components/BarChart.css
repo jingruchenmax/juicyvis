@@ -49,6 +49,52 @@
   box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
 }
 
+.sort-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+.sort-btn:hover {
+  border-color: #7d7d7d;
+}
+
+.sort-btn:active {
+  transform: translateY(1px);
+}
+
+.sort-btn.active {
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+.color-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex: 0 0 auto;
+}
+
+.sort-label {
+  white-space: nowrap;
+}
+
 .order-btn {
   padding: 8px 16px;
   background-color: #2196f3;

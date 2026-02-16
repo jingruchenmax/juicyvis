@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import './BarChartJuicy.css'
-import { playHoverSound, playClickSound, playZoomSound } from '../utils/soundUtils'
 
 interface EnergyData {
   Entity: string
@@ -57,7 +56,6 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ type: 'total', direction: 'desc' })
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const [hoveredBar, setHoveredBar] = useState<string | null>(null)
-  const [particles, setParticles] = useState<Array<{ id: string; x: number; y: number; life: number }>>([])
 
   // Get latest year data for the top countries
   const getLatestYearData = () => {
@@ -96,27 +94,6 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   const latestData = getLatestYearData()
   const sortedData = sortData(latestData)
 
-  const createParticles = (x: number, y: number) => {
-    playHoverSound()
-    const newParticles = Array.from({ length: 5 }, (_, i) => ({
-      id: `${Date.now()}-${i}`,
-      x,
-      y,
-      life: 1
-    }))
-    setParticles(prev => [...prev, ...newParticles])
-  }
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setParticles(prev => 
-        prev
-          .map(p => ({ ...p, life: p.life - 0.05 }))
-          .filter(p => p.life > 0)
-      )
-    }, 30)
-    return () => clearInterval(interval)
-  }, [])
 
   useEffect(() => {
     if (!sortedData || sortedData.length === 0) return
@@ -253,7 +230,6 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
           value: value
         })
         
-        createParticles(tooltipX, tooltipY)
       })
       .on('mouseout', function() {
         setHoveredBar(null)
@@ -318,66 +294,45 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   }, [sortedData, hoveredBar])
 
   const handleSortChange = (type: SortConfig['type'], direction?: SortConfig['direction']) => {
-    playClickSound()
-    playZoomSound()
-    
     setSortConfig(prev => ({
       type,
       direction: direction || (prev.type === type && prev.direction === 'desc' ? 'asc' : 'desc')
     }))
   }
 
+  const sortOptions: Array<{ type: SortConfig['type']; label: string; color: string }> = [
+    { type: 'total', label: 'Total Energy', color: '#666666' },
+    ...ENERGY_SOURCES.map(source => ({
+      type: source,
+      label: source,
+      color: COLORS[source]
+    }))
+  ]
+
   const latestYear = Math.max(...data.map(d => d.Year))
 
   return (
     <div className="bar-chart-juicy-container">
-      <div className="controls-juicy">
-        <div className="control-group-juicy">
-          <label>Sort by:</label>
-          <select 
-            value={sortConfig.type}
-            onChange={(e) => handleSortChange(e.target.value as any)}
-            className="sort-select-juicy"
-          >
-            <option value="total">Total Energy</option>
-            {ENERGY_SOURCES.map(source => (
-              <option key={source} value={source}>{source}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="control-group-juicy">
-          <label>Order:</label>
-          <button 
-            onClick={() => handleSortChange(sortConfig.type, sortConfig.direction === 'asc' ? 'desc' : 'asc')}
-            className={`order-btn-juicy ${sortConfig.direction}`}
-          >
-            {sortConfig.direction === 'asc' ? '↑ Low to High' : '↓ High to Low'}
-          </button>
-        </div>
-      </div>
-
       <div className="chart-info-juicy">
         Data from {latestYear} | Sorted by {sortConfig.type === 'total' ? 'Total Energy' : sortConfig.type}
       </div>
       
-      <div className="chart-wrapper-juicy" style={{ position: 'relative' }}>
+      <div
+        className="chart-wrapper-juicy"
+        style={{ position: 'relative' }}
+        onMouseMove={(event) => {
+          const target = event.target as Element
+          if (!target.closest('rect')) {
+            setHoveredBar(null)
+            setTooltip(null)
+          }
+        }}
+        onMouseLeave={() => {
+          setHoveredBar(null)
+          setTooltip(null)
+        }}
+      >
         <svg ref={svgRef} className="bar-svg-juicy"></svg>
-        
-        {/* Particle effects */}
-        {particles.map(particle => (
-          <div
-            key={particle.id}
-            className="particle"
-            style={{
-              position: 'absolute',
-              left: `${particle.x}px`,
-              top: `${particle.y}px`,
-              opacity: particle.life,
-              pointerEvents: 'none'
-            }}
-          />
-        ))}
         
         {tooltip && (
           <div 
@@ -410,6 +365,36 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="controls-juicy">
+        <div className="control-group-juicy">
+          <label>Sort by:</label>
+          <div className="sort-buttons-juicy" role="group" aria-label="Sort by energy source">
+            {sortOptions.map(option => (
+              <button
+                key={option.type}
+                type="button"
+                className={`sort-btn-juicy ${sortConfig.type === option.type ? 'active' : ''}`}
+                onClick={() => handleSortChange(option.type)}
+                aria-pressed={sortConfig.type === option.type}
+              >
+                <span className="color-swatch-juicy" style={{ backgroundColor: option.color }} />
+                <span className="sort-label-juicy">{option.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="control-group-juicy">
+          <label>Order:</label>
+          <button 
+            onClick={() => handleSortChange(sortConfig.type, sortConfig.direction === 'asc' ? 'desc' : 'asc')}
+            className={`order-btn-juicy ${sortConfig.direction}`}
+          >
+            {sortConfig.direction === 'asc' ? '↑ Low to High' : '↓ High to Low'}
+          </button>
+        </div>
       </div>
     </div>
   )
