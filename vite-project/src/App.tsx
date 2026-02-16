@@ -20,7 +20,7 @@ function App() {
 
   useEffect(() => {
     // Load CSV file
-    fetch('/ai-training-computation-vs-parameters-by-researcher-affiliation.csv')
+    fetch(`${import.meta.env.BASE_URL}ai-training-computation-vs-parameters-by-researcher-affiliation.csv`)
       .then(res => res.text())
       .then(csv => {
         const lines = csv.trim().split('\n')

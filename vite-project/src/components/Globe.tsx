@@ -29,7 +29,7 @@ function Globe({ width = 975, height = 610 }: GlobeProps) {
   useEffect(() => {
     Promise.all([
       fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json').then(res => res.json()),
-      fetch('/child-mortality.csv').then(res => res.text())
+      fetch(`${import.meta.env.BASE_URL}child-mortality.csv`).then(res => res.text())
     ])
       .then(([worldData, csvText]) => {
         setWorldData(worldData)
