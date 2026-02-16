@@ -1,0 +1,101 @@
+.bar-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background-color: #fff;
+}
+
+.controls {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.control-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.control-group label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+}
+
+.sort-select {
+  padding: 8px 12px;
+  border: 1px solid #999;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: white;
+  color: #333;
+  transition: border-color 0.2s;
+}
+
+.sort-select:hover {
+  border-color: #555;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+.order-btn {
+  padding: 8px 16px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  min-width: 140px;
+}
+
+.order-btn:hover {
+  background-color: #1976d2;
+}
+
+.order-btn:active {
+  background-color: #1565c0;
+}
+
+.chart-info {
+  font-size: 12px;
+  color: #666;
+  padding: 10px 15px;
+  background-color: #fafafa;
+  border-left: 3px solid #2196f3;
+  border-radius: 2px;
+}
+
+.chart-wrapper {
+  display: inline-block;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.bar-svg {
+  border: 1px solid #ddd;
+  background: white;
+  display: block;
+  border-radius: 2px;
+}
+
+.bar-svg text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.tooltip {
+  line-height: 1.4;
+}

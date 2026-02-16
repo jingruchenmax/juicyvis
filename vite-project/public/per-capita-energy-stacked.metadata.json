@@ -1,0 +1,185 @@
+{
+  "chart": {
+    "title": "Per capita primary energy consumption by source",
+    "subtitle": "[Primary energy](#dod:primaryenergy) is measured in [kilowatt-hours](#dod:watt-hours) per person, using the [substitution method](#dod:substitutionmethod).",
+    "citation": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024)",
+    "originalChartUrl": "https://ourworldindata.org/grapher/per-capita-energy-stacked?v=1&csvType=full&useColumnShortNames=false",
+    "selection": [
+      "United States",
+      "United Kingdom",
+      "World",
+      "China",
+      "India",
+      "France",
+      "Germany",
+      "Sweden",
+      "South Africa",
+      "Japan",
+      "Brazil"
+    ]
+  },
+  "columns": {
+    "Coal per capita (kWh)": {
+      "titleShort": "Coal consumption per capita",
+      "titleLong": "Coal consumption per capita",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Includes commercial solid fuels only, i.e. bituminous coal and anthracite (hard coal), and lignite and brown (sub-bituminous) coal, and other commercial solid fuels. Excludes coal converted to liquid or gaseous fuels, but includes coal consumed in transformation processes. Differences between the consumption figures and the world production statistics are accounted for by stock changes, and unavoidable disparities in the definition, measurement or conversion of coal supply and demand data."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077798,
+      "shortName": "coal_per_capita__kwh",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Coal consumption per capita” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077798.metadata.json"
+    },
+    "Oil per capita (kWh)": {
+      "titleShort": "Oil consumption per capita",
+      "titleLong": "Oil consumption per capita",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Includes inland demand plus international aviation and marine bunkers and refinery fuel and loss. Consumption of biogasoline (such as ethanol) and biodiesel are excluded while derivatives of coal and natural gas are included. Differences between the world consumption figures and world production statistics are accounted for by stock changes, consumption of non-petroleum additives and substitute fuels and unavoidable disparities in the definition, measurement or conversion of oil supply and demand data."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077801,
+      "shortName": "oil_per_capita__kwh",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Oil consumption per capita” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077801.metadata.json"
+    },
+    "Gas per capita (kWh)": {
+      "titleShort": "Gas consumption per capita",
+      "titleLong": "Gas consumption per capita",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Excludes natural gas converted to liquid fuels but includes derivatives of coal as well as natural gas consumed in Gas-to-Liquids transformation. The difference between the world consumption figures and the world production statistics is due to variations in stocks at storage facilities and liquefaction plants, together with unavoidable disparities in the definition, measurement or conversion of gas supply and demand data."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077800,
+      "shortName": "gas_per_capita__kwh",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Gas consumption per capita” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077800.metadata.json"
+    },
+    "Nuclear per capita (kWh - equivalent)": {
+      "titleShort": "Nuclear power consumption per capita",
+      "titleLong": "Nuclear power consumption per capita - Using the substitution method",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Primary energy is measured using the \"substitution method\" (also called \"input-equivalent\" primary energy). This method is used for non-fossil sources of electricity (namely renewables and nuclear), and measures the amount of fossil fuels that would be required by thermal power stations to generate the same amount of non-fossil electricity.\nFor example, if a country's nuclear power generated 100 TWh of electricity, and assuming that the efficiency of a standard thermal power plant is 38%, the input-equivalent primary energy for this country would be 100 TWh / 0.38 = 263 TWh = 0.95 EJ. This input-equivalent primary energy takes account of the inefficiencies in energy production from fossil fuels and provides a better approximation of each source's share of energy consumption. You can find more details in [the Statistical Review of World Energy's methodology document](https://www.energyinst.org/__data/assets/pdf_file/0003/1055541/Methodology.pdf)."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077816,
+      "shortName": "nuclear_per_capita__kwh__equivalent",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Nuclear power consumption per capita – Using the substitution method” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077816.metadata.json"
+    },
+    "Hydro per capita (kWh - equivalent)": {
+      "titleShort": "Hydropower consumption per capita",
+      "titleLong": "Hydropower consumption per capita - Using the substitution method",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Primary energy is measured using the \"substitution method\" (also called \"input-equivalent\" primary energy). This method is used for non-fossil sources of electricity (namely renewables and nuclear), and measures the amount of fossil fuels that would be required by thermal power stations to generate the same amount of non-fossil electricity.\nFor example, if a country's nuclear power generated 100 TWh of electricity, and assuming that the efficiency of a standard thermal power plant is 38%, the input-equivalent primary energy for this country would be 100 TWh / 0.38 = 263 TWh = 0.95 EJ. This input-equivalent primary energy takes account of the inefficiencies in energy production from fossil fuels and provides a better approximation of each source's share of energy consumption. You can find more details in [the Statistical Review of World Energy's methodology document](https://www.energyinst.org/__data/assets/pdf_file/0003/1055541/Methodology.pdf)."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077809,
+      "shortName": "hydro_per_capita__kwh__equivalent",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Hydropower consumption per capita – Using the substitution method” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077809.metadata.json"
+    },
+    "Wind per capita (kWh - equivalent)": {
+      "titleShort": "Wind power consumption per capita",
+      "titleLong": "Wind power consumption per capita - Using the substitution method",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Primary energy is measured using the \"substitution method\" (also called \"input-equivalent\" primary energy). This method is used for non-fossil sources of electricity (namely renewables and nuclear), and measures the amount of fossil fuels that would be required by thermal power stations to generate the same amount of non-fossil electricity.\nFor example, if a country's nuclear power generated 100 TWh of electricity, and assuming that the efficiency of a standard thermal power plant is 38%, the input-equivalent primary energy for this country would be 100 TWh / 0.38 = 263 TWh = 0.95 EJ. This input-equivalent primary energy takes account of the inefficiencies in energy production from fossil fuels and provides a better approximation of each source's share of energy consumption. You can find more details in [the Statistical Review of World Energy's methodology document](https://www.energyinst.org/__data/assets/pdf_file/0003/1055541/Methodology.pdf)."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077823,
+      "shortName": "wind_per_capita__kwh__equivalent",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Wind power consumption per capita – Using the substitution method” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077823.metadata.json"
+    },
+    "Solar per capita (kWh - equivalent)": {
+      "titleShort": "Solar power consumption per capita",
+      "titleLong": "Solar power consumption per capita - Using the substitution method",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Primary energy is measured using the \"substitution method\" (also called \"input-equivalent\" primary energy). This method is used for non-fossil sources of electricity (namely renewables and nuclear), and measures the amount of fossil fuels that would be required by thermal power stations to generate the same amount of non-fossil electricity.\nFor example, if a country's nuclear power generated 100 TWh of electricity, and assuming that the efficiency of a standard thermal power plant is 38%, the input-equivalent primary energy for this country would be 100 TWh / 0.38 = 263 TWh = 0.95 EJ. This input-equivalent primary energy takes account of the inefficiencies in energy production from fossil fuels and provides a better approximation of each source's share of energy consumption. You can find more details in [the Statistical Review of World Energy's methodology document](https://www.energyinst.org/__data/assets/pdf_file/0003/1055541/Methodology.pdf)."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077822,
+      "shortName": "solar_per_capita__kwh__equivalent",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Solar power consumption per capita – Using the substitution method” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077822.metadata.json"
+    },
+    "Other renewables per capita (kWh - equivalent)": {
+      "titleShort": "Other renewables consumption per capita",
+      "titleLong": "Other renewables consumption per capita - Using the substitution method",
+      "descriptionShort": "Measured in [kilowatt-hours](#dod:watt-hours) per person.",
+      "descriptionKey": [
+        "Primary energy is measured using the \"substitution method\" (also called \"input-equivalent\" primary energy). This method is used for non-fossil sources of electricity (namely renewables and nuclear), and measures the amount of fossil fuels that would be required by thermal power stations to generate the same amount of non-fossil electricity.\nFor example, if a country's nuclear power generated 100 TWh of electricity, and assuming that the efficiency of a standard thermal power plant is 38%, the input-equivalent primary energy for this country would be 100 TWh / 0.38 = 263 TWh = 0.95 EJ. This input-equivalent primary energy takes account of the inefficiencies in energy production from fossil fuels and provides a better approximation of each source's share of energy consumption. You can find more details in [the Statistical Review of World Energy's methodology document](https://www.energyinst.org/__data/assets/pdf_file/0003/1055541/Methodology.pdf)."
+      ],
+      "descriptionProcessing": "Per capita figures are calculated by dividing by a population dataset that is built and maintained by Our World in Data, based on [different sources](https://ourworldindata.org/population-sources).",
+      "shortUnit": "kWh",
+      "unit": "kilowatt-hours",
+      "timespan": "1965-2024",
+      "type": "Numeric",
+      "owidVariableId": 1077819,
+      "shortName": "other_renewables_per_capita__kwh__equivalent",
+      "lastUpdated": "2025-06-27",
+      "nextUpdate": "2026-06-27",
+      "citationShort": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Energy Institute - Statistical Review of World Energy (2025); Population based on various sources (2024) – with major processing by Our World in Data. “Other renewables consumption per capita – Using the substitution method” [dataset]. Energy Institute, “Statistical Review of World Energy”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1077819.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-02-16",
+  "activeFilters": {}
+}

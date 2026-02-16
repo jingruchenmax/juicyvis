@@ -1,0 +1,337 @@
+import { useState, useEffect, useRef } from 'react'
+import * as d3 from 'd3'
+import './BarChart.css'
+
+interface EnergyData {
+  Entity: string
+  Code: string
+  Year: number
+  Coal: number
+  Oil: number
+  Gas: number
+  Nuclear: number
+  Hydropower: number
+  Wind: number
+  Solar: number
+  'Other renewables': number
+}
+
+const ENERGY_SOURCES = ['Coal', 'Oil', 'Gas', 'Nuclear', 'Hydropower', 'Wind', 'Solar', 'Other renewables'] as const
+type EnergySource = typeof ENERGY_SOURCES[number]
+
+const COLORS: Record<EnergySource, string> = {
+  'Coal': '#404040',
+  'Oil': '#8B7355',
+  'Gas': '#FFB366',
+  'Nuclear': '#FFD700',
+  'Hydropower': '#4169E1',
+  'Wind': '#87CEEB',
+  'Solar': '#FF8C00',
+  'Other renewables': '#90EE90',
+}
+
+const SVG_WIDTH = 1400
+const SVG_HEIGHT = 600
+const MARGIN = { top: 80, right: 200, bottom: 80, left: 60 }
+
+interface BarChartProps {
+  data: EnergyData[]
+}
+
+interface SortConfig {
+  type: 'total' | EnergySource
+  direction: 'asc' | 'desc'
+}
+
+interface TooltipData {
+  x: number
+  y: number
+  entity: string
+  source: EnergySource
+  value: number
+}
+
+function BarChart({ data }: BarChartProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ type: 'total', direction: 'desc' })
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null)
+
+  // Get latest year data for the top countries
+  const getLatestYearData = () => {
+    const latestYear = Math.max(...data.map(d => d.Year))
+    const latestData = data.filter(d => d.Year === latestYear)
+    
+    // Filter to main countries (exclude regions without proper data)
+    const mainCountries = ['United States', 'United Kingdom', 'World', 'China', 'India', 'France', 
+                          'Germany', 'Sweden', 'South Africa', 'Japan', 'Brazil', 'Canada', 'Australia',
+                          'Mexico', 'Russia', 'South Korea', 'Italy', 'Spain', 'Netherlands', 'Norway']
+    
+    return latestData.filter(d => mainCountries.includes(d.Entity))
+  }
+
+  const sortData = (dataToSort: EnergyData[]) => {
+    const sorted = [...dataToSort]
+    
+    if (sortConfig.type === 'total') {
+      sorted.sort((a, b) => {
+        const totalA = ENERGY_SOURCES.reduce((sum, source) => sum + (a[source] || 0), 0)
+        const totalB = ENERGY_SOURCES.reduce((sum, source) => sum + (b[source] || 0), 0)
+        return sortConfig.direction === 'asc' ? totalA - totalB : totalB - totalA
+      })
+    } else {
+      const sourceKey = sortConfig.type as EnergySource
+      sorted.sort((a, b) => {
+        const valA = a[sourceKey] || 0
+        const valB = b[sourceKey] || 0
+        return sortConfig.direction === 'asc' ? valA - valB : valB - valA
+      })
+    }
+    
+    return sorted
+  }
+
+  const latestData = getLatestYearData()
+  const sortedData = sortData(latestData)
+
+  useEffect(() => {
+    if (!sortedData || sortedData.length === 0) return
+
+    const width = SVG_WIDTH - MARGIN.left - MARGIN.right
+    const height = SVG_HEIGHT - MARGIN.top - MARGIN.bottom
+
+    // Calculate max stacked value
+    const maxValue = Math.max(...sortedData.map(d => 
+      ENERGY_SOURCES.reduce((sum, source) => sum + (d[source] || 0), 0)
+    ))
+
+    // Get or create SVG
+    let svg = d3.select(svgRef.current)
+    
+    // Clear previous content
+    svg.selectAll("*").remove()
+
+    // Set SVG dimensions
+    svg
+      .attr('width', SVG_WIDTH)
+      .attr('height', SVG_HEIGHT)
+
+    // Add title
+    svg.append('text')
+      .attr('x', SVG_WIDTH / 2)
+      .attr('y', 25)
+      .style('font-size', '16px')
+      .style('font-weight', 'bold')
+      .style('text-anchor', 'middle')
+      .text('Per Capita Energy Consumption by Source (Latest Year)')
+
+    const g = svg
+      .append('g')
+      .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
+
+    // Create scales
+    const xScale = d3.scaleBand()
+      .domain(sortedData.map(d => d.Entity))
+      .range([0, width])
+      .padding(0.3)
+
+    const yScale = d3.scaleLinear()
+      .domain([0, maxValue * 1.1])
+      .range([height, 0])
+
+    // Add Y axis
+    const yAxisGroup = g.append('g')
+      .call(d3.axisLeft(yScale))
+
+    yAxisGroup.append('text')
+      .attr('transform', 'rotate(-90)')
+      .attr('x', -height / 2)
+      .attr('y', -45)
+      .attr('fill', 'black')
+      .style('font-size', '12px')
+      .style('text-anchor', 'middle')
+      .text('kWh per capita')
+
+    // Add grid lines
+    g.append('g')
+      .attr('class', 'grid')
+      .call(
+        d3.axisLeft(yScale)
+          .tickSize(-width)
+          .tickFormat(() => '')
+      )
+      .selectAll('line')
+      .attr('stroke', '#e0e0e0')
+      .attr('stroke-dasharray', '4')
+
+    // Create stacked data
+    const stackedData = d3.stack<EnergyData, EnergySource>()
+      .keys(ENERGY_SOURCES)
+      (sortedData as any)
+
+    // Add stacked bars
+    g.selectAll('g.layer')
+      .data(stackedData)
+      .join('g')
+      .attr('class', 'layer')
+      .attr('fill', d => COLORS[d.key])
+      .selectAll('rect')
+      .data((d) => d.map((interval) => ({ interval, sourceKey: d.key as EnergySource })))
+      .join('rect')
+      .attr('x', d => xScale((d.interval as any).data.Entity) || 0)
+      .attr('y', d => yScale((d.interval as any)[1]))
+      .attr('height', d => yScale((d.interval as any)[0]) - yScale((d.interval as any)[1]))
+      .attr('width', xScale.bandwidth())
+      .attr('stroke', 'none')
+      .attr('stroke-width', 1)
+      .attr('fill-opacity', 0.85)
+      .on('mouseover', function(_event, d) {
+        const value = (d.interval as any)[1] - (d.interval as any)[0]
+        
+        const rect = d3.select(this as SVGRectElement)
+        rect.attr('fill-opacity', 1).attr('stroke', '#000')
+        
+        const xPos = rect.attr('x')
+        const yPos = rect.attr('y')
+        const bw = xScale.bandwidth() || 0
+        
+        setTooltip({
+          x: parseFloat(xPos) + bw / 2,
+          y: parseFloat(yPos),
+          entity: (d.interval as any).data.Entity,
+          source: d.sourceKey,
+          value: value
+        })
+      })
+      .on('mouseout', function() {
+        const rect = d3.select(this as SVGRectElement)
+        rect.attr('fill-opacity', 0.85).attr('stroke', 'none')
+        setTooltip(null)
+      })
+      .style('cursor', 'pointer')
+
+    // Add X axis
+    const xAxisGroup = g.append('g')
+      .attr('transform', `translate(0,${height})`)
+      .call(d3.axisBottom(xScale))
+
+    xAxisGroup.selectAll('text')
+      .style('text-anchor', 'start')
+      .attr('transform', 'rotate(45)')
+      .attr('dx', '8px')
+      .attr('dy', '8px')
+
+    // Add legend
+    const legendData = ENERGY_SOURCES.map(source => ({
+      name: source,
+      color: COLORS[source]
+    }))
+
+    const legend = g.append('g')
+      .attr('class', 'legend')
+      .attr('transform', `translate(${width + 20}, 0)`)
+
+    legendData.forEach((item, i) => {
+      const row = i % 4
+      const col = Math.floor(i / 4)
+      
+      const legendItem = legend.append('g')
+        .attr('transform', `translate(${col * 90}, ${row * 20})`)
+
+      legendItem.append('rect')
+        .attr('width', 12)
+        .attr('height', 12)
+        .attr('fill', item.color)
+        .attr('fill-opacity', 0.85)
+
+      legendItem.append('text')
+        .attr('x', 18)
+        .attr('y', 10)
+        .style('font-size', '11px')
+        .style('font-family', 'sans-serif')
+        .style('fill', '#333')
+        .text(item.name)
+    })
+
+  }, [sortedData])
+
+  const handleSortChange = (type: SortConfig['type'], direction?: SortConfig['direction']) => {
+    setSortConfig(prev => ({
+      type,
+      direction: direction || (prev.type === type && prev.direction === 'desc' ? 'asc' : 'desc')
+    }))
+  }
+
+  const latestYear = Math.max(...data.map(d => d.Year))
+
+  return (
+    <div className="bar-chart-container">
+      <div className="controls">
+        <div className="control-group">
+          <label>Sort by:</label>
+          <select 
+            value={sortConfig.type}
+            onChange={(e) => handleSortChange(e.target.value as any)}
+            className="sort-select"
+          >
+            <option value="total">Total Energy</option>
+            {ENERGY_SOURCES.map(source => (
+              <option key={source} value={source}>{source}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="control-group">
+          <label>Order:</label>
+          <button 
+            onClick={() => handleSortChange(sortConfig.type, sortConfig.direction === 'asc' ? 'desc' : 'asc')}
+            className={`order-btn ${sortConfig.direction}`}
+          >
+            {sortConfig.direction === 'asc' ? '↑ Low to High' : '↓ High to Low'}
+          </button>
+        </div>
+      </div>
+
+      <div className="chart-info">
+        Data from {latestYear} | Sorted by {sortConfig.type === 'total' ? 'Total Energy' : sortConfig.type}
+      </div>
+      
+      <div className="chart-wrapper" style={{ position: 'relative' }}>
+        <svg ref={svgRef} className="bar-svg"></svg>
+        
+        {tooltip && (
+          <div 
+            className="tooltip" 
+            style={{
+              position: 'absolute',
+              left: `${tooltip.x + 10}px`,
+              top: `${tooltip.y - 30}px`,
+              backgroundColor: 'white',
+              border: '1px solid #333',
+              borderRadius: '4px',
+              padding: '8px 12px',
+              fontSize: '12px',
+              fontFamily: 'sans-serif',
+              zIndex: 1000,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '13px' }}>
+              {tooltip.entity}
+            </div>
+            <div style={{ fontSize: '11px', color: '#555' }}>
+              <span style={{ color: COLORS[tooltip.source], fontWeight: 'bold' }}>
+                {tooltip.source}:
+              </span>
+              {' '}
+              <strong>{tooltip.value.toFixed(1)} kWh</strong>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default BarChart

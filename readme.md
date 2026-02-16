@@ -1,6 +1,6 @@
-# Child mortality rate - Data package
+# CO₂ emissions per capita - Data package
 
-This data package contains the data that powers the chart ["Child mortality rate"](https://ourworldindata.org/grapher/child-mortality?v=1&csvType=full&useColumnShortNames=false) on the Our World in Data website. It was downloaded on February 15, 2026.
+This data package contains the data that powers the chart ["CO₂ emissions per capita"](https://ourworldindata.org/grapher/co-emissions-per-capita?v=1&csvType=full&useColumnShortNames=false) on the Our World in Data website. It was downloaded on February 16, 2026.
 
 ### Active Filters
 
@@ -28,60 +28,47 @@ Our World in Data is almost never the original producer of the data - almost all
 ## Detailed information about the data
 
 
-## Child mortality rate – Long-run data – Gapminder; UN IGME
-The long-run estimated share of newborns who die before reaching the age of five.
-Last updated: April 25, 2025  
-Date range: 1751–2023  
-Unit: deaths per 100 live births  
+## CO₂ emissions per capita
+Carbon dioxide (CO₂) emissions from [burning fossil fuels and industrial processes](#dod:fossilemissions). This includes emissions from transport, electricity generation, and heating, but not [land-use change](#dod:land-use-change-emissions).
+Last updated: November 13, 2025  
+Next update: November 2026  
+Date range: 1750–2024  
+Unit: tonnes per person  
 
 
 ### How to cite this data
 
 #### In-line citation
 If you have limited space (e.g. in data visualizations), you can use this abbreviated in-line citation:  
-Gapminder (2015); UN Inter-agency Group for Child Mortality Estimation (2025) – processed by Our World in Data
+Global Carbon Budget (2025); Population based on various sources (2024) – with major processing by Our World in Data
 
 #### Full citation
-Gapminder (2015); UN Inter-agency Group for Child Mortality Estimation (2025) – processed by Our World in Data. “Child mortality rate – Gapminder; UN IGME – Long-run data” [dataset]. United Nations Inter-agency Group for Child Mortality Estimation, “United Nations Inter-agency Group for Child Mortality Estimation”; Gapminder, “Child mortality rate under age five v7”; Gapminder based on UN IGME & UN WPP, “Under-five Mortality v11”; Various sources, “Population” [original data].
-Source: Gapminder (2015); UN Inter-agency Group for Child Mortality Estimation (2025) – processed by Our World In Data
+Global Carbon Budget (2025); Population based on various sources (2024) – with major processing by Our World in Data. “CO₂ emissions per capita” [dataset]. Global Carbon Project, “Global Carbon Budget v15”; Various sources, “Population” [original data].
+Source: Global Carbon Budget (2025), Population based on various sources (2024) – with major processing by Our World In Data
 
 ### What you should know about this data
-* What could be more tragic than the death of a young child? Child mortality, the death of children under the age of five, is still extremely common in our world today.
-* The historical data makes clear that it doesn’t have to be this way: societies can protect their children and reduce child mortality to very low rates. For child mortality to reach low levels, many things have to go right at the same time: good healthcare, good nutrition, clean water and sanitation, maternal health, and high living standards. We can, therefore, think of child mortality as a proxy indicator of a country’s living conditions.
-* The chart shows our long-run data on child mortality, which allows you to see how child mortality has changed in countries around the world. It combines data from two sources: Gapminder and the UN Inter-agency Group for Child Mortality Estimation (UN IGME).
-* [Gapminder](https://www.gapminder.org/data/documentation/gd005/) provides estimates of child mortality rates from 1800 to 2015. The full list of sources used can be found in [their documentation](https://www.gapminder.org/data/documentation/gd005/).
-* [UN IGME](https://childmortality.org/all-cause-mortality/data) provides estimates of child mortality rates for some countries from 1932 onward.
-* For years where data from both sources is available, we prioritize the UN IGME data. See [this page](https://docs.google.com/spreadsheets/d/1n-WO7yEbi6sXPpeWrorSEVu8w_Yu5dM0n97q1h16L0g/edit?gid=0#gid=0) for more details on which source is used for each data point.
-* This indicator is calculated as the number of children under the age of five who died in a given year, divided by the number of newborns in that year.
+* Carbon dioxide (CO₂) is the primary [greenhouse gas](#dod:ghgemissions) causing climate change.
+* Global CO₂ emissions have stayed just below five tonnes per person for over a decade. But across countries, emissions vary widely, rising in some, falling in others.
+* Fossil fuel burning is the main source of CO₂ emissions. This data includes [fossil CO₂ emissions](#dod:fossilemissions) from activities such as transport, electricity generation, and heating.
+* These figures don't include CO₂ emissions from [changes in land use](#dod:land-use-change-emissions), like deforestation or reforestation.
+* Emissions from international aviation and shipping are not included in the data for any individual country or region. They are only counted in the global total.
+* This data is based on territorial emissions, meaning the emissions produced within a country's borders, but not those from imported goods. For example, emissions from imported steel are counted in the country where the steel is produced. To learn more and look at emissions adjusted for trade, read our article: [How do CO₂ emissions compare when we adjust for trade?](https://ourworldindata.org/consumption-based-co2)
+* The data comes from the Global Carbon Budget. Fossil CO₂ emissions are estimated using national statistics on energy use — such as coal, oil, and gas consumption — and industrial production, particularly cement. These figures are converted into CO₂ emissions using standardized emission factors. For more details, read [the Global Carbon Budget paper](https://doi.org/10.5194/essd-15-5301-2023).
+* CO₂ emissions per capita are calculated by dividing emissions by population. They represent the average emissions per person in a country or region. To learn more about how different metrics capture the distribution of CO₂ emissions, read our article: [Per capita, national, historical: how do countries compare on CO2 metrics?](https://ourworldindata.org/co2-emissions-metrics)
 
 ### Sources
 
-#### United Nations Inter-agency Group for Child Mortality Estimation
-Retrieved on: 2025-03-25  
-Retrieved from: https://childmortality.org/all-cause-mortality/data  
-
-#### Gapminder – Child mortality rate under age five
-Retrieved on: 2023-09-18  
-Retrieved from: https://www.gapminder.org/data/documentation/gd005/  
-
-#### Gapminder based on UN IGME & UN WPP – Under-five Mortality
-Retrieved on: 2023-09-21  
-Retrieved from: https://docs.google.com/spreadsheets/d/1Av7eps_zEK73-AdbFYEmtTrwFKlfruBYXdrnXAOFVpM/edit#gid=501532268  
+#### Global Carbon Project – Global Carbon Budget
+Retrieved on: 2025-11-13  
+Retrieved from: https://globalcarbonbudget.org/  
 
 #### Various sources – Population
 Retrieved on: 2024-07-11  
 Retrieved from: https://ourworldindata.org/population-sources  
 
 #### Notes on our processing step for this indicator
-This indicator is a combination of data from two sources:
-  - Gapminder, which provides estimates of child mortality rates for the years 1800 to 2015.
-  - The UN Inter-agency Group for Child Mortality Estimation (UN IGME) provides estimates of child mortality rates, for some countries from 1932 onward.
-
-For years where data from both sources is available, we prioritize the UN IGME data. See [this page](https://docs.google.com/spreadsheets/d/1n-WO7yEbi6sXPpeWrorSEVu8w_Yu5dM0n97q1h16L0g/edit?gid=0#gid=0) for more details on which source is used for each data point.
-
-In the Gapminder dataset we remove rows where the source is labelled as "Guesstimate" or "Model based on Life Expectancy" to try and ensure we use the best available data.
-
-We remove data for Austria before 1830 from the Gapminder dataset, as there is a jump in 1830 that is likely an error.
+- Global emissions are converted from tonnes of carbon to tonnes of carbon dioxide (CO₂) using a factor of 3.664. This is the conversion factor [recommended by the Global Carbon Project](https://globalcarbonbudgetdata.org/downloads/jGJH0-data/Global+Carbon+Budget+v2024+Dataset+Descriptions.pdf). It reflects that one tonne of carbon, when fully oxidized, forms 3.664 tonnes of CO₂, based on the relative molecular weights of carbon and oxygen in CO₂.
+- Emissions from the 1991 Kuwaiti oil fires are included in Kuwait's emissions for that year.- To calculate CO₂ emissions per capita, we divide the original data by a country's estimated population. These estimates come from our population dataset based on [multiple sources](https://ourworldindata.org/population-sources).
 
 
     
