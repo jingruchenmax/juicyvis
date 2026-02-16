@@ -291,7 +291,6 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
         playClickSound()
         
         const dotId = d.id || ''
-        let animationComplete = false
         
         // First shrink, then expand with bounce
         d3.select(event.target)
@@ -306,9 +305,6 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
               .duration(100)
               .attr('r', 15)
               .ease(d3.easeBounceOut)
-              .on('end', () => {
-                animationComplete = true
-              })
           })
         
         setTimeout(() => {

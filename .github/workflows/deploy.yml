@@ -39,6 +39,7 @@ jobs:
           path: ./vite-project/dist
 
   deploy:
+    # Environment will be auto-created by GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

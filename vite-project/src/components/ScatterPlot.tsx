@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import './ScatterPlot.css'
 
@@ -100,7 +100,7 @@ function ScatterPlot({ data }: ScatterPlotProps) {
       .text('Training computation vs. parameters in notable AI systems, by researcher affiliation')
 
     // Add subtitle lines
-    const subtitle1 = svg.append('text')
+    svg.append('text')
       .attr('x', SVG_WIDTH / 2)
       .attr('y', 45)
       .style('font-size', '12px')
@@ -108,7 +108,7 @@ function ScatterPlot({ data }: ScatterPlotProps) {
       .style('fill', '#666')
       .text('Computation is measured in total petaFLOP (10¹⁵ floating-point operations), estimated from AI literature with some uncertainty.')
 
-    const subtitle2 = svg.append('text')
+    svg.append('text')
       .attr('x', SVG_WIDTH / 2)
       .attr('y', 62)
       .style('font-size', '12px')
@@ -193,7 +193,7 @@ function ScatterPlot({ data }: ScatterPlotProps) {
       .attr('fill-opacity', 0.8)
       .attr('stroke', 'none')
       .style('cursor', 'pointer')
-      .on('mouseover', (event, d: ScatterDot) => {
+      .on('mouseover', (_event, d: ScatterDot) => {
         const cxVal = xScale(d['Training computation (petaFLOP)'] || 1)
         const cyVal = yScale(d['Number of parameters'] || 1)
         setTooltip({
