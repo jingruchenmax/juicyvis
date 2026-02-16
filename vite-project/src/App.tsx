@@ -5,6 +5,7 @@ import Globe from './components/Globe'
 import GlobeJuicy from './components/GlobeJuicy'
 import BarChart from './components/BarChart'
 import BarChartJuicy from './components/BarChartJuicy'
+import MeatChart from './components/MeatChart'
 import './App.css'
 
 interface DataRow {
@@ -29,15 +30,29 @@ interface EnergyData {
   'Other renewables': number
 }
 
+interface MeatData {
+  Entity: string
+  Code: string
+  Year: number
+  Poultry: number
+  'Beef and buffalo': number
+  'Sheep and goat': number
+  Pork: number
+  'Other meats': number
+  'Fish and seafood': number
+}
+
 function App() {
   const [data, setData] = useState<DataRow[]>([])
   const [energyData, setEnergyData] = useState<EnergyData[]>([])
+  const [meatData, setMeatData] = useState<MeatData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let loadedScatter = false
     let loadedEnergy = false
+    let loadedMeat = false
 
     // Load AI training CSV file
     fetch(`${import.meta.env.BASE_URL}ai-training-computation-vs-parameters-by-researcher-affiliation.csv`)
@@ -93,7 +108,7 @@ function App() {
         
         setData(filtered)
         loadedScatter = true
-        if (loadedScatter && loadedEnergy) {
+        if (loadedScatter && loadedEnergy && loadedMeat) {
           setLoading(false)
         }
       })
@@ -129,7 +144,43 @@ function App() {
         
         setEnergyData(parsed)
         loadedEnergy = true
-        if (loadedScatter && loadedEnergy) {
+        if (loadedScatter && loadedEnergy && loadedMeat) {
+          setLoading(false)
+        }
+      })
+      .catch(err => {
+        setError(err.message)
+        setLoading(false)
+      })
+
+    // Load meat type CSV file
+    fetch(`${import.meta.env.BASE_URL}per-capita-meat-type.csv`)
+      .then(res => res.text())
+      .then(csv => {
+        const lines = csv.trim().split('\n')
+        const headers = lines[0].split(',').map(h => h.trim())
+        
+        const parsed: MeatData[] = lines.slice(1).map(line => {
+          const values = line.split(',').map(v => v.trim())
+          
+          const row: any = {}
+          headers.forEach((header, i) => {
+            const value = values[i] || ''
+            
+            if (header === 'Year') {
+              row[header] = parseInt(value)
+            } else if (['Poultry', 'Beef and buffalo', 'Sheep and goat', 'Pork', 'Other meats', 'Fish and seafood'].includes(header)) {
+              row[header] = value === '' ? 0 : parseFloat(value)
+            } else {
+              row[header] = value
+            }
+          })
+          return row as MeatData
+        })
+        
+        setMeatData(parsed)
+        loadedMeat = true
+        if (loadedScatter && loadedEnergy && loadedMeat) {
           setLoading(false)
         }
       })
@@ -146,6 +197,17 @@ function App() {
   const params = new URLSearchParams(window.location.search)
   const chart = params.get('chart') || '1'
   const juicy = params.get('juicy') === '1'
+
+  // Chart 4: Meat Consumption
+  if (chart === '4') {
+    return (
+      <div className="app">
+        <h1>Per Capita Meat Consumption</h1>
+        <p className="subtitle">By Meat Type {juicy && '(Juicy Mode)'}</p>
+        {meatData.length > 0 ? (juicy ? <div>Juicy coming soon</div> : <MeatChart data={meatData} />) : <div className="loading">Loading meat data...</div>}
+      </div>
+    )
+  }
 
   // Chart 3: Energy Stacked Bar Chart
   if (chart === '3') {
