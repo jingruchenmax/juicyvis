@@ -1,0 +1,51 @@
+.scatter-plot-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background-color: #fff;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.clear-btn {
+  padding: 8px 16px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.clear-btn:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
+.clear-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.chart-wrapper {
+  display: inline-block;
+}
+
+.scatter-svg {
+  border: 1px solid #ddd;
+  background: white;
+  display: block;
+}
+
+.scatter-svg text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.tooltip {
+  line-height: 1.4;
+}
+
