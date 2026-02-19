@@ -38,4 +38,6 @@ export const playMinimalistSound = createPlayer('Coffee2.mp3', 0.6)
 
 // Optional whoosh used during fast pans
 export const playWhooshSound = createPlayer('dragon-studio-simple-whoosh-03-433005.mp3', 0.35)
+// African sound for slider animation end
+export const playAfricanSound = createPlayer('African4.mp3', 0.9)
 

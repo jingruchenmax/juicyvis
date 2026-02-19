@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import './BarChartJuicy.css'
-import { playMinimalistSound, playClickSound } from '../utils/soundUtils'
+import { playMinimalistSound, playClickSound, playAfricanSound } from '../utils/soundUtils'
 
 interface EnergyData {
   Entity: string
@@ -76,6 +76,8 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   const waveFramesRef = useRef<EnergyData[][]>([])
   const flickerRef = useRef<number | null>(null)
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const screenShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isScreenShaking, setIsScreenShaking] = useState(false)
 
   // Get latest year data for the top countries
   const getLatestYearData = () => {
@@ -121,8 +123,8 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   useEffect(() => {
     if (!displayData || displayData.length === 0) return
     
-    // Ensure sliderProgress is updated with slider state
-    if (sliderPosition === 'middle') {
+    // Ensure sliderProgress is updated with slider state (but do not override during animation)
+    if (sliderPosition === 'middle' && !isWaveAnimating) {
       setSliderProgress(50)
     }
 
@@ -356,6 +358,18 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
         .text(item.name)
     })
 
+    // Slow idle blink animation on highlighted bars when hovering slider in middle state
+    if (sliderHovered && !isWaveAnimating && highlightedSource !== 'total' && sliderPosition === 'middle') {
+      const popBars = g.selectAll<SVGRectElement, any>('rect.bar-rect')
+        .filter((d: any) => d && d.sourceKey === highlightedSource)
+
+      popBars.classed('bar-pop-animate', true)
+    } else {
+      // Remove animation when conditions are no longer met
+      const allBars = g.selectAll<SVGRectElement, any>('rect.bar-rect')
+      allBars.classed('bar-pop-animate', false)
+    }
+
     // Render preview layer if previewData exists and highlightedSource is set
     // Always remove old preview layer first
     g.selectAll('g.preview-layer').remove()
@@ -417,6 +431,9 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
       if (shakeTimeoutRef.current) {
         clearTimeout(shakeTimeoutRef.current)
       }
+      if (screenShakeTimeoutRef.current) {
+        clearTimeout(screenShakeTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -451,8 +468,17 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
         return previewDirection === 'asc' ? valA - valB : valB - valA
       })
       
-      // Set preview data once - CSS animation will handle the flashing effect
-      setPreviewData(previewSorted)
+      // Avoid redundant updates that constantly re-render SVG and restart hover animation
+      setPreviewData((prev) => {
+        if (
+          prev &&
+          prev.length === previewSorted.length &&
+          prev.every((item, idx) => item.Entity === previewSorted[idx].Entity)
+        ) {
+          return prev
+        }
+        return previewSorted
+      })
     } else {
       // Stop preview when not hovering or when animating
       setPreviewData(null)
@@ -653,6 +679,8 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
     const frames = generateWaveFrames(latestData, type, toDir)
     waveFramesRef.current = frames
     let frameIndex = 0
+    const startProgress = sliderProgress
+    const targetProgress = toDir === 'asc' ? 100 : 0
     
     const FRAME_INTERVAL = 20 // ms per frame (very fast - original was 77ms)
     const totalFrames = frames.length
@@ -685,28 +713,26 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
       if (frameIndex < frames.length) {
         setAnimatedData([...frames[frameIndex]])
         
-        // Trigger pop-up animation on highlighted bars
+        // Trigger burst pop animation on highlighted bars during wave sorting
         if (svgRef.current && highlightedSource !== 'total') {
           const allBars = d3.select(svgRef.current)
             .selectAll('rect.bar-rect')
             .filter((d: any) => d && d.sourceKey === highlightedSource)
           
-          // Add pop class
-          allBars.classed('bar-pop-animate', true)
+          // Add burst class
+          allBars.classed('bar-pop-burst', true)
           
-          // Remove pop class after animation
+          // Remove burst class after animation
           setTimeout(() => {
-            allBars.classed('bar-pop-animate', false)
+            allBars.classed('bar-pop-burst', false)
           }, 120) // Match CSS animation duration
         }
         
-        // Update slider progress based on animation direction
-        const progress = (frameIndex / frames.length) * 100
-        if (toDir === 'asc') {
-          setSliderProgress(progress)
-        } else {
-          setSliderProgress(100 - progress)
-        }
+        // Update slider progress smoothly from current position to target
+        const denominator = Math.max(frames.length - 1, 1)
+        const t = frameIndex / denominator
+        const interpolatedProgress = startProgress + (targetProgress - startProgress) * t
+        setSliderProgress(interpolatedProgress)
         
         frameIndex++
       } else {
@@ -715,12 +741,24 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
         setAnimatedData(null)
         setIsWaveAnimating(false)
         setSortConfig({ type, direction: toDir })
+        setSliderPosition(toDir === 'desc' ? 'left' : 'right')
+        setSliderProgress(targetProgress)
         
         // Stop sound playback if still running
         if (soundPlaybackRef.current) {
           clearInterval(soundPlaybackRef.current)
           soundPlaybackRef.current = null
         }
+          // Play African sound effect after animation completes
+          playAfricanSound()
+        // Light screen shake at the end of slider animation
+        setIsScreenShaking(true)
+        if (screenShakeTimeoutRef.current) {
+          clearTimeout(screenShakeTimeoutRef.current)
+        }
+        screenShakeTimeoutRef.current = setTimeout(() => {
+          setIsScreenShaking(false)
+        }, 280)
         
         // Trigger particle effect at handle position
         if (sliderContainerRef.current) {
@@ -774,7 +812,7 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   const latestYear = Math.max(...data.map(d => d.Year))
 
   return (
-    <div className="bar-chart-juicy-container">
+    <div className={`bar-chart-juicy-container ${isScreenShaking ? 'bar-chart-screen-shake' : ''}`}>
 
       
       <div className="chart-info-juicy">
@@ -877,12 +915,7 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                   <div 
                     className="slider-handle-juicy"
                     style={{ 
-                      left: (() => {
-                        // Position handle based on slider state
-                        if (sliderPosition === 'middle') return '50%'
-                        if (sliderPosition === 'left') return '5%'
-                        return '95%' // right
-                      })(),
+                      left: `${5 + sliderProgress * 0.9}%`,
                       borderColor: sliderColor,
                       opacity: flickerOpacity,
                       boxShadow: sliderHovered
@@ -903,7 +936,6 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                         // Trigger animation based on direction change
                         if (newPos !== sliderPosition) {
                           // First sort from middle or switch sides
-                          setSliderPosition(newPos)
                           const direction = newPos === 'left' ? 'desc' : 'asc'
                           animateWaveSort(highlightedSource, direction)
                         }
@@ -911,7 +943,7 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                         document.removeEventListener('mousemove', handleMouseMove)
                         document.removeEventListener('mouseup', handleMouseUp)
                       }
-                      
+
                       const handleMouseUp = () => {
                         document.removeEventListener('mousemove', handleMouseMove)
                         document.removeEventListener('mouseup', handleMouseUp)
@@ -930,13 +962,13 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                         <>
                           <div 
                             className="slider-arrow slider-arrow-left"
-                            style={{ color: sliderColor, left: '25%' }}
+                            style={{ left: '25%', ['--slider-arrow-stroke' as any]: sliderColor }}
                           >
                             ←
                           </div>
                           <div 
                             className="slider-arrow slider-arrow-right"
-                            style={{ color: sliderColor, left: '75%' }}
+                            style={{ left: '75%', ['--slider-arrow-stroke' as any]: sliderColor }}
                           >
                             →
                           </div>
@@ -945,9 +977,9 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                         // Show single arrow based on current position
                         <div 
                           className={`slider-arrow ${sliderPosition === 'left' ? 'slider-arrow-left' : 'slider-arrow-right'}`}
-                          style={{ color: sliderColor }}
+                          style={{ ['--slider-arrow-stroke' as any]: sliderColor }}
                         >
-                          {sliderPosition === 'left' ? '←' : '→'}
+                          {sliderPosition === 'left' ? '→' : '←'}
                         </div>
                       )}
                     </>
