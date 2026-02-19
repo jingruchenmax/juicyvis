@@ -710,10 +710,11 @@ function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
           .translate(width / 2, height / 2)
           .scale(scale)
           .translate(-(x0 + x1) / 2, -(y0 + y1) / 2)
-        
+
         // Apply the transformation to g element directly for smooth focus
         g.transition()
-          .duration(750)
+          .duration(600)
+          .ease(d3.easeCubicInOut)
           .attr('transform', newTransform.toString())
       }
     }
