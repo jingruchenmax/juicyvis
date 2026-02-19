@@ -23,21 +23,21 @@ const createPlayer = (fileName: string, volume = 0.9) => {
 export const playHoverSound = createPlayer('hover.mp3', 0.5)
 
 // Selection (country click)
-export const playClickSound = createPlayer('Minimalist13.mp3', 0.9)
+export const playClickSound = createPlayer('click13.mp3', 0.9)
 
 // Dragging/panning the canvas
-export const playGrabSound = createPlayer('Minimalist1.mp3', 0.75)
-export const playReleaseSound = createPlayer('Minimalist1.mp3', 0.55)
-export const playDragStartSound = createPlayer('Minimalist8.mp3', 0.8)
+export const playGrabSound = createPlayer('click1.mp3', 0.75)
+export const playReleaseSound = createPlayer('click1.mp3', 0.55)
+export const playDragStartSound = createPlayer('click8.mp3', 0.8)
 
 // Zooming feedback
-export const playZoomSound = createPlayer('Minimalist5.mp3', 0.7)
+export const playZoomSound = createPlayer('click5.mp3', 0.7)
 
 // Bar chart wave animation
-export const playMinimalistSound = createPlayer('Coffee2.mp3', 0.6)
+export const playMinimalistSound = createPlayer('dingdong1.mp3', 0.6)
 
 // Optional whoosh used during fast pans
-export const playWhooshSound = createPlayer('dragon-studio-simple-whoosh-03-433005.mp3', 0.35)
+export const playWhooshSound = createPlayer('huhu1.mp3', 0.35)
 // African sound for slider animation end
-export const playAfricanSound = createPlayer('African4.mp3', 0.9)
+export const playAfricanSound = createPlayer('dingdong2.mp3', 0.9)
 
