@@ -395,7 +395,6 @@
   z-index: 10;
   color: #fff;
   -webkit-text-stroke: 4px var(--slider-arrow-stroke, #888);
-  text-stroke: 4px var(--slider-arrow-stroke, #888);
   paint-order: stroke fill;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.18));
 }

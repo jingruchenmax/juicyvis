@@ -23,7 +23,7 @@ interface TooltipData {
 
 const SVG_WIDTH = 1200
 const SVG_HEIGHT = 800
-const MARGIN = { top: 100, right: 220, bottom: 80, left: 80 }
+const MARGIN = { top: 100, right: 40, bottom: 80, left: 80 }
 
 // Function to format large numbers as readable text
 const formatNumber = (num: number | null): string => {
@@ -44,8 +44,8 @@ const formatNumber = (num: number | null): string => {
 }
 
 const COLORS: Record<string, string> = {
-  'Academia': '#4472C4',
-  'Industry': '#ED7D31',
+  'Academia': '#00B7EB', // 鲜艳青蓝色
+  'Industry': '#E53935', // 更鲜明的红色
   'Academia and industry collaboration': '#70AD47',
   'Government': '#D62728',
   'Other': '#7030A0',
@@ -53,6 +53,27 @@ const COLORS: Record<string, string> = {
 }
 
 const GREY = '#CCCCCC'
+
+// Blend each category color 70% original + 30% grey for unselected dots
+function blendWithGrey(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const grey = 180
+  return `rgb(${Math.round(r * 0.7 + grey * 0.3)}, ${Math.round(g * 0.7 + grey * 0.3)}, ${Math.round(b * 0.7 + grey * 0.3)})`
+}
+
+function blendWithWhite(hex: string, amount = 0.2): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const white = 255
+  return `rgb(${Math.round(r * amount + white * (1 - amount))}, ${Math.round(g * amount + white * (1 - amount))}, ${Math.round(b * amount + white * (1 - amount))})`
+}
+
+const MUTED_COLORS: Record<string, string> = Object.fromEntries(
+  Object.entries(COLORS).map(([k, v]) => [k, blendWithGrey(v)])
+)
 
 interface ScatterDot extends DataRow {
   id?: string
@@ -62,7 +83,7 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [selectedDots, setSelectedDots] = useState<Set<string>>(new Set())
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
-
+  const [selectedTooltips, setSelectedTooltips] = useState<Record<string, TooltipData>>({})
   useEffect(() => {
     if (!data || data.length === 0) return
 
@@ -117,32 +138,34 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       .style('fill', '#666')
       .text('Parameters are variables adjusted during training to transform input data into desired output.')
 
+    // Clip path so dots don't overflow chart bounds during zoom
+    svg.append('defs').append('clipPath')
+      .attr('id', 'scatter-juicy-clip')
+      .append('rect')
+      .attr('width', width)
+      .attr('height', height)
+
     const g = svg
       .append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
 
-    // Add grid lines
-    g.append('g')
-      .attr('class', 'grid-x')
-      .call(
-        d3.axisBottom(xScale)
-          .tickSize(height)
-          .tickFormat(() => '')
-      )
-      .selectAll('line')
-      .attr('stroke', '#e0e0e0')
-      .attr('stroke-dasharray', '4')
+    const chartBg = g.append('rect')
+      .attr('class', 'chart-bg')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', '#fff')
+      .attr('fill-opacity', 1)
 
-    g.append('g')
-      .attr('class', 'grid-y')
-      .call(
-        d3.axisLeft(yScale)
-          .tickSize(-width)
-          .tickFormat(() => '')
-      )
-      .selectAll('line')
-      .attr('stroke', '#e0e0e0')
-      .attr('stroke-dasharray', '4')
+    // Add grid lines
+    const gridX = g.append('g').attr('class', 'grid-x')
+    gridX.call(d3.axisBottom(xScale).tickSize(height).tickFormat(() => ''))
+      .selectAll('line').attr('stroke', '#e0e0e0').attr('stroke-dasharray', '4')
+
+    const gridY = g.append('g').attr('class', 'grid-y')
+    gridY.call(d3.axisLeft(yScale).tickSize(-width).tickFormat(() => ''))
+      .selectAll('line').attr('stroke', '#e0e0e0').attr('stroke-dasharray', '4')
 
     // Add crosshair lines
     const crosshairGroup = g.append('g')
@@ -155,7 +178,7 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       .attr('x2', 0)
       .attr('y1', 0)
       .attr('y2', height)
-      .attr('stroke', '#FF6B6B')
+      .attr('stroke', '#000')
       .attr('stroke-width', 1)
       .attr('opacity', 0)
       .attr('stroke-dasharray', '3,3')
@@ -166,7 +189,7 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       .attr('x2', width)
       .attr('y1', 0)
       .attr('y2', 0)
-      .attr('stroke', '#FF6B6B')
+      .attr('stroke', '#000')
       .attr('stroke-width', 1)
       .attr('opacity', 0)
       .attr('stroke-dasharray', '3,3')
@@ -234,6 +257,10 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       .style('text-anchor', 'middle')
       .text('Training computation (petaFLOP) (plotted on a logarithmic axis)')
 
+    // Clipped group for dots and highlights
+    const dotsGroup = g.append('g').attr('clip-path', 'url(#scatter-juicy-clip)')
+    const effectsGroup = g.append('g').attr('clip-path', 'url(#scatter-juicy-clip)')
+
     // Prepare data with IDs - separate unselected and selected
     const allDataWithIds = data.map((d, i) => ({
       ...d,
@@ -246,90 +273,175 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       ...allDataWithIds.filter(d => selectedDots.has(d.id || ''))
     ]
 
-    // Add dots
-    g.selectAll('.dot')
+    const getBaseOpacity = (dot: ScatterDot) => {
+      const dotId = dot.id || ''
+      if (selectedDots.size > 0 && !selectedDots.has(dotId)) {
+        return 0.55
+      }
+      return 0.8
+    }
+
+    const triggerShake = () => {
+      g.transition().duration(60)
+        .attr('transform', `translate(${MARGIN.left + 1},${MARGIN.top - 0.5})`)
+        .transition().duration(60)
+        .attr('transform', `translate(${MARGIN.left - 1},${MARGIN.top + 0.5})`)
+        .transition().duration(60)
+        .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
+    }
+
+    const spawnParticles = (x: number, y: number, color: string) => {
+      const particleCount = 16
+      const particleRadius = 2.5
+      const particles = d3.range(particleCount).map(() => {
+        const angle = Math.random() * Math.PI * 2
+        const distance = 20 + Math.random() * 14
+        return { angle, distance }
+      })
+
+      const burst = effectsGroup.append('g')
+        .attr('class', 'particle-burst')
+        .attr('transform', `translate(${x},${y})`)
+
+      burst.selectAll('circle')
+        .data(particles)
+        .enter()
+        .append('circle')
+        .attr('r', particleRadius)
+        .attr('cx', 0)
+        .attr('cy', 0)
+        .attr('fill', color)
+        .attr('opacity', 0.9)
+        .transition()
+        .duration(500)
+        .ease(d3.easeCubicOut)
+        .attr('cx', d => Math.cos(d.angle) * d.distance)
+        .attr('cy', d => Math.sin(d.angle) * d.distance)
+        .attr('opacity', 0)
+        .remove()
+
+      burst.transition()
+        .duration(650)
+        .remove()
+    }
+
+    // Add dots inside clipped group
+    dotsGroup.selectAll('.dot')
       .data(sortedData, (d: any) => d.id)
       .join('circle')
       .attr('class', 'dot')
       .attr('cx', d => xScale(d['Training computation (petaFLOP)'] || 1))
       .attr('cy', d => yScale(d['Number of parameters'] || 1))
-      .attr('r', 5)
-      .attr('fill', d => selectedDots.size === 0 ? GREY : (selectedDots.has(d.id || '') ? COLORS[d['Researcher affiliation']] || COLORS['Other'] : GREY))
-      .attr('fill-opacity', 0.8)
+      .attr('r', 4)
+      .attr('fill', d => selectedDots.has(d.id || '') ? COLORS[d['Researcher affiliation']] || COLORS['Other'] : MUTED_COLORS[d['Researcher affiliation']] || MUTED_COLORS['Other'])
+      .attr('fill-opacity', d => getBaseOpacity(d as ScatterDot))
       .attr('stroke', 'none')
       .style('cursor', 'pointer')
       .on('mouseover', (event, d: ScatterDot) => {
         playHoverSound()
-        
-        // Pop up effect - increase radius and darken color
+        const dotColor = COLORS[d['Researcher affiliation']] || COLORS['Other']
+        chartBg.transition('bg-tint').duration(150)
+          .attr('fill', blendWithWhite(dotColor, 0.2))
+          .attr('fill-opacity', 0.25)
+        crosshairGroup.selectAll('line')
+          .transition('crosshair-tint').duration(150)
+          .attr('stroke', dotColor)
+          .attr('stroke-width', 2)
+        dotsGroup.selectAll<SVGCircleElement, ScatterDot>('.dot')
+          .transition('hover-dim').duration(150)
+          .attr('fill-opacity', dot => (dot.id === d.id ? 1 : getBaseOpacity(dot) * 0.35))
         d3.select(event.target)
-          .transition('hover-pop')
-          .duration(200)
+          .transition('hover-pop').duration(200)
           .attr('r', 9)
-          .attr('fill', '#999999')
-        
-        const cxVal = xScale(d['Training computation (petaFLOP)'] || 1)
-        const cyVal = yScale(d['Number of parameters'] || 1)
+          .attr('fill', COLORS[d['Researcher affiliation']] || COLORS['Other'])
         setTooltip({
-          x: cxVal + MARGIN.left,
-          y: cyVal + MARGIN.top,
+          x: xScale(d['Training computation (petaFLOP)'] || 1) + MARGIN.left,
+          y: yScale(d['Number of parameters'] || 1) + MARGIN.top,
           data: d
         })
       })
       .on('mouseout', (event, d: ScatterDot) => {
-        // Reset to original size and color
         d3.select(event.target as SVGCircleElement)
-          .transition('hover-reset')
-          .duration(200)
-          .attr('r', 5)
-          .attr('fill', selectedDots.size === 0 ? GREY : (selectedDots.has(d.id || '') ? COLORS[d['Researcher affiliation']] || COLORS['Other'] : GREY))
-        
+          .transition('hover-reset').duration(200)
+          .attr('r', 4)
+          .attr('fill', selectedDots.has(d.id || '') ? COLORS[d['Researcher affiliation']] || COLORS['Other'] : MUTED_COLORS[d['Researcher affiliation']] || MUTED_COLORS['Other'])
+        chartBg.transition('bg-reset').duration(200)
+          .attr('fill', '#fff')
+          .attr('fill-opacity', 1)
+        crosshairGroup.selectAll('line')
+          .transition('crosshair-reset').duration(200)
+          .attr('stroke', '#000')
+          .attr('stroke-width', 1)
+        dotsGroup.selectAll<SVGCircleElement, ScatterDot>('.dot')
+          .transition('hover-undim').duration(150)
+          .attr('fill-opacity', dot => getBaseOpacity(dot))
         setTooltip(null)
       })
       .on('click', (event, d: ScatterDot) => {
         event.stopPropagation()
         playClickSound()
-        
         const dotId = d.id || ''
-        
-        // First shrink, then expand with bounce
+        const cxVal = xScale(d['Training computation (petaFLOP)'] || 1)
+        const cyVal = yScale(d['Number of parameters'] || 1)
+        const dotColor = COLORS[d['Researcher affiliation']] || COLORS['Other']
+        triggerShake()
+        spawnParticles(cxVal, cyVal, dotColor)
         d3.select(event.target)
-          .transition('shrink')
-          .duration(100)
-          .attr('r', 2)
-          .ease(d3.easeCubicIn)
+          .transition('shrink').duration(100).attr('r', 1.5).ease(d3.easeCubicIn)
           .on('end', () => {
-            // Then expand with bounce
             d3.select(event.target)
-              .transition('expand')
-              .duration(100)
-              .attr('r', 15)
-              .ease(d3.easeBounceOut)
+              .transition('expand').duration(100).attr('r', 12).ease(d3.easeBounceOut)
           })
-        
         setTimeout(() => {
           setSelectedDots(prev => {
             const newSet = new Set(prev)
             if (newSet.has(dotId)) {
               newSet.delete(dotId)
+              setSelectedTooltips(prevTips => {
+                const next = { ...prevTips }
+                delete next[dotId]
+                return next
+              })
             } else {
               newSet.add(dotId)
+              setSelectedTooltips(prevTips => ({
+                ...prevTips,
+                [dotId]: { x: cxVal + MARGIN.left, y: cyVal + MARGIN.top, data: d }
+              }))
             }
             return newSet
           })
         }, 200)
       })
 
-    // Add circle highlights for selected dots
-    const highlightCircles = g.selectAll('.highlight-circle')
+    // Add circle highlights for selected dots inside clipped group
+    const outlineCircles = dotsGroup.selectAll('.highlight-outline')
       .data(Array.from(selectedDots), (d: any) => d)
       .join(enter => {
         return enter.append('circle')
-          .attr('class', 'highlight-circle')
-          .attr('r', 8)
-          .attr('fill', 'none')
-          .attr('stroke-width', 2.5)
-          .attr('opacity', 0.8)
+          .attr('class', 'highlight-outline')
+          .attr('r', 8).attr('fill', 'none')
+          .attr('stroke', '#000')
+          .attr('stroke-width', 4.5)
+          .attr('opacity', 0.9)
+      })
+      .attr('cx', (dotId: string) => {
+        const dotIndex = parseInt(dotId.split('-')[1])
+        return xScale(data[dotIndex]['Training computation (petaFLOP)'] || 1)
+      })
+      .attr('cy', (dotId: string) => {
+        const dotIndex = parseInt(dotId.split('-')[1])
+        return yScale(data[dotIndex]['Number of parameters'] || 1)
+      })
+    outlineCircles.exit().remove()
+
+    const highlightCircles = dotsGroup.selectAll('.highlight-circle')
+      .data(Array.from(selectedDots), (d: any) => d)
+      .join(enter => {
+        return enter.append('circle')
+            .attr('class', 'highlight-circle')
+            .attr('r', 6).attr('fill', 'none')
+          .attr('stroke-width', 2.5).attr('opacity', 0.8)
       })
       .attr('cx', (dotId: string) => {
         const dotIndex = parseInt(dotId.split('-')[1])
@@ -343,91 +455,129 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
         const dotIndex = parseInt(dotId.split('-')[1])
         return COLORS[data[dotIndex]['Researcher affiliation']] || COLORS['Other']
       })
-
-    // Remove highlight circles for deselected dots
     highlightCircles.exit().remove()
 
-    // Add legend
-    const legendData = [
-      { name: 'Academia', color: COLORS['Academia'] },
-      { name: 'Academia and industry collaboration', color: COLORS['Academia and industry collaboration'] },
-      { name: 'Industry', color: COLORS['Industry'] },
-      { name: 'Not specified', color: COLORS['Not specified'] },
-      { name: 'Other', color: COLORS['Other'] },
-    ]
-
-    const legend = g.append('g')
-      .attr('class', 'legend')
-      .attr('transform', `translate(${width + 10}, 0)`)
-
-    legendData.forEach((item, i) => {
-      const legendRow = legend.append('g')
-        .attr('transform', `translate(0, ${i * 20})`)
-
-      legendRow.append('circle')
-        .attr('r', 5)
-        .attr('fill', item.color)
-        .attr('fill-opacity', 0.8)
-
-      legendRow.append('text')
-        .attr('x', 12)
-        .attr('y', 5)
-        .style('font-size', '12px')
-        .style('font-family', 'sans-serif')
-        .style('fill', '#333')
-        .text(item.name)
-    })
+    // Legend will be displayed in React JSX above, no need to generate in d3
 
   }, [data, selectedDots])
 
+  // legend数据用于上方和右侧显示
+  const legendDataArray = [
+    { name: 'Academia', color: COLORS['Academia'] },
+    { name: 'Academia and industry collaboration', color: COLORS['Academia and industry collaboration'] },
+    { name: 'Industry', color: COLORS['Industry'] },
+    { name: 'Not specified', color: COLORS['Not specified'] },
+    { name: 'Other', color: COLORS['Other'] },
+  ]
+
+  const selectedList = Array.from(selectedDots).map(dotId => {
+    const dotIndex = parseInt(dotId.split('-')[1])
+    return data[dotIndex]
+  })
+
   const handleClearSelection = () => {
     setSelectedDots(new Set())
+    setSelectedTooltips({})
   }
 
   return (
-    <div className="scatter-plot-container">
-      <div className="controls">
-        <button 
-          onClick={handleClearSelection}
-          disabled={selectedDots.size === 0}
-          className="clear-btn"
-        >
-          Clear Selection ({selectedDots.size})
-        </button>
-      </div>
-      
-      <div className="chart-wrapper" style={{ position: 'relative' }}>
-        <svg ref={svgRef} className="scatter-svg"></svg>
-        
-        {tooltip && (
-          <div 
-            className="tooltip" 
-            style={{
-              position: 'absolute',
-              left: `${tooltip.x + 10}px`,
-              top: `${tooltip.y + 10}px`,
-              backgroundColor: 'white',
-              border: '1px solid #333',
-              borderRadius: '4px',
-              padding: '8px 12px',
-              fontSize: '12px',
-              fontFamily: 'sans-serif',
-              zIndex: 1000,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              pointerEvents: 'none',
-              maxWidth: '280px'
-            }}
-          >
-            <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '13px' }}>
-              {tooltip.data.Entity}
-            </div>
-            <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>
-              <div>Computation: <strong>{formatNumber(tooltip.data['Training computation (petaFLOP)'])} petaFLOP</strong></div>
-              <div>Parameters: <strong>{formatNumber(tooltip.data['Number of parameters'])}</strong></div>
-              <div>Affiliation: <strong>{tooltip.data['Researcher affiliation']}</strong></div>
-            </div>
+    <div className="scatter-plot-container" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'row', flex: 1, alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
+          <div className="chart-wrapper" style={{ position: 'relative', width: SVG_WIDTH }}>  
+            <svg ref={svgRef} className="scatter-svg"></svg>
+            {Object.entries(selectedTooltips).map(([dotId, selectedTip]) => (
+              <div
+                key={`selected-tooltip-${dotId}`}
+                className="tooltip"
+                style={{
+                  position: 'absolute',
+                  left: `${selectedTip.x + 10}px`,
+                  top: `${selectedTip.y + 10}px`,
+                  backgroundColor: 'white',
+                  border: '1px solid #333',
+                  borderRadius: '4px',
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  fontFamily: 'sans-serif',
+                  zIndex: 950,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  pointerEvents: 'none',
+                  maxWidth: '280px'
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '13px' }}>
+                  {selectedTip.data.Entity}
+                </div>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>
+                  <div>Computation: <strong>{formatNumber(selectedTip.data['Training computation (petaFLOP)'])} petaFLOP</strong></div>
+                  <div>Parameters: <strong>{formatNumber(selectedTip.data['Number of parameters'])}</strong></div>
+                  <div>Affiliation: <strong>{selectedTip.data['Researcher affiliation']}</strong></div>
+                </div>
+              </div>
+            ))}
+            {tooltip && (
+              <div 
+                className="tooltip" 
+                style={{
+                  position: 'absolute',
+                  left: `${tooltip.x + 10}px`,
+                  top: `${tooltip.y + 10}px`,
+                  backgroundColor: 'white',
+                  border: '1px solid #333',
+                  borderRadius: '4px',
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  fontFamily: 'sans-serif',
+                  zIndex: 1000,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  pointerEvents: 'none',
+                  maxWidth: '280px'
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '13px' }}>
+                  {tooltip.data.Entity}
+                </div>
+                <div style={{ fontSize: '11px', color: '#555', marginBottom: '2px' }}>
+                  <div>Computation: <strong>{formatNumber(tooltip.data['Training computation (petaFLOP)'])} petaFLOP</strong></div>
+                  <div>Parameters: <strong>{formatNumber(tooltip.data['Number of parameters'])}</strong></div>
+                  <div>Affiliation: <strong>{tooltip.data['Researcher affiliation']}</strong></div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+        <div className="side-panel" style={{ width: 220, padding: '20px 12px 12px 12px', background: '#fff', borderLeft: '1px solid #e0e0e0', minHeight: SVG_HEIGHT - 100, boxSizing: 'border-box', overflowY: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            {legendDataArray.map(item => (
+              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: item.color, border: '1.5px solid #999' }}></span>
+                <span style={{ fontSize: 13, color: '#333', fontWeight: 400 }}>{item.name}</span>
+              </div>
+            ))}
+          </div>
+          <button 
+            onClick={handleClearSelection}
+            disabled={selectedDots.size === 0}
+            className="clear-btn"
+            style={{ width: '100%', marginBottom: 16 }}
+          >
+            Clear Selection ({selectedDots.size})
+          </button>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>Selected Items</div>
+          <div style={{ maxHeight: 320, overflowY: 'auto', background: '#fff', border: '1px solid #eee', borderRadius: 6, padding: 8 }}>
+            {selectedList.length === 0 ? (
+              <div style={{ color: '#aaa', fontSize: 13 }}>No items selected</div>
+            ) : (
+              selectedList.map((item, idx) => (
+                <div key={item.Entity + idx} style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', background: COLORS[item['Researcher affiliation']] || GREY, marginRight: 8, border: '1.5px solid #bbb' }}></span>
+                  <span style={{ fontSize: 13, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 150 }}>{item.Entity}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
