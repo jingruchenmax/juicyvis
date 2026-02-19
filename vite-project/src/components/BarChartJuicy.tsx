@@ -68,6 +68,7 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   const [particlePos, setParticlePos] = useState({ x: 0, y: 0 })
   const [flickerOpacity, setFlickerOpacity] = useState(1)
   const [highlightedSource, setHighlightedSource] = useState<SortConfig['type']>('total')
+  const [sliderPosition, setSliderPosition] = useState<'left' | 'middle' | 'right'>('middle') // Track slider state
   const [dimLevel, setDimLevel] = useState(1) // 1 = normal, 0.8 = dimmed, 0.4 = very dimmed
   const [isSvgShaking, setIsSvgShaking] = useState(false)
   const [previewData, setPreviewData] = useState<EnergyData[] | null>(null)
@@ -119,6 +120,11 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
 
   useEffect(() => {
     if (!displayData || displayData.length === 0) return
+    
+    // Ensure sliderProgress is updated with slider state
+    if (sliderPosition === 'middle') {
+      setSliderProgress(50)
+    }
 
     const width = SVG_WIDTH - MARGIN.left - MARGIN.right
     const height = SVG_HEIGHT - MARGIN.top - MARGIN.bottom
@@ -188,10 +194,10 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
       .attr('stroke', '#e0e0e0')
       .attr('stroke-dasharray', '4')
 
-    // Create stacked data with highlighted source at the bottom
-    const orderedKeys = highlightedSource === 'total' 
-      ? ENERGY_SOURCES 
-      : [highlightedSource as EnergySource, ...ENERGY_SOURCES.filter(s => s !== highlightedSource)]
+    // Create stacked data with highlighted source at the bottom - ONLY if slider has been dragged
+    const orderedKeys = (highlightedSource !== 'total' && sliderPosition !== 'middle')
+      ? /**Highlighted source moves to bottom ONLY after dragging slider */ [highlightedSource as EnergySource, ...ENERGY_SOURCES.filter(s => s !== highlightedSource)]
+      : ENERGY_SOURCES /**Keep original order until slider is dragged */
     
     const stackedData = d3.stack<EnergyData, EnergySource>()
       .keys(orderedKeys as any)
@@ -212,11 +218,11 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
           .attr('y', d => yScale((d.interval as any)[1]))
           .attr('height', d => yScale((d.interval as any)[0]) - yScale((d.interval as any)[1]))
           .attr('width', xScale.bandwidth())
-          .attr('stroke', d => (d.sourceKey === highlightedSource && sliderHovered) ? '#000' : 'none')
-          .attr('stroke-width', d => (d.sourceKey === highlightedSource && sliderHovered) ? 2 : 0)
+          .attr('stroke', d => (d.sourceKey === highlightedSource) ? '#000' : 'none')
+          .attr('stroke-width', d => (d.sourceKey === highlightedSource) ? 2 : 0)
           .attr('fill-opacity', d => {
             if (d.sourceKey === highlightedSource) return 1
-            return sliderHovered ? 0.3 : dimLevel
+            return dimLevel
           }),
         (update) => update
           .transition()
@@ -228,12 +234,12 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
           .attr('width', xScale.bandwidth())
           .attr('fill-opacity', d => {
             if (d.sourceKey === highlightedSource) return 1
-            return sliderHovered ? 0.3 : dimLevel
+            return dimLevel
           })
           .transition()
           .duration(200)
-          .attr('stroke', d => (d.sourceKey === highlightedSource && sliderHovered) ? '#000' : 'none')
-          .attr('stroke-width', d => (d.sourceKey === highlightedSource && sliderHovered) ? 2 : 0)
+          .attr('stroke', d => (d.sourceKey === highlightedSource) ? '#000' : 'none')
+          .attr('stroke-width', d => (d.sourceKey === highlightedSource) ? 2 : 0)
       )
       .attr('data-entity', d => (d.interval as any).data.Entity)
       .attr('data-source', d => d.sourceKey)
@@ -245,7 +251,7 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
         const value = (d.interval as any)[1] - (d.interval as any)[0]
         
         const rect = d3.select(this as SVGRectElement)
-        const targetOpacity = d.sourceKey === highlightedSource ? 1 : (sliderHovered ? 0.3 : dimLevel)
+        const targetOpacity = d.sourceKey === highlightedSource ? 1 : dimLevel
         rect
           .transition()
           .duration(150)
@@ -275,9 +281,9 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
         d3.select(this as SVGRectElement)
           .transition()
           .duration(150)
-          .attr('fill-opacity', d.sourceKey === highlightedSource ? 1 : (sliderHovered ? 0.3 : dimLevel))
-          .attr('stroke', (d.sourceKey === highlightedSource && sliderHovered) ? '#000' : 'none')
-          .attr('stroke-width', (d.sourceKey === highlightedSource && sliderHovered) ? 2 : 0)
+          .attr('fill-opacity', d.sourceKey === highlightedSource ? 1 : dimLevel)
+          .attr('stroke', (d.sourceKey === highlightedSource) ? '#000' : 'none')
+          .attr('stroke-width', (d.sourceKey === highlightedSource) ? 2 : 0)
         
         setTooltip(null)
       })
@@ -391,7 +397,7 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
       }
     }
 
-  }, [displayData, hoveredBar, highlightedSource, dimLevel, sliderHovered, previewData])
+  }, [displayData, hoveredBar, highlightedSource, dimLevel, sliderHovered, previewData, sliderProgress, sliderPosition])
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -416,29 +422,42 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
 
   // Handle preview animation when hovering over slider
   useEffect(() => {
-    // Only show preview if hovering, not animating, and highlightedSource is not 'total'
+    // Show preview if: hovering, not animating, and highlightedSource is not 'total'
     if (sliderHovered && !isWaveAnimating && highlightedSource !== 'total') {
-      // Get the opposite direction data
-      const oppositeDirection = sortConfig.direction === 'desc' ? 'asc' : 'desc'
-      const oppositeSorted = [...sortedData].sort((a, b) => {
+      // Determine which direction to show preview for
+      let previewDirection: 'asc' | 'desc'
+      
+      if (sliderPosition === 'middle') {
+        // When slider is at middle, show desc (High to Low) preview by default
+        previewDirection = 'desc'
+      } else {
+        // When slider has been dragged, show the opposite direction
+        previewDirection = sortConfig.direction === 'desc' ? 'asc' : 'desc'
+      }
+      
+      // Get the preview data sorted in the preview direction
+      const previewSorted = [...sortedData].sort((a, b) => {
         const getSortValue = (item: EnergyData): number => {
-          if (sortConfig.type === 'total') {
+          // Use highlightedSource for sorting when slider is at middle, otherwise use sortConfig.type
+          const sourceToSort = sliderPosition === 'middle' ? highlightedSource : sortConfig.type
+          
+          if (sourceToSort === 'total') {
             return ENERGY_SOURCES.reduce((sum, source) => sum + (item[source] || 0), 0)
           }
-          return item[sortConfig.type as EnergySource] || 0
+          return item[sourceToSort as EnergySource] || 0
         }
         const valA = getSortValue(a)
         const valB = getSortValue(b)
-        return oppositeDirection === 'asc' ? valA - valB : valB - valA
+        return previewDirection === 'asc' ? valA - valB : valB - valA
       })
       
       // Set preview data once - CSS animation will handle the flashing effect
-      setPreviewData(oppositeSorted)
+      setPreviewData(previewSorted)
     } else {
       // Stop preview when not hovering or when animating
       setPreviewData(null)
     }
-  }, [sliderHovered, isWaveAnimating, sortConfig, sortedData, highlightedSource])
+  }, [sliderHovered, isWaveAnimating, sortConfig, sortedData, highlightedSource, sliderPosition])
 
   // Handle flickering effect during animation
   useEffect(() => {
@@ -726,26 +745,21 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
     }, FRAME_INTERVAL) // Animation frame interval
   }
 
-  const handleSortChange = (type: SortConfig['type'], direction?: SortConfig['direction']) => {
+  const handleSortChange = (type: SortConfig['type']) => {
     // Play click sound
     playClickSound()
     
-    // Update highlighted source
+    // Update highlighted source for visual feedback (highlight bars, show color on slider)
     setHighlightedSource(type)
-    setDimLevel(0.6) // Initial dim level for non-selected categories
+    setDimLevel(0.7) // Dim level for non-selected categories when selected
     
-    const newDirection = direction || (sortConfig.type === type && sortConfig.direction === 'desc' ? 'asc' : 'desc')
+    // Reset slider to middle position when selecting a new type
+    setSliderPosition('middle')
+    setSliderProgress(50) // Position handle at middle
     
-    // If direction is changing and not already animating, trigger wave animation
-    if (direction !== undefined && direction !== sortConfig.direction && !isWaveAnimating && sortConfig.type === type) {
-      animateWaveSort(type, newDirection)
-    } else {
-      setSortConfig({
-        type,
-        direction: newDirection
-      })
-      setAnimatedData(null)
-    }
+    // Do NOT update sortConfig - data order stays the same until slider is dragged
+    // Only apply visual changes: highlight bars, show black borders, change slider color
+    // User must drag slider to trigger actual sorting and animation
   }
 
   const sortOptions: Array<{ type: SortConfig['type']; label: string; color: string }> = [
@@ -844,7 +858,8 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
           <span style={{ marginRight: '10px', fontSize: '14px', fontWeight: '500' }}>High to Low</span>
           <div className="slider-container-juicy" ref={sliderContainerRef}>
             {(() => {
-              const sliderColor = sortConfig.type === 'total' ? '#666666' : COLORS[sortConfig.type as EnergySource]
+              // Color slider based on highlighted source, not sortConfig
+              const sliderColor = highlightedSource === 'total' ? '#666666' : COLORS[highlightedSource as EnergySource]
               
               return (
                 <div 
@@ -858,17 +873,16 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                   }}
                   onMouseEnter={() => setSliderHovered(true)}
                   onMouseLeave={() => setSliderHovered(false)}
-                  onClick={(e) => {
-                    if (isWaveAnimating) return
-                    const rect = e.currentTarget.getBoundingClientRect()
-                    const progress = (e.clientX - rect.left) / rect.width
-                    handleSortChange(sortConfig.type, progress < 0.5 ? 'desc' : 'asc')
-                  }}
                 >
                   <div 
                     className="slider-handle-juicy"
                     style={{ 
-                      left: isWaveAnimating ? `${sliderProgress}%` : (sortConfig.direction === 'desc' ? '5%' : '95%'),
+                      left: (() => {
+                        // Position handle based on slider state
+                        if (sliderPosition === 'middle') return '50%'
+                        if (sliderPosition === 'left') return '5%'
+                        return '95%' // right
+                      })(),
                       borderColor: sliderColor,
                       opacity: flickerOpacity,
                       boxShadow: sliderHovered
@@ -876,20 +890,26 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                         : `0 4px 12px ${sliderColor}33`
                     }}
                     onMouseDown={(e) => {
-                      if (isWaveAnimating) {
-                        e.preventDefault()
-                        return
-                      }
                       e.preventDefault()
                       const startX = e.clientX
                       
                       const handleMouseMove = (moveEvent: MouseEvent) => {
                         const delta = moveEvent.clientX - startX
-                        if (Math.abs(delta) > 20) {
-                          handleSortChange(sortConfig.type, delta > 0 ? 'asc' : 'desc')
-                          document.removeEventListener('mousemove', handleMouseMove)
-                          document.removeEventListener('mouseup', handleMouseUp)
+                        if (Math.abs(delta) < 20) return // Need at least 20px movement
+                        
+                        // Determine direction based on delta
+                        const newPos = delta > 0 ? 'right' : 'left'
+                        
+                        // Trigger animation based on direction change
+                        if (newPos !== sliderPosition) {
+                          // First sort from middle or switch sides
+                          setSliderPosition(newPos)
+                          const direction = newPos === 'left' ? 'desc' : 'asc'
+                          animateWaveSort(highlightedSource, direction)
                         }
+                        
+                        document.removeEventListener('mousemove', handleMouseMove)
+                        document.removeEventListener('mouseup', handleMouseUp)
                       }
                       
                       const handleMouseUp = () => {
@@ -902,14 +922,35 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
                     }}
                   />
                   
-                  {/* Floating arrow when hovering */}
+                  {/* Floating arrows when hovering */}
                   {sliderHovered && !isWaveAnimating && (
-                    <div 
-                      className={`slider-arrow ${sortConfig.direction === 'desc' ? 'slider-arrow-right' : 'slider-arrow-left'}`}
-                      style={{ color: sliderColor }}
-                    >
-                      {sortConfig.direction === 'desc' ? '→' : '←'}
-                    </div>
+                    <>
+                      {sliderPosition === 'middle' ? (
+                        // Show two arrows when slider is at middle
+                        <>
+                          <div 
+                            className="slider-arrow slider-arrow-left"
+                            style={{ color: sliderColor, left: '25%' }}
+                          >
+                            ←
+                          </div>
+                          <div 
+                            className="slider-arrow slider-arrow-right"
+                            style={{ color: sliderColor, left: '75%' }}
+                          >
+                            →
+                          </div>
+                        </>
+                      ) : (
+                        // Show single arrow based on current position
+                        <div 
+                          className={`slider-arrow ${sliderPosition === 'left' ? 'slider-arrow-left' : 'slider-arrow-right'}`}
+                          style={{ color: sliderColor }}
+                        >
+                          {sliderPosition === 'left' ? '←' : '→'}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )

@@ -55,6 +55,8 @@ function BarChart({ data }: BarChartProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ type: 'total', direction: 'desc' })
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
+  const [highlightedSource, setHighlightedSource] = useState<SortConfig['type']>('total')
+  const [sliderPosition, setSliderPosition] = useState<'left' | 'middle' | 'right'>('middle')
 
   // Get latest year data for the top countries
   const getLatestYearData = () => {
@@ -187,7 +189,13 @@ function BarChart({ data }: BarChartProps) {
       .attr('width', xScale.bandwidth())
       .attr('stroke', 'none')
       .attr('stroke-width', 1)
-      .attr('fill-opacity', 0.85)
+      .attr('fill-opacity', d => {
+        // When a source is highlighted, show it at full opacity, dim others
+        if (highlightedSource !== 'total' && d.sourceKey !== highlightedSource) {
+          return 0.7
+        }
+        return 0.85
+      })
       .on('mouseover', function(_event, d) {
         const value = (d.interval as any)[1] - (d.interval as any)[0]
         
@@ -277,13 +285,21 @@ function BarChart({ data }: BarChartProps) {
         .text(item.name)
     })
 
-  }, [sortedData, sortConfig.type])
+  }, [sortedData, sortConfig.type, highlightedSource])
 
-  const handleSortChange = (type: SortConfig['type'], direction?: SortConfig['direction']) => {
-    setSortConfig(prev => ({
+  const handleSortChange = (type: SortConfig['type']) => {
+    // Only update selection, do NOT sort yet
+    setHighlightedSource(type)
+    setSliderPosition('middle')
+  }
+
+  const handleSort = (type: SortConfig['type'], direction: 'asc' | 'desc') => {
+    // Execute the actual sort when slider is dragged
+    setSortConfig({
       type,
-      direction: direction || (prev.type === type && prev.direction === 'desc' ? 'asc' : 'desc')
-    }))
+      direction
+    })
+    setSliderPosition(direction === 'desc' ? 'left' : 'right')
   }
 
   const sortOptions: Array<{ type: SortConfig['type']; label: string; color: string }> = [
@@ -357,9 +373,9 @@ function BarChart({ data }: BarChartProps) {
               <button
                 key={option.type}
                 type="button"
-                className={`sort-btn ${sortConfig.type === option.type ? 'active' : ''}`}
+                className={`sort-btn ${highlightedSource === option.type ? 'active' : ''}`}
                 onClick={() => handleSortChange(option.type)}
-                aria-pressed={sortConfig.type === option.type}
+                aria-pressed={highlightedSource === option.type}
               >
                 <span className="color-swatch" style={{ backgroundColor: option.color }} />
                 <span className="sort-label">{option.label}</span>
@@ -373,15 +389,12 @@ function BarChart({ data }: BarChartProps) {
           <div className="slider-container">
             <div 
               className="slider-track"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const progress = (e.clientX - rect.left) / rect.width
-                handleSortChange(sortConfig.type, progress < 0.5 ? 'desc' : 'asc')
-              }}
             >
               <div 
                 className="slider-handle"
-                style={{ left: sortConfig.direction === 'desc' ? '5%' : '95%' }}
+                style={{ 
+                  left: sliderPosition === 'middle' ? '50%' : (sliderPosition === 'left' ? '5%' : '95%')
+                }}
                 onMouseDown={(e) => {
                   e.preventDefault()
                   const startX = e.clientX
@@ -389,7 +402,8 @@ function BarChart({ data }: BarChartProps) {
                   const handleMouseMove = (moveEvent: MouseEvent) => {
                     const delta = moveEvent.clientX - startX
                     if (Math.abs(delta) > 20) {
-                      handleSortChange(sortConfig.type, delta > 0 ? 'asc' : 'desc')
+                      const newPos = delta > 0 ? 'right' : 'left'
+                      handleSort(highlightedSource, newPos === 'left' ? 'desc' : 'asc')
                       document.removeEventListener('mousemove', handleMouseMove)
                       document.removeEventListener('mouseup', handleMouseUp)
                     }
