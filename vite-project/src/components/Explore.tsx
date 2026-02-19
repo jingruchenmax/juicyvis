@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as d3 from 'd3'
-import './Globe.css'
+import './Explore.css'
 
-interface GlobeProps {
+interface ExploreProps {
   width?: number
   height?: number
 }
@@ -39,7 +39,7 @@ const loadTopojson = () => {
   })
 }
 
-function Globe({ width = 975, height = 610 }: GlobeProps) {
+function Explore({ width = 975, height = 610 }: ExploreProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const projectionRef = useRef<d3.GeoProjection | null>(null)
@@ -466,6 +466,6 @@ function Globe({ width = 975, height = 610 }: GlobeProps) {
   )
 }
 
-export default Globe
+export default Explore
 
 

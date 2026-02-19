@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { playHoverSound, playClickSound, playGrabSound, playReleaseSound, playZoomSound, playDragStartSound } from '../utils/soundUtils'
-import './Globe.css'
+import './Explore.css'
 
-interface GlobeProps {
+interface ExploreProps {
   width?: number
   height?: number
 }
@@ -41,7 +41,7 @@ const loadTopojson = () => {
   })
 }
 
-function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
+function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const pathRef = useRef<d3.GeoPath<any, d3.GeoPermissibleObjects> | null>(null)
@@ -957,4 +957,4 @@ function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
   )
 }
 
-export default GlobeJuicy
+export default ExploreJuicy

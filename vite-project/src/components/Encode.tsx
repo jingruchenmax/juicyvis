@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
-import './MeatChart.css'
+import './Encode.css'
 
 interface MeatData {
   Entity: string
@@ -40,7 +40,7 @@ interface SortConfig {
   direction: 'asc' | 'desc'
 }
 
-export default function MeatChart({ data }: { data: MeatData[] }) {
+export default function Encode({ data }: { data: MeatData[] }) {
   const chartRef = useRef<SVGSVGElement | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ type: 'total', direction: 'desc' })
   const [tooltip, setTooltip] = useState<Tooltip | null>(null)

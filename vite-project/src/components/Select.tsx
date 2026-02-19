@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-import { playHoverSound, playClickSound } from '../utils/soundUtils'
-import './ScatterPlot.css'
+import './Select.css'
 
 interface DataRow {
   Entity: string
@@ -11,7 +10,7 @@ interface DataRow {
   'Researcher affiliation': string
 }
 
-interface ScatterPlotProps {
+interface SelectProps {
   data: DataRow[]
 }
 
@@ -44,8 +43,8 @@ const formatNumber = (num: number | null): string => {
 }
 
 const COLORS: Record<string, string> = {
-  'Academia': '#00B7EB', // 鲜艳青蓝色
-  'Industry': '#E53935', // 更鲜明的红色
+  'Academia': '#00B7EB', 
+  'Industry': '#E53935', 
   'Academia and industry collaboration': '#70AD47',
   'Government': '#D62728',
   'Other': '#7030A0',
@@ -63,14 +62,6 @@ function blendWithGrey(hex: string): string {
   return `rgb(${Math.round(r * 0.7 + grey * 0.3)}, ${Math.round(g * 0.7 + grey * 0.3)}, ${Math.round(b * 0.7 + grey * 0.3)})`
 }
 
-function blendWithWhite(hex: string, amount = 0.2): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  const white = 255
-  return `rgb(${Math.round(r * amount + white * (1 - amount))}, ${Math.round(g * amount + white * (1 - amount))}, ${Math.round(b * amount + white * (1 - amount))})`
-}
-
 const MUTED_COLORS: Record<string, string> = Object.fromEntries(
   Object.entries(COLORS).map(([k, v]) => [k, blendWithGrey(v)])
 )
@@ -79,7 +70,7 @@ interface ScatterDot extends DataRow {
   id?: string
 }
 
-function ScatterPlotJuicy({ data }: ScatterPlotProps) {
+function Select({ data }: SelectProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [selectedDots, setSelectedDots] = useState<Set<string>>(new Set())
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
@@ -140,7 +131,7 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
 
     // Clip path so dots don't overflow chart bounds during zoom
     svg.append('defs').append('clipPath')
-      .attr('id', 'scatter-juicy-clip')
+      .attr('id', 'scatter-clip')
       .append('rect')
       .attr('width', width)
       .attr('height', height)
@@ -149,87 +140,24 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       .append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
 
-    const chartBg = g.append('rect')
-      .attr('class', 'chart-bg')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('width', width)
-      .attr('height', height)
-      .attr('fill', '#fff')
-      .attr('fill-opacity', 1)
-
     // Add grid lines
-    const gridX = g.append('g').attr('class', 'grid-x')
-    gridX.call(d3.axisBottom(xScale).tickSize(height).tickFormat(() => ''))
-      .selectAll('line').attr('stroke', '#e0e0e0').attr('stroke-dasharray', '4')
+    const gridX = g.append('g')
+      .attr('class', 'grid-x')
 
-    const gridY = g.append('g').attr('class', 'grid-y')
-    gridY.call(d3.axisLeft(yScale).tickSize(-width).tickFormat(() => ''))
-      .selectAll('line').attr('stroke', '#e0e0e0').attr('stroke-dasharray', '4')
+    gridX.call(
+      d3.axisBottom(xScale).tickSize(height).tickFormat(() => '')
+    ).selectAll('line')
+      .attr('stroke', '#e0e0e0')
+      .attr('stroke-dasharray', '4')
 
-    // Add crosshair lines
-    const crosshairGroup = g.append('g')
-      .attr('class', 'crosshair')
-      .attr('pointer-events', 'none')
+    const gridY = g.append('g')
+      .attr('class', 'grid-y')
 
-    crosshairGroup.append('line')
-      .attr('class', 'crosshair-vertical')
-      .attr('x1', 0)
-      .attr('x2', 0)
-      .attr('y1', 0)
-      .attr('y2', height)
-      .attr('stroke', '#000')
-      .attr('stroke-width', 1)
-      .attr('opacity', 0)
-      .attr('stroke-dasharray', '3,3')
-
-    crosshairGroup.append('line')
-      .attr('class', 'crosshair-horizontal')
-      .attr('x1', 0)
-      .attr('x2', width)
-      .attr('y1', 0)
-      .attr('y2', 0)
-      .attr('stroke', '#000')
-      .attr('stroke-width', 1)
-      .attr('opacity', 0)
-      .attr('stroke-dasharray', '3,3')
-
-    // Add mousemove listener for crosshair
-    svg.on('mousemove', function (event) {
-      const [mouseX, mouseY] = d3.pointer(event)
-      const chartX = mouseX - MARGIN.left
-      const chartY = mouseY - MARGIN.top
-
-      // Only show crosshair if within chart bounds
-      if (chartX >= 0 && chartX <= width && chartY >= 0 && chartY <= height) {
-        crosshairGroup.select('.crosshair-vertical')
-          .attr('x1', chartX)
-          .attr('x2', chartX)
-          .transition()
-          .duration(0)
-          .attr('opacity', 0.6)
-
-        crosshairGroup.select('.crosshair-horizontal')
-          .attr('y1', chartY)
-          .attr('y2', chartY)
-          .transition()
-          .duration(0)
-          .attr('opacity', 0.6)
-      } else {
-        crosshairGroup.selectAll('line')
-          .transition()
-          .duration(0)
-          .attr('opacity', 0)
-      }
-    })
-
-    // Hide crosshair on mouseout
-    svg.on('mouseout', () => {
-      crosshairGroup.selectAll('line')
-        .transition()
-        .duration(200)
-        .attr('opacity', 0)
-    })
+    gridY.call(
+      d3.axisLeft(yScale).tickSize(-width).tickFormat(() => '')
+    ).selectAll('line')
+      .attr('stroke', '#e0e0e0')
+      .attr('stroke-dasharray', '4')
 
     // Add X axis
     const xAxisGroup = g.append('g')
@@ -257,9 +185,8 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       .style('text-anchor', 'middle')
       .text('Training computation (petaFLOP) (plotted on a logarithmic axis)')
 
-    // Clipped group for dots and highlights
-    const dotsGroup = g.append('g').attr('clip-path', 'url(#scatter-juicy-clip)')
-    const effectsGroup = g.append('g').attr('clip-path', 'url(#scatter-juicy-clip)')
+    // Clipped group for dots
+    const dotsGroup = g.append('g').attr('clip-path', 'url(#scatter-clip)')
 
     // Prepare data with IDs - separate unselected and selected
     const allDataWithIds = data.map((d, i) => ({
@@ -281,50 +208,6 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       return 0.8
     }
 
-    const triggerShake = () => {
-      g.transition().duration(60)
-        .attr('transform', `translate(${MARGIN.left + 1},${MARGIN.top - 0.5})`)
-        .transition().duration(60)
-        .attr('transform', `translate(${MARGIN.left - 1},${MARGIN.top + 0.5})`)
-        .transition().duration(60)
-        .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
-    }
-
-    const spawnParticles = (x: number, y: number, color: string) => {
-      const particleCount = 16
-      const particleRadius = 2.5
-      const particles = d3.range(particleCount).map(() => {
-        const angle = Math.random() * Math.PI * 2
-        const distance = 20 + Math.random() * 14
-        return { angle, distance }
-      })
-
-      const burst = effectsGroup.append('g')
-        .attr('class', 'particle-burst')
-        .attr('transform', `translate(${x},${y})`)
-
-      burst.selectAll('circle')
-        .data(particles)
-        .enter()
-        .append('circle')
-        .attr('r', particleRadius)
-        .attr('cx', 0)
-        .attr('cy', 0)
-        .attr('fill', color)
-        .attr('opacity', 0.9)
-        .transition()
-        .duration(500)
-        .ease(d3.easeCubicOut)
-        .attr('cx', d => Math.cos(d.angle) * d.distance)
-        .attr('cy', d => Math.sin(d.angle) * d.distance)
-        .attr('opacity', 0)
-        .remove()
-
-      burst.transition()
-        .duration(650)
-        .remove()
-    }
-
     // Add dots inside clipped group
     dotsGroup.selectAll('.dot')
       .data(sortedData, (d: any) => d.id)
@@ -337,84 +220,45 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       .attr('fill-opacity', d => getBaseOpacity(d as ScatterDot))
       .attr('stroke', 'none')
       .style('cursor', 'pointer')
-      .on('mouseover', (event, d: ScatterDot) => {
-        playHoverSound()
-        const dotColor = COLORS[d['Researcher affiliation']] || COLORS['Other']
-        chartBg.transition('bg-tint').duration(150)
-          .attr('fill', blendWithWhite(dotColor, 0.2))
-          .attr('fill-opacity', 0.25)
-        crosshairGroup.selectAll('line')
-          .transition('crosshair-tint').duration(150)
-          .attr('stroke', dotColor)
-          .attr('stroke-width', 2)
-        dotsGroup.selectAll<SVGCircleElement, ScatterDot>('.dot')
-          .transition('hover-dim').duration(150)
-          .attr('fill-opacity', dot => (dot.id === d.id ? 1 : getBaseOpacity(dot) * 0.35))
-        d3.select(event.target)
-          .transition('hover-pop').duration(200)
-          .attr('r', 9)
-          .attr('fill', COLORS[d['Researcher affiliation']] || COLORS['Other'])
+      .on('mouseover', (_event, d: ScatterDot) => {
         setTooltip({
           x: xScale(d['Training computation (petaFLOP)'] || 1) + MARGIN.left,
           y: yScale(d['Number of parameters'] || 1) + MARGIN.top,
           data: d
         })
       })
-      .on('mouseout', (event, d: ScatterDot) => {
-        d3.select(event.target as SVGCircleElement)
-          .transition('hover-reset').duration(200)
-          .attr('r', 4)
-          .attr('fill', selectedDots.has(d.id || '') ? COLORS[d['Researcher affiliation']] || COLORS['Other'] : MUTED_COLORS[d['Researcher affiliation']] || MUTED_COLORS['Other'])
-        chartBg.transition('bg-reset').duration(200)
-          .attr('fill', '#fff')
-          .attr('fill-opacity', 1)
-        crosshairGroup.selectAll('line')
-          .transition('crosshair-reset').duration(200)
-          .attr('stroke', '#000')
-          .attr('stroke-width', 1)
-        dotsGroup.selectAll<SVGCircleElement, ScatterDot>('.dot')
-          .transition('hover-undim').duration(150)
-          .attr('fill-opacity', dot => getBaseOpacity(dot))
+      .on('mouseout', () => {
         setTooltip(null)
       })
       .on('click', (event, d: ScatterDot) => {
         event.stopPropagation()
-        playClickSound()
         const dotId = d.id || ''
         const cxVal = xScale(d['Training computation (petaFLOP)'] || 1)
         const cyVal = yScale(d['Number of parameters'] || 1)
-        const dotColor = COLORS[d['Researcher affiliation']] || COLORS['Other']
-        triggerShake()
-        spawnParticles(cxVal, cyVal, dotColor)
-        d3.select(event.target)
-          .transition('shrink').duration(100).attr('r', 1.5).ease(d3.easeCubicIn)
-          .on('end', () => {
-            d3.select(event.target)
-              .transition('expand').duration(100).attr('r', 12).ease(d3.easeBounceOut)
-          })
-        setTimeout(() => {
-          setSelectedDots(prev => {
-            const newSet = new Set(prev)
-            if (newSet.has(dotId)) {
-              newSet.delete(dotId)
-              setSelectedTooltips(prevTips => {
-                const next = { ...prevTips }
-                delete next[dotId]
-                return next
-              })
-            } else {
-              newSet.add(dotId)
-              setSelectedTooltips(prevTips => ({
-                ...prevTips,
-                [dotId]: { x: cxVal + MARGIN.left, y: cyVal + MARGIN.top, data: d }
-              }))
-            }
-            return newSet
-          })
-        }, 200)
+        setSelectedDots(prev => {
+          const newSet = new Set(prev)
+          if (newSet.has(dotId)) {
+            newSet.delete(dotId)
+            setSelectedTooltips(prevTips => {
+              const next = { ...prevTips }
+              delete next[dotId]
+              return next
+            })
+          } else {
+            newSet.add(dotId)
+            setSelectedTooltips(prevTips => ({
+              ...prevTips,
+              [dotId]: {
+                x: cxVal + MARGIN.left,
+                y: cyVal + MARGIN.top,
+                data: d
+              }
+            }))
+          }
+          return newSet
+        })
       })
 
-    // Add circle highlights for selected dots inside clipped group
     const outlineCircles = dotsGroup.selectAll('.highlight-outline')
       .data(Array.from(selectedDots), (d: any) => d)
       .join(enter => {
@@ -435,31 +279,17 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
       })
     outlineCircles.exit().remove()
 
-    const highlightCircles = dotsGroup.selectAll('.highlight-circle')
-      .data(Array.from(selectedDots), (d: any) => d)
-      .join(enter => {
-        return enter.append('circle')
-            .attr('class', 'highlight-circle')
-            .attr('r', 6).attr('fill', 'none')
-          .attr('stroke-width', 2.5).attr('opacity', 0.8)
-      })
-      .attr('cx', (dotId: string) => {
-        const dotIndex = parseInt(dotId.split('-')[1])
-        return xScale(data[dotIndex]['Training computation (petaFLOP)'] || 1)
-      })
-      .attr('cy', (dotId: string) => {
-        const dotIndex = parseInt(dotId.split('-')[1])
-        return yScale(data[dotIndex]['Number of parameters'] || 1)
-      })
-      .attr('stroke', (dotId: string) => {
-        const dotIndex = parseInt(dotId.split('-')[1])
-        return COLORS[data[dotIndex]['Researcher affiliation']] || COLORS['Other']
-      })
-    highlightCircles.exit().remove()
-
-    // Legend will be displayed in React JSX above, no need to generate in d3
+    // Legend已在React JSX中显示，无需在d3中生成
 
   }, [data, selectedDots])
+
+  const handleClearSelection = () => {
+    setSelectedDots(new Set())
+    setSelectedTooltips({})
+  }
+
+  // 获取所有已选中点的详细数据
+  const selectedList = Object.values(selectedTooltips).map(tip => tip.data)
 
   // legend数据用于上方和右侧显示
   const legendDataArray = [
@@ -469,16 +299,6 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
     { name: 'Not specified', color: COLORS['Not specified'] },
     { name: 'Other', color: COLORS['Other'] },
   ]
-
-  const selectedList = Array.from(selectedDots).map(dotId => {
-    const dotIndex = parseInt(dotId.split('-')[1])
-    return data[dotIndex]
-  })
-
-  const handleClearSelection = () => {
-    setSelectedDots(new Set())
-    setSelectedTooltips({})
-  }
 
   return (
     <div className="scatter-plot-container" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -583,4 +403,4 @@ function ScatterPlotJuicy({ data }: ScatterPlotProps) {
   )
 }
 
-export default ScatterPlotJuicy
+export default Select

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-import './BarChart.css'
+import './Reconfigure.css'
 
 interface EnergyData {
   Entity: string
@@ -34,7 +34,7 @@ const SVG_WIDTH = 1400
 const SVG_HEIGHT = 600
 const MARGIN = { top: 80, right: 200, bottom: 80, left: 60 }
 
-interface BarChartProps {
+interface ReconfigureProps {
   data: EnergyData[]
 }
 
@@ -51,7 +51,7 @@ interface TooltipData {
   value: number
 }
 
-function BarChart({ data }: BarChartProps) {
+function Reconfigure({ data }: ReconfigureProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ type: 'total', direction: 'desc' })
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
@@ -427,4 +427,4 @@ function BarChart({ data }: BarChartProps) {
   )
 }
 
-export default BarChart
+export default Reconfigure

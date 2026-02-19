@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import ScatterPlot from './components/ScatterPlot'
-import ScatterPlotJuicy from './components/ScatterPlotJuicy'
-import Globe from './components/Globe'
-import GlobeJuicy from './components/GlobeJuicy'
-import BarChart from './components/BarChart'
-import BarChartJuicy from './components/BarChartJuicy'
-import MeatChart from './components/MeatChart'
+import Select from './components/Select'
+import SelectJuicy from './components/SelectJuicy'
+import Explore from './components/Explore'
+import ExploreJuicy from './components/ExploreJuicy'
+import Reconfigure from './components/Reconfigure'
+import ReconfigureJuicy from './components/ReconfigureJuicy'
+import Encode from './components/Encode'
 import './App.css'
 
 interface DataRow {
@@ -204,7 +204,7 @@ function App() {
       <div className="app">
         <h1>Per Capita Meat Consumption</h1>
         <p className="subtitle">By Meat Type {juicy && '(Juicy Mode)'}</p>
-        {meatData.length > 0 ? (juicy ? <div>Juicy coming soon</div> : <MeatChart data={meatData} />) : <div className="loading">Loading meat data...</div>}
+        {meatData.length > 0 ? (juicy ? <div>Juicy coming soon</div> : <Encode data={meatData} />) : <div className="loading">Loading meat data...</div>}
       </div>
     )
   }
@@ -215,7 +215,7 @@ function App() {
       <div className="app">
         <h1>Per Capita Energy Consumption</h1>
         <p className="subtitle">Stacked by Energy Source {juicy && '(Juicy Mode)'}</p>
-        {energyData.length > 0 ? (juicy ? <BarChartJuicy data={energyData} /> : <BarChart data={energyData} />) : <div className="loading">Loading energy data...</div>}
+        {energyData.length > 0 ? (juicy ? <ReconfigureJuicy data={energyData} /> : <Reconfigure data={energyData} />) : <div className="loading">Loading energy data...</div>}
       </div>
     )
   }
@@ -226,7 +226,7 @@ function App() {
       <div className="app">
         <h1>3D Interactive World Map</h1>
         <p className="subtitle">Explore countries by dragging to rotate {juicy && '(Juicy Mode)'}</p>
-        {juicy ? <GlobeJuicy /> : <Globe />}
+        {juicy ? <ExploreJuicy /> : <Explore />}
       </div>
     )
   }
@@ -236,7 +236,7 @@ function App() {
     <div className="app">
       <h1>AI Training Computation vs Parameters</h1>
       <p className="subtitle">by Researcher Affiliation {juicy && '(Juicy Mode)'}</p>
-      {juicy ? <ScatterPlotJuicy data={data} /> : <ScatterPlot data={data} />}
+      {juicy ? <SelectJuicy data={data} /> : <Select data={data} />}
     </div>
   )
 }

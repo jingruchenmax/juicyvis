@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-import './BarChartJuicy.css'
+import './ReconfigureJuicy.css'
 import { playMinimalistSound, playClickSound, playAfricanSound } from '../utils/soundUtils'
 
 interface EnergyData {
@@ -35,7 +35,7 @@ const SVG_WIDTH = 1400
 const SVG_HEIGHT = 600
 const MARGIN = { top: 80, right: 200, bottom: 80, left: 60 }
 
-interface BarChartJuicyProps {
+interface ReconfigureJuicyProps {
   data: EnergyData[]
 }
 
@@ -52,7 +52,7 @@ interface TooltipData {
   value: number
 }
 
-function BarChartJuicy({ data }: BarChartJuicyProps) {
+function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const sliderContainerRef = useRef<HTMLDivElement>(null)
   const soundPlaybackRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -1029,7 +1029,7 @@ function BarChartJuicy({ data }: BarChartJuicyProps) {
   )
 }
 
-export default BarChartJuicy
+export default ReconfigureJuicy
 
 // Add keyframe animation to stylesheet
 if (typeof document !== 'undefined') {
