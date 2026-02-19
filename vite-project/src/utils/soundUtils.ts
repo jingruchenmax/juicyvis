@@ -9,7 +9,10 @@ const createPlayer = (fileName: string, volume = 0.9) => {
     try {
       const audio = new Audio(src)
       audio.volume = volume
-      audio.play().catch(err => console.debug('Audio play blocked:', err))
+      const playPromise = audio.play()
+      if (playPromise !== undefined) {
+        playPromise.catch(err => console.debug('Audio play blocked:', err))
+      }
     } catch (e) {
       console.debug('Audio error:', e)
     }
@@ -29,6 +32,9 @@ export const playDragStartSound = createPlayer('Minimalist8.mp3', 0.8)
 
 // Zooming feedback
 export const playZoomSound = createPlayer('Minimalist5.mp3', 0.7)
+
+// Bar chart wave animation
+export const playMinimalistSound = createPlayer('Coffee2.mp3', 0.6)
 
 // Optional whoosh used during fast pans
 export const playWhooshSound = createPlayer('dragon-studio-simple-whoosh-03-433005.mp3', 0.35)

@@ -145,3 +145,47 @@
 .tooltip {
   line-height: 1.4;
 }
+
+/* Slider styles */
+.slider-container {
+  display: flex;
+  align-items: center;
+  width: 200px;
+  position: relative;
+}
+
+.slider-track {
+  width: 100%;
+  height: 4px;
+  background-color: #ddd;
+  border-radius: 2px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.slider-track:hover {
+  background-color: #bbb;
+}
+
+.slider-handle {
+  width: 20px;
+  height: 20px;
+  background-color: #2196f3;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.2s, background-color 0.2s;
+}
+
+.slider-handle:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  background-color: #1976d2;
+}
+
+.slider-handle:active {
+  cursor: grabbing;
+}

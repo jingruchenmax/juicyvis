@@ -163,9 +163,13 @@ function BarChart({ data }: BarChartProps) {
       .attr('stroke', '#e0e0e0')
       .attr('stroke-dasharray', '4')
 
-    // Create stacked data
+    // Create stacked data with highlighted source at the bottom
+    const orderedKeys = sortConfig.type === 'total' 
+      ? ENERGY_SOURCES 
+      : [sortConfig.type as EnergySource, ...ENERGY_SOURCES.filter(s => s !== sortConfig.type)]
+    
     const stackedData = d3.stack<EnergyData, EnergySource>()
-      .keys(ENERGY_SOURCES)
+      .keys(orderedKeys as any)
       (sortedData as any)
 
     // Add stacked bars
@@ -220,8 +224,13 @@ function BarChart({ data }: BarChartProps) {
       .attr('dx', '8px')
       .attr('dy', '8px')
 
-    // Add legend
-    const legendData = ENERGY_SOURCES.map(source => ({
+    // Add legend with highlighted source at top
+    let orderedSources = [...ENERGY_SOURCES]
+    if (sortConfig.type !== 'total') {
+      orderedSources = [sortConfig.type as EnergySource, ...ENERGY_SOURCES.filter(s => s !== sortConfig.type)]
+    }
+    
+    const legendData = orderedSources.map(source => ({
       name: source,
       color: COLORS[source]
     }))
@@ -231,11 +240,27 @@ function BarChart({ data }: BarChartProps) {
       .attr('transform', `translate(${width + 20}, 0)`)
 
     legendData.forEach((item, i) => {
-      const row = i % 4
-      const col = Math.floor(i / 4)
+      const row = i
+      const col = 0
       
       const legendItem = legend.append('g')
-        .attr('transform', `translate(${col * 90}, ${row * 20})`)
+        .attr('transform', `translate(${col * 90}, ${row * 24})`)
+
+      // Add background box for selected source
+      if (item.name === sortConfig.type) {
+        legendItem.append('rect')
+          .attr('class', 'legend-highlight-box')
+          .attr('x', -8)
+          .attr('y', -4)
+          .attr('width', 120)
+          .attr('height', 18)
+          .attr('rx', 6)
+          .attr('ry', 6)
+          .attr('fill', '#333333')
+          .attr('fill-opacity', 0.15)
+          .attr('stroke', '#555555')
+          .attr('stroke-width', 1)
+      }
 
       legendItem.append('rect')
         .attr('width', 12)
@@ -252,7 +277,7 @@ function BarChart({ data }: BarChartProps) {
         .text(item.name)
     })
 
-  }, [sortedData])
+  }, [sortedData, sortConfig.type])
 
   const handleSortChange = (type: SortConfig['type'], direction?: SortConfig['direction']) => {
     setSortConfig(prev => ({
@@ -344,13 +369,44 @@ function BarChart({ data }: BarChartProps) {
         </div>
         
         <div className="control-group">
-          <label>Order:</label>
-          <button 
-            onClick={() => handleSortChange(sortConfig.type, sortConfig.direction === 'asc' ? 'desc' : 'asc')}
-            className={`order-btn ${sortConfig.direction}`}
-          >
-            {sortConfig.direction === 'asc' ? '↑ Low to High' : '↓ High to Low'}
-          </button>
+          <span style={{ marginRight: '10px' }}>High to Low</span>
+          <div className="slider-container">
+            <div 
+              className="slider-track"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect()
+                const progress = (e.clientX - rect.left) / rect.width
+                handleSortChange(sortConfig.type, progress < 0.5 ? 'desc' : 'asc')
+              }}
+            >
+              <div 
+                className="slider-handle"
+                style={{ left: sortConfig.direction === 'desc' ? '5%' : '95%' }}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  const startX = e.clientX
+                  
+                  const handleMouseMove = (moveEvent: MouseEvent) => {
+                    const delta = moveEvent.clientX - startX
+                    if (Math.abs(delta) > 20) {
+                      handleSortChange(sortConfig.type, delta > 0 ? 'asc' : 'desc')
+                      document.removeEventListener('mousemove', handleMouseMove)
+                      document.removeEventListener('mouseup', handleMouseUp)
+                    }
+                  }
+                  
+                  const handleMouseUp = () => {
+                    document.removeEventListener('mousemove', handleMouseMove)
+                    document.removeEventListener('mouseup', handleMouseUp)
+                  }
+                  
+                  document.addEventListener('mousemove', handleMouseMove)
+                  document.addEventListener('mouseup', handleMouseUp)
+                }}
+              />
+            </div>
+          </div>
+          <span style={{ marginLeft: '10px' }}>Low to High</span>
         </div>
       </div>
     </div>
