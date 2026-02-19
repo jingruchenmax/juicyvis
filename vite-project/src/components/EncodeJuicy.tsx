@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
-import './Encode.css'
+import './EncodeJuicy.css'
 
 interface MeatData {
   Entity: string
@@ -38,7 +38,7 @@ const targetCountries = [
 
 const targetYear = 2022
 
-export default function Encode({ data }: { data: MeatData[] }) {
+export default function EncodeJuicy({ data }: { data: MeatData[] }) {
   const chartRef = useRef<SVGSVGElement | null>(null)
   const [tooltip, setTooltip] = useState<{ x: number; y: number; content: string } | null>(null)
 

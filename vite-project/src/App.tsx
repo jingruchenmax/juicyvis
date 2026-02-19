@@ -6,6 +6,7 @@ import ExploreJuicy from './components/ExploreJuicy'
 import Reconfigure from './components/Reconfigure'
 import ReconfigureJuicy from './components/ReconfigureJuicy'
 import Encode from './components/Encode'
+import EncodeJuicy from './components/EncodeJuicy'
 import './App.css'
 
 interface DataRow {
@@ -204,7 +205,7 @@ function App() {
       <div className="app">
         <h1>Per Capita Meat Consumption</h1>
         <p className="subtitle">By Meat Type {juicy && '(Juicy Mode)'}</p>
-        {meatData.length > 0 ? (juicy ? <div>Juicy coming soon</div> : <Encode data={meatData} />) : <div className="loading">Loading meat data...</div>}
+        {meatData.length > 0 ? (juicy ? <EncodeJuicy data={meatData} /> : <Encode data={meatData} />) : <div className="loading">Loading meat data...</div>}
       </div>
     )
   }
