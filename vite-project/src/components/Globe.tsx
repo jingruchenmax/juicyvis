@@ -235,10 +235,11 @@ function Globe({ width = 975, height = 610 }: GlobeProps) {
       .attr('fill', '#c8e6f5')
 
     const mortalityValuesForScale = Object.values(mortalityData).filter(v => v > 0)
-    const mortalityExtentForScale = d3.extent(mortalityValuesForScale) as [number, number]
-    const colorScale = d3.scaleLinear<string>()
-      .domain([mortalityExtentForScale[0] || 0, mortalityExtentForScale[1] || 100])
-      .range(['#2ecc71', '#c0392b'])
+    // Quantile bins produce clearer separation across countries (equal-count buckets)
+    const quantileDomain = mortalityValuesForScale.length > 0 ? mortalityValuesForScale : [0, 1]
+    const colorScale = d3.scaleQuantile<string>()
+      .domain(quantileDomain)
+      .range(['#2ecc71', '#1abc9c', '#3498db', '#8e44ad', '#e84393', '#e74c3c'])
 
     const path = pathRef.current
 
@@ -440,8 +441,24 @@ function Globe({ width = 975, height = 610 }: GlobeProps) {
             <span>Low mortality</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
-            <div style={{ width: '20px', height: '20px', backgroundColor: '#c0392b' }}></div>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#1abc9c' }}></div>
+            <span>Low-medium mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#3498db' }}></div>
+            <span>Medium mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#8e44ad' }}></div>
+            <span>Medium-high mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#e84393' }}></div>
             <span>High mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#e74c3c' }}></div>
+            <span>Extreme high mortality</span>
           </div>
         </div>
       </div>

@@ -393,10 +393,11 @@ function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
 
     // Color scale - calculate after data loads
     const mortalityValuesForScale = Object.values(mortalityData).filter(v => v > 0)
-    const mortalityExtentForScale = d3.extent(mortalityValuesForScale) as [number, number]
-    const colorScale = d3.scaleLinear<string>()
-      .domain([mortalityExtentForScale[0] || 0, mortalityExtentForScale[1] || 100])
-      .range(['#2ecc71', '#c0392b'])
+    // Quantile bins produce clearer separation across countries (equal-count buckets)
+    const quantileDomain = mortalityValuesForScale.length > 0 ? mortalityValuesForScale : [0, 1]
+    const colorScale = d3.scaleQuantile<string>()
+      .domain(quantileDomain)
+      .range(['#2ecc71', '#1abc9c', '#3498db', '#8e44ad', '#e84393', '#e74c3c'])
 
     svg.call(zoom)
 
@@ -663,7 +664,11 @@ function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
     }
 
     function clicked(event: MouseEvent, d: any) {
+      event.stopPropagation()
       playClickSound()
+
+      // Check if this country is already selected (before the toggle)
+      const isCurrentlySelected = selectedRef.current.has(d.id)
 
       setSelectedIds(prev => {
         const next = new Set(prev)
@@ -682,8 +687,6 @@ function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
       const y0 = bounds[0][1]
       const x1 = bounds[1][0]
       const y1 = bounds[1][1]
-
-      event.stopPropagation()
       countriesGroup.selectAll('path')
         .transition()
         .attr('opacity', (d: any) => selectedRef.current.has(d.id) ? 1 : 0.85)
@@ -700,18 +703,19 @@ function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
         .duration(200)
         .attr('opacity', 1)
 
-      const scale = Math.min(8, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height))
-      svg
-        .transition()
-        .duration(750)
-        .call(
-          zoom.transform,
-          d3.zoomIdentity
-            .translate(width / 2, height / 2)
-            .scale(scale)
-            .translate(-(x0 + x1) / 2, -(y0 + y1) / 2),
-          d3.pointer(event, svg.node() as SVGSVGElement)
-        )
+      // Only focus on newly selected countries, not on deselected ones
+      if (!isCurrentlySelected) {
+        const scale = Math.min(8, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height))
+        const newTransform = d3.zoomIdentity
+          .translate(width / 2, height / 2)
+          .scale(scale)
+          .translate(-(x0 + x1) / 2, -(y0 + y1) / 2)
+        
+        // Apply the transformation to g element directly for smooth focus
+        g.transition()
+          .duration(750)
+          .attr('transform', newTransform.toString())
+      }
     }
 
     function zoomed(event: any) {
@@ -875,8 +879,24 @@ function GlobeJuicy({ width = 975, height = 610 }: GlobeProps) {
             <span>Low mortality</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
-            <div style={{ width: '20px', height: '20px', backgroundColor: '#c0392b' }}></div>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#1abc9c' }}></div>
+            <span>Low-medium mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#3498db' }}></div>
+            <span>Medium mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#8e44ad' }}></div>
+            <span>Medium-high mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#e84393' }}></div>
             <span>High mortality</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '5px 0' }}>
+            <div style={{ width: '20px', height: '20px', backgroundColor: '#e74c3c' }}></div>
+            <span>Extreme high mortality</span>
           </div>
           
           <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #ddd' }}>
