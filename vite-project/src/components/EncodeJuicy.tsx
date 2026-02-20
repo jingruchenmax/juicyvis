@@ -111,6 +111,18 @@ export default function EncodeJuicy({ data }: { data: MeatData[] }) {
           d3.select(this).append('rect').attr('width', 15).attr('height', 15).attr('fill', colorScale(d.name))
           d3.select(this).append('text').attr('x', 22).attr('y', 12).attr('font-size', '13px').text(d.label)
         })
+
+      // Toggle button below legend items
+      const btnY = meatTypes.length * 25 + 20
+      const fo = legend.append('foreignObject')
+        .attr('x', 0)
+        .attr('y', btnY)
+        .attr('width', 140)
+        .attr('height', 38)
+      fo.append('xhtml:button' as any)
+        .attr('class', 'donut-toggle')
+        .text(viewMode === 'bar' ? 'View Donut ●' : 'View Bars ■')
+        .on('click', () => setViewMode((prev: 'bar' | 'donut') => (prev === 'bar' ? 'donut' : 'bar')))
     }
 
     const addTitles = () => {
@@ -473,14 +485,12 @@ export default function EncodeJuicy({ data }: { data: MeatData[] }) {
     const transitionToDonut = async () => {
       hideTooltip()
 
-      // Phase 1 (800ms): bars squeeze toward centerY, axes/labels fade
+      // Phase 1 (800ms): bars squeeze right-to-left, axes/labels fade
       const phase1 = d3.transition().duration(800).ease(d3.easeCubicInOut)
-      const barCenterY = margin.top + height / 2
 
       svg.selectAll('.meat-group rect')
         .transition(phase1)
-        .attr('y', barCenterY)
-        .attr('height', 0)
+        .attr('width', 0)
         .style('opacity', 0)
 
       svg.selectAll('.meat-group text')
@@ -552,24 +562,23 @@ export default function EncodeJuicy({ data }: { data: MeatData[] }) {
 
       await phase2.end().catch(() => undefined)
 
-      // Phase 3 (800ms): draw bar chart then animate bars expanding from center
+      // Phase 3 (800ms): draw bar chart then animate bars expanding left-to-right
       drawBarChart()
 
       const phase3 = d3.transition().duration(800).ease(d3.easeBackOut.overshoot(1.1))
-      const centerLocal = height / 2
 
       svg.selectAll('.meat-group').each(function() {
         d3.select(this).selectAll('rect').each(function() {
           const rect = d3.select(this)
-          const finalY = parseFloat(rect.attr('y'))
-          const finalH = parseFloat(rect.attr('height'))
+          const finalX = parseFloat(rect.attr('x'))
+          const finalW = parseFloat(rect.attr('width'))
           rect
-            .attr('y', centerLocal)
-            .attr('height', 0)
+            .attr('x', finalX + finalW)  // Start from right edge
+            .attr('width', 0)
             .style('opacity', 0)
             .transition(phase3)
-            .attr('y', finalY)
-            .attr('height', finalH)
+            .attr('x', finalX)
+            .attr('width', finalW)
             .style('opacity', 1)
         })
         d3.select(this).selectAll('text')
@@ -603,13 +612,6 @@ export default function EncodeJuicy({ data }: { data: MeatData[] }) {
   return (
     <div className="meat-chart-container">
       <svg ref={chartRef} className="meat-svg"></svg>
-      <button
-        className="donut-toggle"
-        type="button"
-        onClick={() => setViewMode(prev => (prev === 'bar' ? 'donut' : 'bar'))}
-      >
-        {viewMode === 'bar' ? 'View Donut' : 'View Bars'}
-      </button>
       <div
         ref={tooltipRef}
         style={{
