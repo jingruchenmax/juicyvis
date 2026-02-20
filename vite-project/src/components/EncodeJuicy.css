@@ -7,6 +7,28 @@
   user-select: none;
 }
 
+.donut-toggle {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #222;
+  background: #fff;
+  color: #222;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.donut-toggle:hover {
+  background: #222;
+  color: #fff;
+}
+
+.donut-toggle:active {
+  transform: translateY(1px);
+}
+
 .meat-controls {
   display: flex;
   gap: 20px;
