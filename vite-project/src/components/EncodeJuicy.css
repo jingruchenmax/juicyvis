@@ -1,154 +1,663 @@
-.meat-chart-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 20px;
-  background-color: #fff;
-  user-select: none;
+.encode-shell.encode-shell-juicy {
+  background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
 }
 
-.donut-toggle {
-  align-self: flex-start;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid #222;
-  background: #fff;
-  color: #222;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+.encode-shell-juicy .encode-panel {
+  background: linear-gradient(180deg, #f7fbff 0%, #edf5ff 100%);
+  border-color: #c9d9f0;
 }
 
-.donut-toggle:hover {
-  background: #222;
-  color: #fff;
+.encode-shell-juicy .encode-legend-item {
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
 }
 
-.donut-toggle:active {
-  transform: translateY(1px);
+.encode-shell-juicy .encode-legend-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(31, 79, 158, 0.14);
 }
 
-.meat-controls {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  align-items: center;
-  background-color: #f5f5f5;
-  padding: 15px;
-  border-radius: 4px;
+.encode-shell-juicy .encode-chart-shell.is-shaking {
+  animation: encode-chart-shake 190ms linear;
 }
 
-.sort-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  flex: 1;
+.encode-shell-juicy .encode-chart-shell.is-transition-frame {
+  outline: 2px solid rgba(255, 106, 61, 0.85);
+  box-shadow: 0 0 0 4px rgba(255, 106, 61, 0.16), 0 18px 46px rgba(255, 106, 61, 0.12);
 }
 
-.sort-button-group {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
+.encode-shell-juicy .encode-chart-flash {
+  animation: encode-chart-flash 200ms ease-out forwards;
 }
 
-.sort-btn {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #f0f0f0;
-  color: #333;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+.encode-shell-juicy .encode-current-layer.is-juicy-enter {
+  transform-origin: 50% 52%;
+  animation: encode-chart-pop 250ms cubic-bezier(0.2, 0.88, 0.28, 1.1);
+  clip-path: circle(0% at 50% 52%);
+  animation-fill-mode: both;
 }
 
-.sort-btn:hover {
-  background-color: #e0e0e0;
-  border-color: #999;
+.encode-shell-juicy .encode-current-layer.is-juicy-enter-next {
+  animation-name: encode-chart-pop, encode-reveal-next;
+  animation-duration: 250ms, 420ms;
+  animation-timing-function: cubic-bezier(0.2, 0.88, 0.28, 1.1), cubic-bezier(0.22, 0.74, 0.28, 1);
 }
 
-.sort-btn.active {
-  background-color: #2196f3;
-  color: white;
-  border-color: #1976d2;
+.encode-shell-juicy .encode-current-layer.is-juicy-enter-prev {
+  animation-name: encode-chart-pop, encode-reveal-prev;
+  animation-duration: 250ms, 420ms;
+  animation-timing-function: cubic-bezier(0.2, 0.88, 0.28, 1.1), cubic-bezier(0.22, 0.74, 0.28, 1);
 }
 
-.direction-controls {
-  display: flex;
-  gap: 20px;
-  align-items: center;
+.encode-shell-juicy .encode-ghost-layer.is-exit {
+  animation: encode-ghost-collapse 220ms ease-out forwards;
+  transform-origin: 50% 52%;
 }
 
-.direction-controls label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  cursor: pointer;
-  font-weight: 500;
-  color: #333;
+.encode-shell-juicy .encode-ghost-layer.is-exit-prev {
+  animation-name: encode-ghost-collapse-prev;
 }
 
-.direction-controls input[type='radio'] {
-  cursor: pointer;
-  width: 16px;
-  height: 16px;
+.encode-shell-juicy .encode-chart-stage.transitioning {
+  animation: encode-stage-blur 220ms ease-out;
 }
 
-.meat-svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  user-select: none;
+.encode-shell-juicy .transition-vignette {
+  background: radial-gradient(
+    circle at 50% 52%,
+    rgba(8, 14, 26, 0) 46%,
+    rgba(8, 14, 26, 0.12) 74%,
+    rgba(8, 14, 26, 0.28) 100%
+  );
 }
 
-.meat-svg text {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px;
+.encode-shell-juicy .transition-vignette.on {
+  animation: encode-vignette-flash 260ms ease-out forwards;
 }
 
-.meat-bar {
-  stroke: none;
-  transition: opacity 0.2s ease;
+.encode-shell-juicy .transition-swipe {
+  background: linear-gradient(
+    112deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 46%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-120%);
 }
 
-.meat-bar:hover {
-  opacity: 0.8;
-  stroke: #333;
-  stroke-width: 1;
+.encode-shell-juicy .transition-swipe.on {
+  animation: encode-swipe-cut 320ms cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
-.country-label {
-  font-size: 13px;
-  font-weight: 500;
-  fill: #333;
+.encode-shell-juicy .encode-mark {
+  transition: opacity 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease, transform 0.2s ease,
+    fill 520ms ease;
 }
 
-.legend {
-  font-size: 12px;
+.encode-shell-juicy .encode-mark.is-hovered-juicy {
+  filter: brightness(1.12) saturate(1.1);
+  transform: scale(1.025);
 }
 
-.legend-item text {
-  fill: #333;
-  font-weight: 500;
+.encode-shell-juicy .encode-mark.is-focus-pulse {
+  animation: encode-focus-pulse 460ms ease-out;
 }
 
-.x-grid line {
-  stroke: #ddd;
-  stroke-dasharray: 4 4;
+.encode-shell-juicy .encode-mark.is-enter-mark.encode-mark-bar {
+  animation: encode-bar-grow 420ms cubic-bezier(0.2, 0.9, 0.28, 1.24) both;
 }
 
-.x-grid path {
-  display: none;
+.encode-shell-juicy .encode-mark.is-enter-mark.encode-mark-heatmap {
+  animation: encode-heatmap-pop 280ms cubic-bezier(0.2, 0.82, 0.3, 1.08) both;
 }
 
-.meat-tooltip {
-  font-family: sans-serif;
-  line-height: 1.4;
-  z-index: 1000;
+.encode-shell-juicy .encode-mark.is-enter-mark.encode-mark-donut {
+  animation: encode-donut-fade 240ms ease-out both;
+}
+
+.encode-shell-juicy .encode-ripple {
+  animation: encode-ripple-expand 320ms ease-out forwards;
+}
+
+.encode-shell-juicy .encode-tooltip.is-juicy {
+  border-color: #4f79d1;
+  box-shadow: 0 8px 22px rgba(25, 56, 106, 0.28);
+  transform-origin: top left;
+  animation: encode-tooltip-pop 150ms ease-out;
+}
+
+.encode-shell-juicy .encode-particle.is-burst {
+  animation: encode-particle-burst 620ms ease-out forwards;
+}
+
+.encode-shell-juicy .encode-particle.is-spark {
+  animation: encode-particle-spark 520ms ease-out forwards;
+}
+
+.encode-shell-juicy .encode-particle.is-color {
+  animation: encode-particle-color 760ms ease-out forwards;
+}
+
+.encode-shell-juicy .encode-particle.is-trail {
+  animation: encode-particle-trail 340ms ease-out forwards;
+}
+
+.encode-shell-juicy .encode-preview-layer {
+  opacity: 0.42;
+  filter: saturate(1.14) brightness(1.02);
+}
+
+.encode-shell-juicy .encode-preview-left-layer {
+  opacity: 0.74;
+  filter: saturate(1.05);
+}
+
+.encode-shell-juicy .encode-preview-arrow {
+  top: 24%;
+  border-color: rgba(70, 114, 183, 0.78);
+  box-shadow: 0 5px 16px rgba(25, 56, 106, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.56);
+  animation: encode-preview-arrow-pulse 380ms ease-out;
+}
+
+.encode-shell-juicy .encode-rep-axis.is-juicy {
+  background: linear-gradient(180deg, #eff5ff 0%, #e8f1ff 100%);
+  border-color: #c8d9f0;
+}
+
+.encode-shell-juicy .encode-rep-tick {
+  transition: color 120ms ease, transform 120ms ease;
+}
+
+.encode-shell-juicy .encode-rep-tick:hover {
+  color: #174480;
+  transform: translateY(-1px);
+}
+
+.encode-shell-juicy .encode-rep-slider {
+  transition: filter 120ms ease;
+  filter: saturate(1.08);
+}
+
+.encode-shell-juicy .encode-rep-slider::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    #3f7ce0 0,
+    #3f7ce0 var(--encode-slider-fill),
+    #cad8ec var(--encode-slider-fill),
+    #cad8ec 100%
+  );
+}
+
+.encode-shell-juicy .encode-rep-slider::-webkit-slider-thumb {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.08;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.encode-shell-juicy .encode-rep-slider:active::-webkit-slider-thumb {
+  transform: scale(1.08);
+  opacity: 0.14;
+}
+
+.encode-shell-juicy .encode-rep-slider::-moz-range-progress {
+  background: #3f7ce0;
+}
+
+.encode-shell-juicy .encode-rep-slider::-moz-range-thumb {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.08;
+}
+
+.encode-shell-juicy .encode-rep-handle-visual {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #2a568f;
+  background: radial-gradient(circle at 34% 30%, #ffffff 0%, #e8f0ff 48%, #cadbfa 100%);
+  box-shadow: 0 0 0 2px rgba(58, 111, 196, 0.24), 0 4px 12px rgba(22, 47, 88, 0.28);
+}
+
+.encode-shell-juicy .encode-rep-direction {
+  animation: encode-slider-direction-drift 180ms ease-out;
+}
+
+.encode-shell-juicy .encode-rep-direction-svg {
+  width: 52px;
+  height: 30px;
+}
+
+.encode-shell-juicy .encode-rep-direction-svg path {
+  fill: #ffffff;
+  stroke: rgba(0, 0, 0, 0.96);
+  stroke-width: 2.9;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.33));
+}
+
+.encode-shell-juicy .encode-transition-ring-fill {
+  fill: rgba(255, 255, 255, 0.98);
+}
+
+.encode-shell-juicy .encode-transition-ring-track {
+  stroke: rgba(0, 0, 0, 0.28);
+}
+
+.encode-shell-juicy .encode-transition-ring-progress {
+  stroke: rgba(0, 0, 0, 0.95);
+}
+
+.encode-shell-juicy .encode-transition-ring.is-running .encode-transition-ring-progress {
+  animation-timing-function: linear;
+}
+
+.encode-shell-juicy .encode-transition-ring.is-fading {
+  animation-duration: 140ms;
+}
+
+.encode-shell-juicy .encode-wheel-preview-vignette.on {
+  animation: encode-wheel-preview-vignette 220ms ease-out forwards;
+}
+
+.encode-shell-juicy .encode-wheel-preview-dust.on {
+  animation: encode-wheel-preview-dust 1200ms linear infinite;
+}
+
+.encode-shell-juicy .encode-projector-flash.on {
+  animation: encode-projector-flash 60ms linear forwards;
+}
+
+.encode-shell-juicy .encode-mark.is-color-pulse {
+  animation: encode-color-pulse 420ms ease-out both;
+}
+
+.encode-shell-juicy .encode-mark.is-color-pulse-1 {
+  animation-delay: 10ms;
+}
+
+.encode-shell-juicy .encode-color-row:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 6px 12px rgba(32, 69, 123, 0.14);
+}
+
+@keyframes encode-chart-shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-1px, 0.5px);
+  }
+  50% {
+    transform: translate(1.2px, -0.5px);
+  }
+  75% {
+    transform: translate(-0.8px, -0.4px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes encode-chart-flash {
+  0% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes encode-chart-pop {
+  0% {
+    opacity: 0.18;
+    transform: scale(0.985);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes encode-reveal-next {
+  0% {
+    clip-path: circle(0% at 50% 52%);
+  }
+  100% {
+    clip-path: circle(140% at 50% 52%);
+  }
+}
+
+@keyframes encode-reveal-prev {
+  0% {
+    clip-path: circle(0% at 50% 52%);
+  }
+  100% {
+    clip-path: circle(140% at 50% 52%);
+  }
+}
+
+@keyframes encode-stage-blur {
+  0% {
+    filter: blur(0.9px) saturate(1.06);
+  }
+  60% {
+    filter: blur(0.55px) saturate(1.04);
+  }
+  100% {
+    filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes encode-ghost-collapse {
+  0% {
+    opacity: 0.46;
+    transform: translate(0, 0) scale(1, 1);
+    filter: blur(0);
+  }
+  60% {
+    opacity: 0.24;
+    transform: translate(10px, -4px) scale(1, 0.44);
+    filter: blur(0.55px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(15px, -6px) scale(0.98, 0.05);
+    filter: blur(0.9px);
+  }
+}
+
+@keyframes encode-ghost-collapse-prev {
+  0% {
+    opacity: 0.46;
+    transform: translate(0, 0) scale(1, 1);
+    filter: blur(0);
+  }
+  60% {
+    opacity: 0.24;
+    transform: translate(-10px, -4px) scale(1, 0.44);
+    filter: blur(0.55px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-15px, -6px) scale(0.98, 0.05);
+    filter: blur(0.9px);
+  }
+}
+
+@keyframes encode-focus-pulse {
+  0% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.72;
+    filter: brightness(1.15);
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes encode-color-pulse {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+    stroke-opacity: 1;
+  }
+  20% {
+    transform: scale(1.05);
+    filter: brightness(1.32) saturate(1.2);
+    stroke-opacity: 1;
+  }
+  42% {
+    transform: scale(0.985);
+    filter: brightness(0.98) saturate(1.04);
+    stroke-opacity: 0.76;
+  }
+  62% {
+    transform: scale(1.035);
+    filter: brightness(1.24) saturate(1.14);
+    stroke-opacity: 0.52;
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+    stroke-opacity: 0;
+  }
+}
+
+@keyframes encode-ripple-expand {
+  0% {
+    opacity: 0.78;
+    transform: translate(-50%, -50%) scale(0.22);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(20);
+  }
+}
+
+@keyframes encode-tooltip-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes encode-particle-burst {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.58);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--encode-dx, 0px)),
+        calc(-50% + var(--encode-dy, 0px))
+      )
+      scale(0.2);
+  }
+}
+
+@keyframes encode-particle-spark {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.86);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--encode-dx, 0px)),
+        calc(-50% + var(--encode-dy, 0px))
+      )
+      scale(0.35);
+  }
+}
+
+@keyframes encode-particle-color {
+  0% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--encode-dx, 0px)),
+        calc(-50% + var(--encode-dy, 0px))
+      )
+      scale(0.4);
+  }
+}
+
+@keyframes encode-particle-trail {
+  0% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--encode-dx, 0px)),
+        calc(-50% + var(--encode-dy, 0px))
+      )
+      scale(0.3);
+  }
+}
+
+@keyframes encode-vignette-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes encode-wheel-preview-vignette {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes encode-wheel-preview-dust {
+  0% {
+    opacity: 0.15;
+    background-position: 0 0, 0 0, 0 0;
+  }
+  50% {
+    opacity: 0.32;
+    background-position: 36px 24px, -18px 28px, 22px -15px;
+  }
+  100% {
+    opacity: 0.2;
+    background-position: 72px 48px, -36px 56px, 44px -30px;
+  }
+}
+
+@keyframes encode-projector-flash {
+  0% {
+    opacity: 0.94;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes encode-swipe-cut {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+  25% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+}
+
+@keyframes encode-bar-grow {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  78% {
+    opacity: 1;
+    transform: scaleX(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes encode-heatmap-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes encode-donut-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes encode-preview-arrow-pulse {
+  0% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes encode-slider-direction-drift {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encode-shell-juicy .encode-chart-shell.is-shaking,
+  .encode-shell-juicy .encode-chart-flash,
+  .encode-shell-juicy .encode-current-layer.is-juicy-enter,
+  .encode-shell-juicy .encode-current-layer.is-juicy-enter-next,
+  .encode-shell-juicy .encode-current-layer.is-juicy-enter-prev,
+  .encode-shell-juicy .encode-ghost-layer.is-exit,
+  .encode-shell-juicy .encode-ghost-layer.is-exit-prev,
+  .encode-shell-juicy .encode-mark.is-focus-pulse,
+  .encode-shell-juicy .encode-mark.is-color-pulse,
+  .encode-shell-juicy .encode-mark.is-enter-mark,
+  .encode-shell-juicy .encode-ripple,
+  .encode-shell-juicy .encode-tooltip.is-juicy,
+  .encode-shell-juicy .encode-particle,
+  .encode-shell-juicy .encode-wheel-preview-vignette.on,
+  .encode-shell-juicy .encode-wheel-preview-dust.on,
+  .encode-shell-juicy .encode-projector-flash.on,
+  .encode-shell-juicy .transition-vignette.on,
+  .encode-shell-juicy .transition-swipe.on,
+  .encode-shell-juicy .encode-preview-arrow,
+  .encode-shell-juicy .encode-transition-ring.is-fading,
+  .encode-shell-juicy .encode-rep-direction {
+    animation: none !important;
+  }
+
+  .encode-shell-juicy .encode-chart-stage.transitioning {
+    filter: none;
+  }
+
+  .encode-shell-juicy .encode-color-row:hover {
+    transform: none;
+    box-shadow: none;
+  }
 }

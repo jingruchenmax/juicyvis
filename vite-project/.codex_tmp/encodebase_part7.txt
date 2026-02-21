@@ -1,0 +1,300 @@
+          <div className="encode-inline-legend" role="group" aria-label="Category legend">
+            {MEAT_CATEGORIES.map(category => {
+              const isFocused = focusCategory === category.key
+              const isActive = activeHoverCategory === category.key || isFocused
+              const displayColor = getCategoryColor(category.key)
+              return (
+                <button
+                  key={category.key}
+                  type="button"
+                  className={`encode-legend-item ${isFocused ? 'is-focused' : ''} ${
+                    isActive ? 'is-active' : ''
+                  }`}
+                  onMouseEnter={() => setLegendHoverCategory(category.key)}
+                  onMouseLeave={() => setLegendHoverCategory(null)}
+                  onClick={event =>
+                    handleFocusCategoryChange(
+                      focusCategory === category.key ? 'All' : category.key,
+                      event.currentTarget
+                    )
+                  }
+                >
+                  <span className="encode-legend-swatch" style={{ backgroundColor: displayColor }} />
+                  <span>{category.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div
+          className={`encode-chart-stage ${juicyActive && isTransitioning ? 'transitioning' : ''} ${
+            wheelPreviewActive ? 'is-wheel-previewing' : ''
+          }`}
+          ref={chartStageRef}
+          onMouseMove={handleStageMouseMove}
+          onMouseEnter={event => {
+            const stage = event.currentTarget.getBoundingClientRect()
+            const x = event.clientX - stage.left
+            const y = event.clientY - stage.top
+            setCursorPosition({ x, y })
+            setIsCursorInsideStage(true)
+          }}
+          onMouseLeave={() => {
+            setIsCursorInsideStage(false)
+            if (previewMode === 'hover') {
+              setPreviewRepresentation(null)
+              setPreviewMode(null)
+            }
+          }}
+        >
+          <svg
+            className={`encode-svg ${juicyActive ? 'is-juicy' : 'is-basic'}`}
+            viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+            role="img"
+            aria-label="Per-capita meat and fish consumption by country and category"
+          >
+            <defs>
+              <filter id="encode-hover-glow-filter" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="0" stdDeviation="2.2" floodColor="#ffffff" floodOpacity="0.9" />
+                <feDropShadow dx="0" dy="0" stdDeviation="1.6" floodColor="#1f6feb" floodOpacity="0.65" />
+              </filter>
+            </defs>
+
+            {ghostSnapshotLayer && (
+              <g
+                className={`encode-ghost-layer ${isTransitioning ? `is-exit is-exit-${transitionDirection}` : ''}`}
+              >
+                {ghostSnapshotLayer}
+              </g>
+            )}
+
+            {!previewActive && (
+              <g key={`encode-layer-${transitionKey}`} className={currentLayerClass}>
+                {renderSnapshot(currentSnapshot, false)}
+              </g>
+            )}
+
+            {previewActive && previewSnapshot && (
+              <g className="encode-preview-split">
+                <g className="encode-preview-left-layer" transform={`translate(${previewLeftX}, 0)`} opacity={0.72}>
+                  <g transform={`scale(${PREVIEW_SCALE})`}>{renderSnapshot(currentSnapshot, false)}</g>
+                </g>
+                <g className="encode-preview-layer" transform={`translate(${previewRightX}, 0)`} opacity={0.52}>
+                  <g transform={`scale(${PREVIEW_SCALE})`}>{renderSnapshot(previewSnapshot, true)}</g>
+                </g>
+              </g>
+            )}
+          </svg>
+
+          {previewActive && previewRepresentation && (
+            <div className="encode-preview-arrow" aria-hidden="true">
+              {labelForRepresentation(representation)} -&gt; {labelForRepresentation(previewRepresentation)}
+            </div>
+          )}
+
+          {juicyActive && transitionRingVisible && isCursorInsideStage && (
+            <div className="encode-cursor-layer" aria-hidden="true">
+              <svg
+                className={`encode-transition-ring ${isTransitioning ? 'is-running' : ''} ${
+                  isTransitioning ? '' : 'is-fading'
+                }`}
+                viewBox="0 0 52 52"
+                style={
+                  {
+                    left: `${cursorPosition.x}px`,
+                    top: `${cursorPosition.y}px`,
+                    '--encode-ring-c': ringCircumference,
+                    '--encode-ring-duration': `${TRANSITION_DURATION_JUICY_MS}ms`
+                  } as CSSProperties
+                }
+              >
+                <circle className="encode-transition-ring-fill" cx="26" cy="26" r="11" />
+                <circle className="encode-transition-ring-track" cx="26" cy="26" r={ringRadius} />
+                <circle
+                  className="encode-transition-ring-progress"
+                  cx="26"
+                  cy="26"
+                  r={ringRadius}
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringCircumference}
+                  transform="rotate(-90 26 26)"
+                />
+              </svg>
+            </div>
+          )}
+        </div>
+
+        <div
+          className={`encode-rep-axis ${juicyActive ? 'is-juicy' : ''}`}
+          style={{ '--encode-slider-fill': `${sliderDisplayPercent}%` } as CSSProperties}
+        >
+          <div className="encode-rep-axis-inner">
+            <div className="encode-rep-ticks">
+              <div className="encode-rep-ticks-track">
+                {REPRESENTATION_OPTIONS.map((option, index) => {
+                  const leftPercent =
+                    REPRESENTATION_OPTIONS.length > 1
+                      ? (index / (REPRESENTATION_OPTIONS.length - 1)) * 100
+                      : 0
+                  const tickLeft = `${leftPercent}%`
+                const isActive = representation === option.value
+                const isPreviewTarget = previewActive && previewRepresentation === option.value
+                return (
+                  <span
+                    key={`tick-${option.value}`}
+                    className={`encode-rep-tick ${isActive ? 'is-active' : ''} ${
+                      isPreviewTarget ? 'is-preview-target' : ''
+                    }`}
+                    style={{ left: tickLeft }}
+                    onMouseEnter={() => handleRepresentationTickEnter(option.value)}
+                    onMouseLeave={handleRepresentationTickLeave}
+                  >
+                    {option.label}
+                  </span>
+                )
+                })}
+              </div>
+            </div>
+            <div className="encode-rep-slider-wrap" ref={repSliderWrapRef}>
+              <input
+                id="encode-representation-axis"
+                className="encode-rep-slider"
+                type="range"
+                min={0}
+                max={REPRESENTATION_ORDER.length - 1}
+                step={1}
+                value={representationIndex}
+                onChange={event => handleRepresentationSlider(Number(event.target.value))}
+                aria-label="Representation axis slider"
+              />
+              {juicyActive && (
+                <span
+                  className="encode-rep-handle-visual"
+                  style={{ left: sliderAlignedLeft }}
+                  aria-hidden="true"
+                />
+              )}
+              {juicyActive && isTransitioning && sliderDirection && (
+                <span
+                  className={`encode-rep-direction is-${sliderDirection}`}
+                  style={{ left: sliderAlignedLeft }}
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 40 24" className="encode-rep-direction-svg">
+                    <path d="M4 12h23l-5.2-5.2 2.9-2.8L36 12l-11.3 8-2.9-2.8L27 12H4z" />
+                  </svg>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="encode-fx-layer" aria-hidden="true">
+          {juicyActive && chartFlashPulseId > 0 && (
+            <span className="encode-chart-flash" key={`flash-${chartFlashPulseId}`} />
+          )}
+          {juicyActive && ripple && (
+            <span
+              className="encode-ripple"
+              style={
+                {
+                  left: `${ripple.x}px`,
+                  top: `${ripple.y}px`,
+                  borderColor: ripple.color
+                } as CSSProperties
+              }
+            />
+          )}
+          {particles.map(particle => (
+            <span
+              key={particle.id}
+              className={`encode-particle is-${particle.variant}`}
+              style={
+                {
+                  left: `${particle.x}px`,
+                  top: `${particle.y}px`,
+                  width: `${particle.size}px`,
+                  height: `${particle.size}px`,
+                  background: particle.color,
+                  '--encode-dx': `${particle.dx}px`,
+                  '--encode-dy': `${particle.dy}px`
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
+
+        {juicyActive && (
+          <>
+            <div className={`encode-wheel-preview-vignette ${wheelPreviewActive ? 'on' : ''}`} />
+            <div className={`encode-wheel-preview-dust ${wheelPreviewActive ? 'on' : ''}`} />
+            <div className={`encode-projector-flash ${projectorFlashActive ? 'on' : ''}`} />
+            <div className={`transition-vignette ${isTransitioning ? 'on' : ''}`} />
+            <div className={`transition-swipe ${isTransitioning ? 'on' : ''}`} />
+          </>
+        )}
+      </div>
+
+      <aside className="encode-panel">
+        <div className="encode-control-group">
+          <label className="encode-control-label" htmlFor="encode-measure">
+            Measure
+          </label>
+          <select
+            id="encode-measure"
+            className="encode-select"
+            value={activeMeasure}
+            disabled={measureLocked}
+            onChange={event => handleMeasureChange(event.target.value as Measure)}
+          >
+            <option value="kg">kg</option>
+            <option value="percent">percent</option>
+          </select>
+        </div>
+
+        <div className="encode-control-group">
+          <label className="encode-control-label" htmlFor="encode-focus">
+            Focus Category
+          </label>
+          <select
+            id="encode-focus"
+            className="encode-select"
+            value={focusCategory}
+            onChange={event =>
+              handleFocusCategoryChange(event.target.value as FocusCategory, event.currentTarget)
+            }
+          >
+            <option value="All">All</option>
+            {MEAT_CATEGORIES.map(category => (
+              <option key={category.key} value={category.key}>
+                {category.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="encode-color-editor">
+          <div className="encode-control-label">Color Encoding</div>
+          <div className="encode-color-hint">Click swatches to edit colors</div>
+          <div className="encode-color-list">
+            {MEAT_CATEGORIES.map(category => (
+              <div key={`color-${category.key}`} className="encode-color-row">
+                <button
+                  type="button"
+                  className="encode-color-swatch-button"
+                  style={{ backgroundColor: categoryColors[category.key] }}
+                  aria-label={`Edit ${category.label} color`}
+                  onClick={event => handleColorSwatchClick(event, category.key)}
+                />
+                <span className="encode-color-name">{category.label}</span>
+                <input
+                  ref={element => {
+                    colorInputRefs.current[category.key] = element
+                  }}
+                  className="encode-color-input"
+                  type="color"
+                  value={categoryColors[category.key]}
+                  onFocus={event => handleColorInputFocus(event, category.key)}
+                  onBlur={handleColorInputBlur}
+                  onChange={event =>

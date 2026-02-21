@@ -1,0 +1,300 @@
+  const ringCircumference = Math.PI * 2 * ringRadius
+
+  const chartSubtitle =
+    activeMeasure === 'kg'
+      ? 'Kilograms per person per year'
+      : "Share of each country's total (%)"
+
+  const currentSnapshot = useMemo<ChartSnapshot>(
+    () => ({
+      representation,
+      measure: activeMeasure,
+      focusCategory,
+      colors: { ...categoryColors }
+    }),
+    [representation, activeMeasure, focusCategory, categoryColors]
+  )
+
+  const previewSnapshot = useMemo<ChartSnapshot | null>(() => {
+    if (!previewRepresentation) return null
+    if (previewRepresentation === representation) return null
+    return {
+      representation: previewRepresentation,
+      measure: measureForRepresentation(previewRepresentation, activeMeasure),
+      focusCategory,
+      colors: { ...categoryColors }
+    }
+  }, [activeMeasure, categoryColors, focusCategory, previewRepresentation, representation])
+
+  const previewActive = Boolean(
+    juicyActive &&
+      !isTransitioning &&
+      previewMode &&
+      previewRepresentation &&
+      previewRepresentation !== representation &&
+      previewSnapshot
+  )
+
+  const getCategoryColor = (category: MeatCategoryKey, snapshot?: ChartSnapshot): string => {
+    if (snapshot) return snapshot.colors[category] ?? categoryColors[category]
+    return categoryColors[category]
+  }
+
+  const getReadableTextColor = (background: string): '#ffffff' | '#0b1220' => {
+    const parsed = d3.color(background)
+    if (!parsed) return '#0b1220'
+    const rgb = parsed.rgb()
+    const [r, g, b] = [rgb.r, rgb.g, rgb.b].map(value => {
+      const normalized = value / 255
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : ((normalized + 0.055) / 1.055) ** 2.4
+    })
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return luminance < 0.45 ? '#ffffff' : '#0b1220'
+  }
+
+  const tooltipTarget = useMemo<TooltipDatum | null>(() => {
+    if (!dataset || !hoveredDatum) return null
+    const country = countryByName.get(hoveredDatum.country)
+    if (!country) return null
+
+    const kg = country.kg[hoveredDatum.category]
+    const percent = country.percent[hoveredDatum.category]
+    let encoded = percent
+
+    if (representation === 'stacked-bar') {
+      encoded = dataset.maxTotalKg > 0 ? (kg / dataset.maxTotalKg) * 100 : 0
+    } else if (representation === 'heatmap') {
+      const intensity =
+        activeMeasure === 'kg'
+          ? dataset.maxCategoryKg > 0
+            ? kg / dataset.maxCategoryKg
+            : 0
+          : percent / 100
+      encoded = intensity * 100
+    }
+
+    return {
+      ...hoveredDatum,
+      kg,
+      percent,
+      encoded: clamp01(encoded / 100) * 100
+    }
+  }, [activeMeasure, countryByName, dataset, hoveredDatum, representation])
+
+  const tooltipSignature = tooltipTarget
+    ? `${tooltipTarget.country}|${tooltipTarget.category}|${tooltipTarget.kg.toFixed(4)}|${tooltipTarget.percent.toFixed(4)}|${tooltipTarget.encoded.toFixed(4)}`
+    : 'none'
+
+  const categoryOpacity = (
+    category: MeatCategoryKey,
+    snapshotFocus: FocusCategory,
+    ghost: boolean
+  ): number => {
+    const focusOpacity =
+      snapshotFocus !== 'All'
+        ? snapshotFocus === category
+          ? 1
+          : 0.3
+        : activeHoverCategory && activeHoverCategory !== category
+          ? 0.45
+          : 1
+    return ghost ? focusOpacity * 0.56 : focusOpacity
+  }
+
+  const markClassName = (
+    category: MeatCategoryKey,
+    isHovered: boolean,
+    ghost: boolean,
+    markType: 'bar' | 'heatmap' | 'donut'
+  ): string => {
+    const classes = ['encode-mark', `encode-mark-${markType}`]
+    if (ghost) classes.push('is-ghost-mark')
+    if (isHovered) classes.push(juicyActive ? 'is-hovered-juicy' : 'is-hovered-basic')
+    if (!ghost && juicyActive && focusPulseCategory === category) classes.push('is-focus-pulse')
+    if (!ghost && juicyActive && motionSafe && isTransitioning) classes.push('is-enter-mark')
+    if (!ghost && juicyActive && colorPulseCategory === category) {
+      classes.push('is-color-pulse', `is-color-pulse-${colorPulseId % 2}`)
+    }
+    return classes.join(' ')
+  }
+
+  const markStyle = (markIndex: number, ghost: boolean): CSSProperties | undefined => {
+    if (ghost) return undefined
+    if (!(juicyActive && motionSafe && isTransitioning)) return undefined
+    return {
+      animationDelay: `${Math.min(240, markIndex * 11)}ms`
+    }
+  }
+
+  const clearTimeoutRef = (ref: React.MutableRefObject<number | null>) => {
+    if (ref.current !== null) {
+      window.clearTimeout(ref.current)
+      ref.current = null
+    }
+  }
+
+  const clearTimeoutList = (timeouts: number[]) => {
+    timeouts.forEach(timeout => window.clearTimeout(timeout))
+    timeouts.length = 0
+  }
+
+  const animateSliderVisualTo = useCallback((nextPercent: number, durationMs: number) => {
+    if (sliderVisualRafRef.current !== null) {
+      window.cancelAnimationFrame(sliderVisualRafRef.current)
+      sliderVisualRafRef.current = null
+    }
+    const startPercent = sliderVisualPercentRef.current
+    const startTime = performance.now()
+    const step = (timestamp: number) => {
+      const progress = clamp01((timestamp - startTime) / durationMs)
+      const eased = d3.easeCubicOut(progress)
+      const value = startPercent + (nextPercent - startPercent) * eased
+      sliderVisualPercentRef.current = value
+      setSliderVisualPercent(value)
+      if (progress < 1) {
+        sliderVisualRafRef.current = window.requestAnimationFrame(step)
+      } else {
+        sliderVisualRafRef.current = null
+      }
+    }
+    sliderVisualRafRef.current = window.requestAnimationFrame(step)
+  }, [])
+
+  const emitGlobalParticles = useCallback(
+    (
+      clientX: number,
+      clientY: number,
+      count: number,
+      variant: ParticleState['variant'],
+      color?: string,
+      sizeMultiplier = 1
+    ) => {
+      if (!(juicyActive && motionSafe)) return
+      const particleLimit = isTransitioning ? TRANSITION_PARTICLE_CAP : PARTICLE_MAX_COUNT
+      const clampedCount = Math.max(1, Math.min(isTransitioning ? 24 : 36, count))
+      const now = performance.now()
+      const palette = color
+        ? [color, '#ffffff', '#ffd166']
+        : ['#2f63d1', '#4ecdc4', '#ffd166', '#ff8fab', '#ffffff']
+      const created = Array.from({ length: clampedCount }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / clampedCount + Math.random() * 0.8
+        const distance =
+          variant === 'burst'
+            ? 24 + Math.random() * 38
+            : variant === 'trail'
+              ? 8 + Math.random() * 14
+              : 14 + Math.random() * 24
+        return {
+          id: now + index + Math.random(),
+          x: clientX,
+          y: clientY,
+          size:
+            variant === 'trail'
+              ? 1.8 + Math.random() * 1.8
+              : variant === 'spark'
+                ? 2.2 + Math.random() * 2.2
+                : (2.8 + Math.random() * 3.2) * Math.max(0.8, sizeMultiplier),
+          dx: Math.cos(angle) * distance,
+          dy: Math.sin(angle) * distance - (variant === 'trail' ? 1 : 4),
+          color: palette[Math.floor(Math.random() * palette.length)],
+          variant
+        } as ParticleState
+      })
+
+      setGlobalParticles(previous => [...previous, ...created].slice(-particleLimit))
+
+      const ids = new Set(created.map(particle => particle.id))
+      const timeout = window.setTimeout(() => {
+        setGlobalParticles(previous => previous.filter(particle => !ids.has(particle.id)))
+        globalParticleTimeoutsRef.current = globalParticleTimeoutsRef.current.filter(
+          item => item !== timeout
+        )
+      }, PARTICLE_LIFETIME_MS)
+      globalParticleTimeoutsRef.current.push(timeout)
+    },
+    [isTransitioning, juicyActive, motionSafe]
+  )
+
+  const clearColorPickerFrameSession = useCallback(() => {
+    clearTimeoutRef(colorPickerSafetyTimeoutRef)
+    clearTimeoutRef(colorPickerCommitClearTimeoutRef)
+    if (colorPickerFrameRafRef.current !== null) {
+      window.cancelAnimationFrame(colorPickerFrameRafRef.current)
+      colorPickerFrameRafRef.current = null
+    }
+    colorPickerFrameAnchorRectRef.current = null
+    setActiveColorCategory(null)
+    setColorPickerFrameVisible(false)
+    setColorPickerFramePosition(null)
+  }, [])
+
+  const computePickerFramePosition = useCallback((rect: DOMRect, color: string) => {
+    const frameWidth = 285
+    const frameHeight = 210
+    const margin = 12
+    const x = Math.max(
+      margin,
+      Math.min(rect.left - 10, window.innerWidth - frameWidth - margin)
+    )
+    let y = rect.bottom + 8
+    if (y + frameHeight > window.innerHeight - margin) {
+      y = rect.top - frameHeight - 8
+    }
+    y = Math.max(margin, y)
+    return { x, y, color }
+  }, [])
+
+  const refreshColorPickerSafetyTimeout = useCallback(() => {
+    clearTimeoutRef(colorPickerSafetyTimeoutRef)
+    colorPickerSafetyTimeoutRef.current = window.setTimeout(() => {
+      clearColorPickerFrameSession()
+    }, COLOR_PICKER_FRAME_SAFETY_MS)
+  }, [clearColorPickerFrameSession])
+
+  const beginColorPickerFrameSession = useCallback(
+    (category: MeatCategoryKey, sourceInputElement: HTMLInputElement) => {
+      const rect = sourceInputElement.getBoundingClientRect()
+      colorPickerFrameAnchorRectRef.current = rect
+      clearTimeoutRef(colorPickerCommitClearTimeoutRef)
+      setActiveColorCategory(category)
+      setColorPickerFrameVisible(true)
+      setColorPickerFramePosition(computePickerFramePosition(rect, categoryColors[category]))
+      refreshColorPickerSafetyTimeout()
+    },
+    [categoryColors, computePickerFramePosition, refreshColorPickerSafetyTimeout]
+  )
+
+  const scheduleWindingClicks = useCallback(() => {
+    if (!(juicyActive && motionSafe)) return
+    const now = performance.now()
+    if (now - windingSoundTimestampRef.current < 360) return
+    windingSoundTimestampRef.current = now
+    clearTimeoutList(windingClickTimeoutsRef.current)
+
+    const pulseCount = 4
+    for (let index = 0; index < pulseCount; index += 1) {
+      const timeout = window.setTimeout(() => {
+        playClickSound()
+      }, index * 68)
+      windingClickTimeoutsRef.current.push(timeout)
+    }
+  }, [juicyActive, motionSafe])
+
+  const emitParticles = useCallback(
+    (
+      x: number,
+      y: number,
+      count: number,
+      variant: ParticleState['variant'],
+      color?: string,
+      force = false
+    ) => {
+      // All juicy particle bursts/trails are centralized here so timing and caps stay consistent.
+      if (!force && !(juicyActive && motionSafe)) return
+      const particleLimit = isTransitioning ? TRANSITION_PARTICLE_CAP : PARTICLE_MAX_COUNT
+      const clampedCount = Math.max(1, Math.min(isTransitioning ? 24 : 36, count))
+      const now = performance.now()
+      const palette = color
+        ? [color, '#ffffff', '#ffd166']

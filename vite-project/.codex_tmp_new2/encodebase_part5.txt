@@ -1,0 +1,260 @@
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+    }
+  }, [juicyActive, motionSafe])
+
+  useEffect(() => {
+    if (!tooltipTarget) return
+    if (!(juicyActive && motionSafe)) {
+      setTooltipDisplay({
+        kg: tooltipTarget.kg,
+        percent: tooltipTarget.percent,
+        encoded: tooltipTarget.encoded
+      })
+      return
+    }
+
+    const start = tooltipDisplayRef.current
+    const target = {
+      kg: tooltipTarget.kg,
+      percent: tooltipTarget.percent,
+      encoded: tooltipTarget.encoded
+    }
+
+    const duration = 190
+    const ease = d3.easeCubicOut
+    let animationFrame = 0
+    let startTimestamp: number | null = null
+
+    const step = (timestamp: number) => {
+      if (startTimestamp === null) startTimestamp = timestamp
+      const t = Math.min(1, (timestamp - startTimestamp) / duration)
+      const p = ease(t)
+      setTooltipDisplay({
+        kg: start.kg + (target.kg - start.kg) * p,
+        percent: start.percent + (target.percent - start.percent) * p,
+        encoded: start.encoded + (target.encoded - start.encoded) * p
+      })
+      if (t < 1) {
+        animationFrame = window.requestAnimationFrame(step)
+      }
+    }
+
+    animationFrame = window.requestAnimationFrame(step)
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [juicyActive, motionSafe, tooltipSignature, tooltipTarget])
+
+  useEffect(() => {
+    const previous = previousCategoryColorsRef.current
+    const changed = MEAT_CATEGORIES.filter(
+      category => previous[category.key] !== categoryColors[category.key]
+    )
+    if (!changed.length) return
+    previousCategoryColorsRef.current = { ...categoryColors }
+
+    const changedCategory = changed[changed.length - 1]
+    setColorPulseId(value => value + 1)
+    setColorPulseCategory(changedCategory.key)
+    clearTimeoutRef(colorPulseTimeoutRef)
+    colorPulseTimeoutRef.current = window.setTimeout(() => {
+      setColorPulseCategory(null)
+    }, 420)
+
+    if (!(juicyActive && motionSafe)) return
+
+    const now = performance.now()
+    if (now - colorSoundTimestampRef.current > 160) {
+      colorSoundTimestampRef.current = now
+      playColorConfirmSound()
+    }
+
+    const anchorRect = colorChangeAnchorRectRef.current
+    if (anchorRect) {
+      emitGlobalParticles(
+        anchorRect.left + anchorRect.width * 0.5,
+        anchorRect.top + anchorRect.height * 0.5,
+        18,
+        'color',
+        categoryColors[changedCategory.key]
+      )
+    }
+    const pointer = lastPointerClientRef.current
+    if (pointer.x > 0 && pointer.y > 0) {
+      emitGlobalParticles(pointer.x, pointer.y, 12, 'spark', categoryColors[changedCategory.key])
+    }
+  }, [
+    categoryColors,
+    emitGlobalParticles,
+    juicyActive,
+    motionSafe
+  ])
+
+  useEffect(() => {
+    const stage = chartStageRef.current
+    if (!stage) return
+
+    // React synthetic wheel handlers are unreliable for preventDefault on some browsers.
+    // A native non-passive listener guarantees page scroll can be blocked on representation steps.
+    const handleWheel = (event: WheelEvent) => {
+      const target = event.target as Element | null
+      if (isFormControlElement(target)) return
+      const activeElement = document.activeElement as Element | null
+      if (isFormControlElement(activeElement)) return
+      event.preventDefault()
+
+      wheelAccumulatorRef.current += event.deltaY
+      if (Math.abs(wheelAccumulatorRef.current) < WHEEL_SWITCH_THRESHOLD) {
+        return
+      }
+
+      const now = performance.now()
+      if (previewMode !== 'wheel' && now - wheelSwitchTimestampRef.current < WHEEL_SWITCH_COOLDOWN_MS) {
+        wheelAccumulatorRef.current = 0
+        return
+      }
+
+      const offset = wheelAccumulatorRef.current > 0 ? 1 : -1
+      wheelAccumulatorRef.current = 0
+      if (previewMode !== 'wheel') {
+        wheelSwitchTimestampRef.current = now
+      }
+      switchRepresentationByOffset(offset, 'wheel')
+    }
+
+    stage.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      stage.removeEventListener('wheel', handleWheel)
+    }
+  }, [previewMode, switchRepresentationByOffset])
+
+  useEffect(() => {
+    return () => {
+      clearTimeoutRef(transitionTimeoutRef)
+      clearTimeoutRef(wheelPreviewExpiryTimeoutRef)
+      clearTimeoutRef(transitionRingFadeTimeoutRef)
+      clearTimeoutRef(focusPulseTimeoutRef)
+      clearTimeoutRef(colorPulseTimeoutRef)
+      clearTimeoutRef(projectorFlashTimeoutRef)
+      clearTimeoutRef(chartShakeTimeoutRef)
+      clearTimeoutRef(rippleTimeoutRef)
+      if (sliderVisualRafRef.current !== null) {
+        window.cancelAnimationFrame(sliderVisualRafRef.current)
+      }
+      clearTimeoutList(windingClickTimeoutsRef.current)
+      particleTimeoutsRef.current.forEach(timeout => window.clearTimeout(timeout))
+      particleTimeoutsRef.current = []
+      globalParticleTimeoutsRef.current.forEach(timeout => window.clearTimeout(timeout))
+      globalParticleTimeoutsRef.current = []
+    }
+  }, [])
+
+  const renderStackedBars = (
+    snapshot: ChartSnapshot,
+    ghost: boolean,
+    mode: 'kg' | 'percent'
+  ) => {
+    if (!dataset) return null
+    const countries = dataset.countries
+
+    const margin = { top: 108, right: 104, bottom: 130, left: 292 }
+    const plotWidth = SVG_WIDTH - margin.left - margin.right
+    const rowHeight = Math.max(34, Math.min(52, 480 / countries.length))
+    const chartHeight = rowHeight * countries.length
+    const plotTop = margin.top
+    const plotBottom = plotTop + chartHeight
+
+    const xMax = mode === 'kg' ? dataset.maxTotalKg : 100
+    const xScale = d3.scaleLinear().domain([0, xMax]).range([margin.left, margin.left + plotWidth])
+    if (mode === 'kg') xScale.nice()
+    const yScale = d3
+      .scaleBand<string>()
+      .domain(countries.map(country => country.country))
+      .range([plotTop, plotBottom])
+      .padding(0.16)
+
+    const ticks = mode === 'kg' ? xScale.ticks(6) : d3.range(0, 101, 20)
+    const markElements: JSX.Element[] = []
+    const valueLabels: JSX.Element[] = []
+    const totalLabels: JSX.Element[] = []
+
+    countries.forEach((country, countryIndex) => {
+      const y = yScale(country.country)
+      if (y === undefined) return
+      const bandHeight = yScale.bandwidth()
+      let cumulative = 0
+
+      MEAT_CATEGORIES.forEach((category, categoryIndex) => {
+        const rawValue =
+          mode === 'kg' ? country.kg[category.key] : country.percent[category.key]
+        const start = cumulative
+        const end = cumulative + rawValue
+        cumulative = end
+
+        const x = xScale(start)
+        const width = Math.max(0, xScale(end) - x)
+        const isHovered =
+          !ghost &&
+          hoveredDatum?.country === country.country &&
+          hoveredDatum.category === category.key
+        const isColorPulse = !ghost && juicyActive && colorPulseCategory === category.key
+        const segmentColor = getCategoryColor(category.key, snapshot)
+        const markIndex = countryIndex * MEAT_CATEGORIES.length + categoryIndex
+
+        markElements.push(
+          <rect
+            key={`segment-${mode}-${country.country}-${category.key}`}
+            data-encode-color={category.key}
+            className={markClassName(category.key, isHovered, ghost, 'bar')}
+            style={markStyle(markIndex, ghost)}
+            x={x}
+            y={y}
+            width={width}
+            height={bandHeight}
+            fill={segmentColor}
+            opacity={categoryOpacity(category.key, snapshot.focusCategory, ghost)}
+            stroke={isHovered ? '#0f172a' : isColorPulse ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0)'}
+            strokeWidth={isHovered ? 2 : isColorPulse ? 1.8 : 1}
+            filter={juicyActive && isHovered && !ghost ? 'url(#encode-hover-glow-filter)' : undefined}
+            onMouseEnter={ghost ? undefined : event => handleMarkEnter(event, country.country, category.key)}
+            onMouseMove={ghost ? undefined : handleMarkMove}
+            onMouseLeave={ghost ? undefined : handleMarkLeave}
+          />
+        )
+
+        if (!ghost && width > 78) {
+          valueLabels.push(
+            <text
+              key={`segment-label-${mode}-${country.country}-${category.key}`}
+              className="encode-segment-label"
+              x={x + width / 2}
+              y={y + bandHeight / 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill={getReadableTextColor(segmentColor)}
+            >
+              {mode === 'kg'
+                ? `${formatKg(country.kg[category.key])} kg`
+                : formatPercent(country.percent[category.key])}
+            </text>
+          )
+        }
+      })
+
+      if (mode === 'kg' && !ghost) {
+        totalLabels.push(
+          <text
+            key={`total-${country.country}`}
+            className="encode-total-label"
+            x={xScale(country.totalKg) + 8}
+            y={y + yScale.bandwidth() / 2}
+            textAnchor="start"
+            dominantBaseline="middle"
+          >
+            {formatKg(country.totalKg)} kg
+          </text>
+        )
+      }
+    })
+
+    return (

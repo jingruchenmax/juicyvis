@@ -1,0 +1,300 @@
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent,
+  type MouseEvent
+} from 'react'
+import * as d3 from 'd3'
+import {
+  playAfricanSound,
+  playClickSound,
+  playColorConfirmSound,
+  playHoverSound,
+  playPreviewCueSound,
+  playWhooshSound
+} from '../../utils/soundUtils'
+import {
+  MEAT_CATEGORIES,
+  type MeatCategoryDef,
+  type MeatCategoryKey,
+  type MeatCountryDatum,
+  type MeatCsvRow,
+  useMeatTypeData
+} from './useMeatTypeData'
+
+type Representation = 'stacked-bar' | 'stacked-100' | 'donut' | 'heatmap'
+type Measure = 'kg' | 'percent'
+type FocusCategory = 'All' | MeatCategoryKey
+type TransitionDirection = 'next' | 'prev'
+type SwitchOrigin = 'wheel' | 'slider'
+
+interface EncodeBaseProps {
+  juicy: boolean
+  data?: MeatCsvRow[]
+}
+
+interface HoverDatum {
+  country: string
+  category: MeatCategoryKey
+  clientX: number
+  clientY: number
+}
+
+interface TooltipDatum extends HoverDatum {
+  kg: number
+  percent: number
+  encoded: number
+}
+
+interface TooltipDisplay {
+  kg: number
+  percent: number
+  encoded: number
+}
+
+interface ParticleState {
+  id: number
+  x: number
+  y: number
+  size: number
+  dx: number
+  dy: number
+  color: string
+  variant: 'burst' | 'spark' | 'color' | 'trail'
+}
+
+interface RippleState {
+  id: number
+  x: number
+  y: number
+  color: string
+}
+
+interface CursorPoint {
+  x: number
+  y: number
+}
+
+interface ChartSnapshot {
+  representation: Representation
+  measure: Measure
+  focusCategory: FocusCategory
+  colors: Record<MeatCategoryKey, string>
+}
+
+const REPRESENTATION_OPTIONS: Array<{ value: Representation; label: string }> = [
+  { value: 'stacked-bar', label: 'Stacked Bar (kg)' },
+  { value: 'stacked-100', label: '100% Stacked (percent)' },
+  { value: 'donut', label: 'Donut (percent)' },
+  { value: 'heatmap', label: 'Heatmap (kg/percent)' }
+]
+
+const REPRESENTATION_ORDER: Representation[] = REPRESENTATION_OPTIONS.map(option => option.value)
+
+const SVG_WIDTH = 1180
+const SVG_HEIGHT = 760
+const WHEEL_SWITCH_THRESHOLD = 80
+const WHEEL_SWITCH_COOLDOWN_MS = 480
+const TRANSITION_DURATION_JUICY_MS = 430
+const TRANSITION_DURATION_BASIC_MS = 190
+const WHEEL_PREVIEW_EXPIRY_MS = 1200
+const RING_FADE_OUT_MS = 140
+const SLIDER_VISUAL_DURATION_MS = 220
+const PROJECTOR_FLASH_MS = 60
+const PREVIEW_SCALE = 0.48
+const COLOR_PICKER_FRAME_SAFETY_MS = 2400
+const COLOR_PICKER_FRAME_POST_COMMIT_MS = 250
+const REP_THUMB_SIZE_PX = 18
+const TRANSITION_PARTICLE_CAP = 24
+const PARTICLE_LIFETIME_MS = 700
+const PARTICLE_MAX_COUNT = 180
+
+const INITIAL_CATEGORY_COLORS: Record<MeatCategoryKey, string> = MEAT_CATEGORIES.reduce(
+  (acc, category) => {
+    acc[category.key] = category.color
+    return acc
+  },
+  {} as Record<MeatCategoryKey, string>
+)
+
+const EMPTY_CURSOR_POINT: CursorPoint = { x: 0, y: 0 }
+
+const formatKg = (value: number): string => {
+  if (value >= 100) return d3.format('.0f')(value)
+  return d3.format('.1f')(value)
+}
+
+const formatPercent = (value: number): string => `${d3.format('.1f')(value)}%`
+
+const clamp01 = (value: number): number => Math.max(0, Math.min(1, value))
+
+const compactCountryLabel = (name: string, code: string | undefined, availableLen: number): string => {
+  if (availableLen >= 140) return name
+  if (code && code.length >= 2 && code.length <= 4) return code.toUpperCase()
+
+  const words = name.split(/[\s-]+/).filter(Boolean)
+  if (words.length >= 2) {
+    const initials = words.map(word => word[0]?.toUpperCase() ?? '').join('')
+    if (initials.length >= 2 && initials.length <= 4) return initials
+  }
+
+  return name.slice(0, Math.min(4, name.length)).toUpperCase()
+}
+
+const representationToIndex = (representation: Representation): number =>
+  Math.max(0, REPRESENTATION_ORDER.indexOf(representation))
+
+const indexToRepresentation = (index: number): Representation => {
+  const clamped = Math.max(0, Math.min(REPRESENTATION_ORDER.length - 1, Math.round(index)))
+  return REPRESENTATION_ORDER[clamped]
+}
+
+const directionBetweenIndexes = (
+  currentIndex: number,
+  nextIndex: number
+): TransitionDirection => {
+  const length = REPRESENTATION_ORDER.length
+  const forward = (nextIndex - currentIndex + length) % length
+  const backward = (currentIndex - nextIndex + length) % length
+  return forward <= backward ? 'next' : 'prev'
+}
+
+const encodedLabelByRepresentation = (representation: Representation): string => {
+  if (representation === 'heatmap') return 'Color intensity'
+  if (representation === 'stacked-bar') return 'Relative bar length'
+  return 'Angular share'
+}
+
+const measureForRepresentation = (representation: Representation, currentMeasure: Measure): Measure => {
+  if (representation === 'stacked-bar') return 'kg'
+  if (representation === 'stacked-100' || representation === 'donut') return 'percent'
+  return currentMeasure
+}
+
+const labelForRepresentation = (representation: Representation): string =>
+  REPRESENTATION_OPTIONS.find(option => option.value === representation)?.label ?? representation
+
+const isFormControlElement = (element: Element | null): boolean => {
+  if (!element) return false
+  return Boolean(
+    element.closest(
+      'input, select, textarea, button, [contenteditable="true"], [role="slider"]'
+    )
+  )
+}
+
+export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
+  const { dataset, loading, error } = useMeatTypeData(data)
+
+  const [representation, setRepresentation] = useState<Representation>('stacked-bar')
+  const [measure, setMeasure] = useState<Measure>('kg')
+  const [focusCategory, setFocusCategory] = useState<FocusCategory>('All')
+  const [categoryColors, setCategoryColors] = useState<Record<MeatCategoryKey, string>>(() => ({
+    ...INITIAL_CATEGORY_COLORS
+  }))
+
+  const [legendHoverCategory, setLegendHoverCategory] = useState<MeatCategoryKey | null>(null)
+  const [markHoverCategory, setMarkHoverCategory] = useState<MeatCategoryKey | null>(null)
+  const [hoveredDatum, setHoveredDatum] = useState<HoverDatum | null>(null)
+  const [tooltipDisplay, setTooltipDisplay] = useState<TooltipDisplay>({
+    kg: 0,
+    percent: 0,
+    encoded: 0
+  })
+
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [transitionKey, setTransitionKey] = useState(0)
+  const [transitionDirection, setTransitionDirection] = useState<TransitionDirection>('next')
+  const [ghostSnapshot, setGhostSnapshot] = useState<ChartSnapshot | null>(null)
+  const [particles, setParticles] = useState<ParticleState[]>([])
+  const [ripple, setRipple] = useState<RippleState | null>(null)
+  const [focusPulseCategory, setFocusPulseCategory] = useState<MeatCategoryKey | null>(null)
+  const [chartShakeActive, setChartShakeActive] = useState(false)
+  const [chartFlashPulseId, setChartFlashPulseId] = useState(0)
+  const [previewRepresentation, setPreviewRepresentation] = useState<Representation | null>(null)
+  const [previewMode, setPreviewMode] = useState<'hover' | 'wheel' | null>(null)
+  const [wheelPendingTarget, setWheelPendingTarget] = useState<{
+    representation: Representation
+    direction: TransitionDirection
+  } | null>(null)
+  const [cursorPosition, setCursorPosition] = useState<CursorPoint>(EMPTY_CURSOR_POINT)
+  const [isCursorInsideStage, setIsCursorInsideStage] = useState(false)
+  const [transitionRingVisible, setTransitionRingVisible] = useState(false)
+  const [sliderDirection, setSliderDirection] = useState<TransitionDirection | null>(null)
+  const [sliderVisualPercent, setSliderVisualPercent] = useState(0)
+  const [projectorFlashActive, setProjectorFlashActive] = useState(false)
+  const [colorPulseCategory, setColorPulseCategory] = useState<MeatCategoryKey | null>(null)
+  const [colorPulseId, setColorPulseId] = useState(0)
+  const [activeColorCategory, setActiveColorCategory] = useState<MeatCategoryKey | null>(null)
+  const [colorPickerFrameVisible, setColorPickerFrameVisible] = useState(false)
+  const [colorPickerFramePosition, setColorPickerFramePosition] = useState<{
+    x: number
+    y: number
+    color: string
+  } | null>(null)
+  const [globalParticles, setGlobalParticles] = useState<ParticleState[]>([])
+
+  const chartSurfaceRef = useRef<HTMLDivElement | null>(null)
+  const chartStageRef = useRef<HTMLDivElement | null>(null)
+  const repSliderWrapRef = useRef<HTMLDivElement | null>(null)
+  const globalFxRef = useRef<HTMLDivElement | null>(null)
+  const colorInputRefs = useRef<Partial<Record<MeatCategoryKey, HTMLInputElement | null>>>({})
+
+  const tooltipDisplayRef = useRef<TooltipDisplay>(tooltipDisplay)
+  const sliderVisualPercentRef = useRef(0)
+  const wheelAccumulatorRef = useRef(0)
+  const wheelSwitchTimestampRef = useRef(0)
+  const hoverSoundTimestampRef = useRef(0)
+  const previewSoundTimestampRef = useRef(0)
+  const representationSoundTimestampRef = useRef(0)
+  const windingSoundTimestampRef = useRef(0)
+  const colorSoundTimestampRef = useRef(0)
+  const sparkleTimestampRef = useRef(0)
+  const sliderVisualRafRef = useRef<number | null>(null)
+  const lastPointerClientRef = useRef<CursorPoint>({ ...EMPTY_CURSOR_POINT })
+  const colorPickerFrameAnchorRectRef = useRef<DOMRect | null>(null)
+  const colorPickerFrameRafRef = useRef<number | null>(null)
+
+  const transitionTimeoutRef = useRef<number | null>(null)
+  const wheelPreviewExpiryTimeoutRef = useRef<number | null>(null)
+  const transitionRingFadeTimeoutRef = useRef<number | null>(null)
+  const focusPulseTimeoutRef = useRef<number | null>(null)
+  const colorPulseTimeoutRef = useRef<number | null>(null)
+  const colorPickerSafetyTimeoutRef = useRef<number | null>(null)
+  const colorPickerCommitClearTimeoutRef = useRef<number | null>(null)
+  const projectorFlashTimeoutRef = useRef<number | null>(null)
+  const chartShakeTimeoutRef = useRef<number | null>(null)
+  const rippleTimeoutRef = useRef<number | null>(null)
+  const particleTimeoutsRef = useRef<number[]>([])
+  const globalParticleTimeoutsRef = useRef<number[]>([])
+  const windingClickTimeoutsRef = useRef<number[]>([])
+  const previousCategoryColorsRef = useRef<Record<MeatCategoryKey, string>>({
+    ...INITIAL_CATEGORY_COLORS
+  })
+
+  const categoryByKey = useMemo(() => {
+    const map = new Map<MeatCategoryKey, MeatCategoryDef>()
+    MEAT_CATEGORIES.forEach(category => map.set(category.key, category))
+    return map
+  }, [])
+
+  const countryByName = useMemo(() => {
+    const map = new Map<string, MeatCountryDatum>()
+    dataset?.countries.forEach(country => map.set(country.country, country))
+    return map
+  }, [dataset])
+
+  const measureLocked = representation !== 'heatmap'
+  const activeMeasure: Measure = measureForRepresentation(representation, measure)
+  const juicyActive = juicy && !prefersReducedMotion
+  const motionSafe = !prefersReducedMotion
+  const representationIndex = representationToIndex(representation)
+  const sliderFillPercent = (representationIndex / (REPRESENTATION_ORDER.length - 1)) * 100
+  const sliderDisplayPercent = juicyActive && motionSafe ? sliderVisualPercent : sliderFillPercent
+  const activeHoverCategory = legendHoverCategory ?? markHoverCategory
+  const ringRadius = 20

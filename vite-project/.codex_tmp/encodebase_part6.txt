@@ -1,0 +1,300 @@
+    const cellWidth = 126
+    const cellHeight = 42
+    const startX = 292
+    const startY = 170
+    const totalWidth = categories.length * cellWidth
+    const totalHeight = countries.length * cellHeight
+
+    const cells: JSX.Element[] = []
+    const values: JSX.Element[] = []
+    let markIndex = 0
+
+    countries.forEach((country, rowIndex) => {
+      categories.forEach((category, colIndex) => {
+        const kg = country.kg[category.key]
+        const percent = country.percent[category.key]
+        const intensity =
+          snapshot.measure === 'kg'
+            ? dataset.maxCategoryKg > 0
+              ? kg / dataset.maxCategoryKg
+              : 0
+            : percent / 100
+        const normalized = clamp01(intensity)
+        const fill = d3.interpolateLab('#f6f8fc', getCategoryColor(category.key, snapshot))(normalized)
+        const x = startX + colIndex * cellWidth
+        const y = startY + rowIndex * cellHeight
+        const isHovered =
+          !ghost &&
+          hoveredDatum?.country === country.country &&
+          hoveredDatum.category === category.key
+        const isColorPulse = !ghost && juicyActive && colorPulseCategory === category.key
+
+        cells.push(
+          <rect
+            key={`cell-${country.country}-${category.key}`}
+            data-encode-color={category.key}
+            className={markClassName(category.key, isHovered, ghost, 'heatmap')}
+            style={markStyle(markIndex, ghost)}
+            x={x}
+            y={y}
+            width={cellWidth}
+            height={cellHeight}
+            fill={fill}
+            opacity={categoryOpacity(category.key, snapshot.focusCategory, ghost)}
+            stroke={isHovered ? '#0f172a' : isColorPulse ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0)'}
+            strokeWidth={isHovered ? 2 : isColorPulse ? 1.8 : 1}
+            filter={juicyActive && isHovered && !ghost ? 'url(#encode-hover-glow-filter)' : undefined}
+            onMouseEnter={ghost ? undefined : event => handleMarkEnter(event, country.country, category.key)}
+            onMouseMove={ghost ? undefined : handleMarkMove}
+            onMouseLeave={ghost ? undefined : handleMarkLeave}
+          />
+        )
+
+        if (!ghost) {
+          values.push(
+            <text
+              key={`cell-label-${country.country}-${category.key}`}
+              className="encode-heatmap-value"
+              x={x + cellWidth / 2}
+              y={y + cellHeight / 2}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill={getReadableTextColor(fill)}
+            >
+              {snapshot.measure === 'kg' ? formatKg(kg) : formatPercent(percent)}
+            </text>
+          )
+        }
+        markIndex += 1
+      })
+    })
+
+    return (
+      <g className={ghost ? 'encode-chart-layer is-ghost' : 'encode-chart-layer'}>
+        {categories.map((category, index) => (
+          <text
+            key={`heatmap-col-${category.key}`}
+            className="encode-axis-tick"
+            x={startX + index * cellWidth + cellWidth / 2}
+            y={startY - 24}
+            textAnchor="middle"
+          >
+            {category.label}
+          </text>
+        ))}
+        {countries.map((country, index) => (
+          <text
+            key={`heatmap-row-${country.country}`}
+            className="encode-country-label"
+            x={startX - 20}
+            y={startY + index * cellHeight + cellHeight / 2}
+            textAnchor="end"
+            dominantBaseline="middle"
+          >
+            {country.country}
+          </text>
+        ))}
+        <rect
+          className="encode-heatmap-frame"
+          x={startX}
+          y={startY}
+          width={totalWidth}
+          height={totalHeight}
+        />
+        {cells}
+        {values}
+      </g>
+    )
+  }
+
+  const renderMultiRingDonut = (snapshot: ChartSnapshot, ghost: boolean) => {
+    if (!dataset) return null
+    const countries = dataset.countries
+    const countryCount = countries.length
+
+    const donutCenterX = SVG_WIDTH * 0.5
+    const donutCenterY = SVG_HEIGHT * 0.52
+    const outerRadius = 296
+    const ringGap = 3.4
+    const desiredThickness = 24
+    const minInnerRadius = 54
+    const requiredInner =
+      outerRadius - desiredThickness * countryCount - ringGap * (countryCount - 1)
+    const innerRadius = requiredInner >= minInnerRadius ? requiredInner : minInnerRadius
+    const ringThickness =
+      requiredInner >= minInnerRadius
+        ? desiredThickness
+        : Math.max(
+            16,
+            Math.min(
+              24,
+              (outerRadius - innerRadius - ringGap * (countryCount - 1)) / Math.max(1, countryCount)
+            )
+          )
+    const labelStartAngle = -Math.PI * 0.92
+    const labelEndAngle = -Math.PI * 0.08
+    const labelArcSpan = Math.abs(labelEndAngle - labelStartAngle)
+
+    const pie = d3
+      .pie<{ category: MeatCategoryDef; value: number }>()
+      .sort(null)
+      .value(item => item.value)
+      .padAngle(0.013)
+
+    const arcMarks: JSX.Element[] = []
+    const countryLabelDefs: JSX.Element[] = []
+    const countryRingLabels: JSX.Element[] = []
+
+    countries.forEach((country, countryIndex) => {
+      const ringOuter = outerRadius - countryIndex * (ringThickness + ringGap)
+      const ringInner = ringOuter - ringThickness
+      const arcGenerator = d3
+        .arc<d3.PieArcDatum<{ category: MeatCategoryDef; value: number }>>()
+        .innerRadius(ringInner)
+        .outerRadius(ringOuter)
+        .cornerRadius(2)
+
+      const series = pie(
+        MEAT_CATEGORIES.map(category => ({
+          category,
+          value: country.percent[category.key]
+        }))
+      )
+
+      series.forEach((slice, categoryIndex) => {
+        const category = slice.data.category
+        const isHovered =
+          !ghost &&
+          hoveredDatum?.country === country.country &&
+          hoveredDatum.category === category.key
+        const isColorPulse = !ghost && juicyActive && colorPulseCategory === category.key
+        const markIndex = countryIndex * MEAT_CATEGORIES.length + categoryIndex
+        arcMarks.push(
+          <path
+            key={`donut-slice-${country.country}-${category.key}`}
+            data-encode-color={category.key}
+            className={markClassName(category.key, isHovered, ghost, 'donut')}
+            style={markStyle(markIndex, ghost)}
+            d={arcGenerator(slice) ?? ''}
+            fill={getCategoryColor(category.key, snapshot)}
+            opacity={categoryOpacity(category.key, snapshot.focusCategory, ghost)}
+            stroke={isHovered ? '#0f172a' : isColorPulse ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0)'}
+            strokeWidth={isHovered ? 2.2 : isColorPulse ? 1.9 : 1}
+            filter={juicyActive && isHovered && !ghost ? 'url(#encode-hover-glow-filter)' : undefined}
+            onMouseEnter={ghost ? undefined : event => handleMarkEnter(event, country.country, category.key)}
+            onMouseMove={ghost ? undefined : handleMarkMove}
+            onMouseLeave={ghost ? undefined : handleMarkLeave}
+          />
+        )
+      })
+
+      const labelRadius = ringInner + ringThickness * 0.55
+      const labelPathId = `encode-donut-label-${ghost ? 'ghost' : 'live'}-${countryIndex}`
+      const availableLen = Math.max(60, labelRadius * labelArcSpan - 10)
+      const countryLabel = compactCountryLabel(country.country, country.code, availableLen)
+      const labelPath =
+        d3
+          .arc<d3.DefaultArcObject>()
+          .innerRadius(labelRadius)
+          .outerRadius(labelRadius)({
+          innerRadius: labelRadius,
+          outerRadius: labelRadius,
+          startAngle: labelStartAngle,
+          endAngle: labelEndAngle,
+          padAngle: 0
+        }) ?? ''
+      countryLabelDefs.push(<path key={labelPathId} id={labelPathId} d={labelPath} fill="none" />)
+      if (!ghost) {
+        countryRingLabels.push(
+          <text key={`donut-country-label-${country.country}`} className="encode-donut-ring-label" dy="0.35em">
+            <textPath
+              href={`#${labelPathId}`}
+              xlinkHref={`#${labelPathId}`}
+              startOffset="50%"
+              textAnchor="middle"
+              textLength={availableLen}
+              lengthAdjust="spacingAndGlyphs"
+            >
+              {countryLabel}
+            </textPath>
+          </text>
+        )
+      }
+    })
+
+    return (
+      <g className={ghost ? 'encode-chart-layer is-ghost' : 'encode-chart-layer'}>
+        <g className="encode-donut-root" transform={`translate(${donutCenterX}, ${donutCenterY})`}>
+          <defs>{countryLabelDefs}</defs>
+          {arcMarks}
+          {countryRingLabels}
+          <circle className="encode-donut-hole" cx={0} cy={0} r={innerRadius - 8} />
+          <text className="encode-donut-center-title" x={0} y={-8} textAnchor="middle">
+            Multi-Ring
+          </text>
+          <text className="encode-donut-center-subtitle" x={0} y={12} textAnchor="middle">
+            Country shares
+          </text>
+        </g>
+      </g>
+    )
+  }
+
+  const renderSnapshot = (snapshot: ChartSnapshot, ghost: boolean) => {
+    if (snapshot.representation === 'stacked-100') {
+      return renderStackedBars(snapshot, ghost, 'percent')
+    }
+    if (snapshot.representation === 'donut') {
+      return renderMultiRingDonut(snapshot, ghost)
+    }
+    if (snapshot.representation === 'heatmap') {
+      return renderHeatmap(snapshot, ghost)
+    }
+    return renderStackedBars(snapshot, ghost, 'kg')
+  }
+
+  const ghostSnapshotSignature = ghostSnapshot
+    ? `${ghostSnapshot.representation}|${ghostSnapshot.measure}|${ghostSnapshot.focusCategory}|${MEAT_CATEGORIES.map(category => `${category.key}:${ghostSnapshot.colors[category.key]}`).join('|')}`
+    : 'none'
+
+  const ghostSnapshotLayer = useMemo(() => {
+    if (!ghostSnapshot || !juicyActive) return null
+    return renderSnapshot(ghostSnapshot, true)
+  }, [ghostSnapshot, ghostSnapshotSignature, juicyActive])
+
+  if (loading) {
+    return <div className="encode-loading">Loading Encode data...</div>
+  }
+
+  if (error || !dataset) {
+    return <div className="encode-error">Encode data error: {error ?? 'Unknown data error.'}</div>
+  }
+
+  const tooltipLeft = (tooltipTarget?.clientX ?? 0) + 14
+  const tooltipTop = (tooltipTarget?.clientY ?? 0) - 20
+  const previewHalfWidth = SVG_WIDTH * 0.5
+  const previewScaledWidth = SVG_WIDTH * PREVIEW_SCALE
+  const previewLeftX = (previewHalfWidth - previewScaledWidth) * 0.5
+  const previewRightX = previewHalfWidth + previewLeftX
+  const wheelPreviewActive = previewActive && previewMode === 'wheel'
+  const sliderAlignedLeft = `${sliderDisplayPercent}%`
+  const currentLayerClass = juicyActive
+    ? `encode-current-layer ${
+        isTransitioning ? `is-juicy-enter is-juicy-enter-${transitionDirection}` : ''
+      }`
+    : `encode-current-layer is-basic-fade`
+
+  return (
+    <div className={`encode-shell ${juicy ? 'encode-shell-juicy' : 'encode-shell-basic'}`}>
+      <div
+        className={`encode-chart-shell ${chartShakeActive ? 'is-shaking' : ''} ${
+          juicyActive && isTransitioning ? 'is-transition-frame' : ''
+        }`}
+        ref={chartSurfaceRef}
+        onMouseLeave={handleChartMouseLeave}
+      >
+        <div className="encode-chart-head">
+          <h2 className="encode-chart-head-title">
+            Per capita meat and fish consumption ({dataset.year})
+          </h2>
+          <p className="encode-chart-head-subtitle">{chartSubtitle}</p>

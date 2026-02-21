@@ -1,10 +1,17 @@
 .app {
   width: 100%;
-  min-height: 100vh;
-  padding: 20px;
+  height: 100%;
+  min-height: unset;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   background: #fafafa;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.app > * {
+  min-height: 0;
 }
 
 .app h1 {

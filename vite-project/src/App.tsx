@@ -204,7 +204,7 @@ function App() {
     return (
       <div className="app">
         <h1>Per Capita Meat Consumption</h1>
-        <p className="subtitle">By Meat Type {juicy && '(Juicy Mode)'}</p>
+        <p className="subtitle">By Meat Type</p>
         {meatData.length > 0 ? (juicy ? <EncodeJuicy data={meatData} /> : <Encode data={meatData} />) : <div className="loading">Loading meat data...</div>}
       </div>
     )

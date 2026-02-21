@@ -1,0 +1,260 @@
+
+    const pulseCount = 4
+    for (let index = 0; index < pulseCount; index += 1) {
+      const timeout = window.setTimeout(() => {
+        playClickSound()
+      }, index * 68)
+      windingClickTimeoutsRef.current.push(timeout)
+    }
+  }, [juicyActive, motionSafe])
+
+  const emitParticles = useCallback(
+    (
+      x: number,
+      y: number,
+      count: number,
+      variant: ParticleState['variant'],
+      color?: string,
+      force = false
+    ) => {
+      // All juicy particle bursts/trails are centralized here so timing and caps stay consistent.
+      if (!force && !(juicyActive && motionSafe)) return
+      const particleLimit = isTransitioning ? TRANSITION_PARTICLE_CAP : PARTICLE_MAX_COUNT
+      const clampedCount = Math.max(1, Math.min(isTransitioning ? 24 : 36, count))
+      const now = performance.now()
+      const palette = color
+        ? [color, '#ffffff', '#ffd166']
+        : ['#2f63d1', '#4ecdc4', '#ffd166', '#ff8fab', '#ffffff']
+      const created = Array.from({ length: clampedCount }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / clampedCount + Math.random() * 0.8
+        const distance =
+          variant === 'burst'
+            ? 20 + Math.random() * 34
+            : variant === 'trail'
+              ? 8 + Math.random() * 14
+              : 14 + Math.random() * 24
+        return {
+          id: now + index + Math.random(),
+          x,
+          y,
+          size:
+            variant === 'trail'
+              ? 1.8 + Math.random() * 1.8
+              : variant === 'spark'
+                ? 2.2 + Math.random() * 2.2
+                : 2.8 + Math.random() * 3.2,
+          dx: Math.cos(angle) * distance,
+          dy: Math.sin(angle) * distance - (variant === 'trail' ? 1 : 4),
+          color: palette[Math.floor(Math.random() * palette.length)],
+          variant
+        } as ParticleState
+      })
+
+      setParticles(previous => [...previous, ...created].slice(-particleLimit))
+
+      const ids = new Set(created.map(particle => particle.id))
+      const timeout = window.setTimeout(() => {
+        setParticles(previous => previous.filter(particle => !ids.has(particle.id)))
+        particleTimeoutsRef.current = particleTimeoutsRef.current.filter(item => item !== timeout)
+      }, PARTICLE_LIFETIME_MS)
+      particleTimeoutsRef.current.push(timeout)
+    },
+    [isTransitioning, juicyActive, motionSafe]
+  )
+
+  const emitParticlesFromClient = useCallback(
+    (
+      clientX: number,
+      clientY: number,
+      count: number,
+      variant: ParticleState['variant'],
+      color?: string
+    ) => {
+      const shell = chartSurfaceRef.current
+      if (!shell) return
+      const bounds = shell.getBoundingClientRect()
+      emitParticles(clientX - bounds.left, clientY - bounds.top, count, variant, color)
+    },
+    [emitParticles]
+  )
+
+  const runRepresentationFeedback = useCallback(
+    () => {
+      if (!(juicyActive && motionSafe)) return
+
+      setChartShakeActive(true)
+      clearTimeoutRef(chartShakeTimeoutRef)
+      chartShakeTimeoutRef.current = window.setTimeout(() => {
+        setChartShakeActive(false)
+      }, 210)
+
+      setChartFlashPulseId(value => value + 1)
+
+      const shell = chartSurfaceRef.current
+      if (shell) {
+        const bounds = shell.getBoundingClientRect()
+        emitParticles(bounds.width * 0.52, Math.min(110, bounds.height * 0.2), 14, 'burst')
+        emitParticles(bounds.width * 0.5, bounds.height * 0.55, 9, 'spark')
+      }
+
+      const now = performance.now()
+      if (now - representationSoundTimestampRef.current > 180) {
+        representationSoundTimestampRef.current = now
+        playWhooshSound()
+      }
+    },
+    [emitParticles, juicyActive, motionSafe]
+  )
+
+  const runFocusFeedback = useCallback(
+    (category: FocusCategory, sourceElement?: HTMLElement | null) => {
+      if (category === 'All') return
+      if (!(juicyActive && motionSafe)) return
+      const categoryKey = category as MeatCategoryKey
+
+      setFocusPulseCategory(categoryKey)
+      clearTimeoutRef(focusPulseTimeoutRef)
+      focusPulseTimeoutRef.current = window.setTimeout(() => {
+        setFocusPulseCategory(null)
+      }, 460)
+
+      if (sourceElement && chartSurfaceRef.current) {
+        const shellBounds = chartSurfaceRef.current.getBoundingClientRect()
+        const sourceBounds = sourceElement.getBoundingClientRect()
+        const x = sourceBounds.left + sourceBounds.width / 2 - shellBounds.left
+        const y = sourceBounds.top + sourceBounds.height / 2 - shellBounds.top
+        const color = categoryByKey.get(categoryKey)?.color ?? '#2f63d1'
+        setRipple({ id: Date.now(), x, y, color })
+        clearTimeoutRef(rippleTimeoutRef)
+        rippleTimeoutRef.current = window.setTimeout(() => {
+          setRipple(null)
+        }, 360)
+      }
+    },
+    [categoryByKey, juicyActive, motionSafe]
+  )
+
+  const getSliderHandleClientPoint = useCallback((percent: number): CursorPoint | null => {
+    const sliderWrap = repSliderWrapRef.current
+    if (!sliderWrap) return null
+    const bounds = sliderWrap.getBoundingClientRect()
+    return {
+      x: bounds.left + REP_THUMB_SIZE_PX / 2 + (percent / 100) * (bounds.width - REP_THUMB_SIZE_PX),
+      y: bounds.top + bounds.height * 0.5
+    }
+  }, [])
+
+  const clearWheelPreviewStage = useCallback(() => {
+    clearTimeoutRef(wheelPreviewExpiryTimeoutRef)
+    setWheelPendingTarget(null)
+    setPreviewRepresentation(null)
+    setPreviewMode(currentMode => (currentMode === 'wheel' ? null : currentMode))
+  }, [])
+
+  const restartWheelPreviewExpiry = useCallback(() => {
+    clearTimeoutRef(wheelPreviewExpiryTimeoutRef)
+    wheelPreviewExpiryTimeoutRef.current = window.setTimeout(() => {
+      clearWheelPreviewStage()
+    }, WHEEL_PREVIEW_EXPIRY_MS)
+  }, [clearWheelPreviewStage])
+
+  const switchRepresentation = useCallback(
+    (
+      nextRepresentation: Representation,
+      direction: TransitionDirection,
+      origin: SwitchOrigin = 'slider'
+    ) => {
+      if (nextRepresentation === representation) return
+      if (isTransitioning) return
+
+      // Transition controller for cinematic switch: old snapshot exits, new representation enters.
+      const nextIndex = representationToIndex(nextRepresentation)
+      const nextPercent = (nextIndex / (REPRESENTATION_ORDER.length - 1)) * 100
+      clearWheelPreviewStage()
+      setPreviewMode(null)
+      clearTimeoutRef(projectorFlashTimeoutRef)
+      setProjectorFlashActive(false)
+      clearTimeoutRef(transitionRingFadeTimeoutRef)
+      setTransitionDirection(direction)
+      setSliderDirection(direction)
+      setTransitionKey(key => key + 1)
+      setIsTransitioning(true)
+      setTransitionRingVisible(juicyActive && motionSafe)
+      setHoveredDatum(null)
+      setMarkHoverCategory(null)
+
+      if (juicyActive && motionSafe) {
+        setGhostSnapshot(currentSnapshot)
+        runRepresentationFeedback()
+        if (origin === 'wheel' || origin === 'slider') {
+          scheduleWindingClicks()
+        }
+      } else {
+        setGhostSnapshot(null)
+      }
+
+      setRepresentation(nextRepresentation)
+      setMeasure(previousMeasure => measureForRepresentation(nextRepresentation, previousMeasure))
+      if (juicyActive && motionSafe) {
+        animateSliderVisualTo(nextPercent, SLIDER_VISUAL_DURATION_MS)
+      } else {
+        sliderVisualPercentRef.current = nextPercent
+        setSliderVisualPercent(nextPercent)
+      }
+
+      clearTimeoutRef(transitionTimeoutRef)
+
+      const duration =
+        juicyActive && motionSafe ? TRANSITION_DURATION_JUICY_MS : TRANSITION_DURATION_BASIC_MS
+      if (origin === 'wheel') {
+        wheelSwitchTimestampRef.current = performance.now()
+      }
+
+      transitionTimeoutRef.current = window.setTimeout(() => {
+        setIsTransitioning(false)
+        setSliderDirection(null)
+        setGhostSnapshot(null)
+        setPreviewRepresentation(null)
+        setPreviewMode(null)
+        setWheelPendingTarget(null)
+        if (juicyActive && motionSafe) {
+          const targetPoint = getSliderHandleClientPoint(nextPercent)
+          if (targetPoint) {
+            emitGlobalParticles(targetPoint.x, targetPoint.y, 22, 'burst', '#ffffff', 5)
+          }
+          playAfricanSound()
+          transitionRingFadeTimeoutRef.current = window.setTimeout(() => {
+            setTransitionRingVisible(false)
+          }, RING_FADE_OUT_MS)
+        } else {
+          setTransitionRingVisible(false)
+        }
+      }, duration)
+    },
+    [
+      animateSliderVisualTo,
+      clearWheelPreviewStage,
+      currentSnapshot,
+      emitGlobalParticles,
+      getSliderHandleClientPoint,
+      isTransitioning,
+      juicyActive,
+      motionSafe,
+      representation,
+      runRepresentationFeedback,
+      scheduleWindingClicks
+    ]
+  )
+
+  const switchRepresentationByOffset = useCallback(
+    (offset: number, origin: SwitchOrigin = 'wheel') => {
+      const baseRepresentation = representation
+      const currentIndex = representationToIndex(baseRepresentation)
+      const nextIndex =
+        (currentIndex + offset + REPRESENTATION_ORDER.length) % REPRESENTATION_ORDER.length
+      const nextRepresentation = REPRESENTATION_ORDER[nextIndex]
+      const direction: TransitionDirection = offset > 0 ? 'next' : 'prev'
+      if (
+        origin === 'wheel' &&
+        juicyActive &&
+        motionSafe &&
