@@ -169,7 +169,10 @@
 
 .encode-shell-juicy .encode-rep-tick:hover {
   color: #174480;
-  transform: translateY(-1px);
+  transform: translateX(-50%) translateY(-2px) scale(1.04);
+  outline: 2px solid rgba(23, 68, 128, 0.24);
+  outline-offset: 6px;
+  border-radius: 10px;
 }
 
 .encode-shell-juicy .encode-rep-slider {
@@ -278,6 +281,33 @@
 .encode-shell-juicy .encode-color-row:hover {
   transform: translateY(-1px) scale(1.01);
   box-shadow: 0 6px 12px rgba(32, 69, 123, 0.14);
+}
+
+.encode-shell-juicy .encode-year-band.is-pulse {
+  animation: encode-year-band-pulse 360ms ease-out;
+}
+
+.encode-shell-juicy .encode-timeline-axis-year.is-hovered {
+  fill: #1e64d0;
+  font-weight: 800;
+}
+
+.encode-shell-juicy .encode-timeline-axis-year.is-selected {
+  fill: #0f3a73;
+  font-weight: 900;
+  font-size: 12px;
+  paint-order: stroke fill;
+  stroke: rgba(30, 100, 208, 0.35);
+  stroke-width: 5px;
+}
+
+.encode-shell-juicy .encode-year-carry-overlay {
+  background: rgba(64, 126, 236, 0.3);
+  animation: encode-year-carry 360ms cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+.encode-shell-juicy .encode-year-carry-label {
+  animation: encode-year-carry-label 360ms ease-out forwards;
 }
 
 @keyframes encode-chart-shake {
@@ -627,6 +657,58 @@
   }
 }
 
+@keyframes encode-year-band-pulse {
+  0% {
+    opacity: 0.9;
+  }
+  55% {
+    opacity: 1;
+    filter: brightness(1.18);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+@keyframes encode-year-carry {
+  0% {
+    left: var(--encode-year-from-left, 0px);
+    width: var(--encode-year-from-width, 10px);
+    opacity: 0.36;
+  }
+  39% {
+    left: var(--encode-year-center-left, 0px);
+    width: 80px;
+    opacity: 0.32;
+  }
+  90% {
+    left: var(--encode-year-plot-left, 0px);
+    width: var(--encode-year-plot-width, 120px);
+    opacity: 0.11;
+  }
+  100% {
+    left: var(--encode-year-plot-left, 0px);
+    width: var(--encode-year-plot-width, 120px);
+    opacity: 0;
+  }
+}
+
+@keyframes encode-year-carry-label {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 3px);
+  }
+  24% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -3px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .encode-shell-juicy .encode-chart-shell.is-shaking,
   .encode-shell-juicy .encode-chart-flash,
@@ -648,7 +730,10 @@
   .encode-shell-juicy .transition-swipe.on,
   .encode-shell-juicy .encode-preview-arrow,
   .encode-shell-juicy .encode-transition-ring.is-fading,
-  .encode-shell-juicy .encode-rep-direction {
+  .encode-shell-juicy .encode-rep-direction,
+  .encode-shell-juicy .encode-year-band.is-pulse,
+  .encode-shell-juicy .encode-year-carry-overlay,
+  .encode-shell-juicy .encode-year-carry-label {
     animation: none !important;
   }
 

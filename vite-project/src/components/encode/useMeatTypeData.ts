@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as d3 from 'd3'
 
 export type MeatCategoryKey =
@@ -42,6 +42,17 @@ export interface MeatDataset {
   countries: MeatCountryDatum[]
   maxTotalKg: number
   maxCategoryKg: number
+}
+
+export interface MeatCountryTimeSeriesValue {
+  year: number
+  totalKg: number
+}
+
+export interface MeatCountryTimeSeries {
+  country: string
+  code: string
+  values: MeatCountryTimeSeriesValue[]
 }
 
 export const MEAT_CATEGORIES: MeatCategoryDef[] = [
@@ -107,28 +118,59 @@ const parseRow = (row: d3.DSVRowString<string>): MeatCsvRow | null => {
   }
 }
 
-const buildDataset = (rows: MeatCsvRow[]): MeatDataset | null => {
-  if (!rows.length) return null
+interface SelectedCountry {
+  country: string
+  code: string
+}
 
-  const latestYear = d3.max(rows, d => d.Year) ?? 2022
-  const rowsOfYear = rows.filter(d => d.Year === latestYear)
+interface MeatDataBundle {
+  dataset: MeatDataset | null
+  years: number[]
+  datasetsByYear: Map<number, MeatDataset>
+  timeSeries: MeatCountryTimeSeries[]
+  latestYear: number | null
+}
 
-  const preferred = rowsOfYear.filter(d => TARGET_COUNTRIES.includes(d.Entity))
+const buildCountrySelection = (rows: MeatCsvRow[], latestYear: number): SelectedCountry[] => {
+  const rowsOfYear = rows.filter(row => row.Year === latestYear)
+  const preferred = rowsOfYear.filter(row => TARGET_COUNTRIES.includes(row.Entity))
   const candidates = preferred.length >= COUNTRY_COUNT ? preferred : rowsOfYear
 
-  const sorted = [...candidates]
+  return [...candidates]
     .map(row => {
       const total = d3.sum(MEAT_CATEGORIES, category => parseNumber(row[category.key]))
       return { row, total }
     })
     .sort((a, b) => b.total - a.total)
     .slice(0, COUNTRY_COUNT)
+    .map(({ row }) => ({
+      country: row.Entity,
+      code: row.Code
+    }))
+}
 
-  const countries: MeatCountryDatum[] = sorted.map(({ row }) => {
-    const kg = MEAT_CATEGORIES.reduce<Record<MeatCategoryKey, number>>((acc, category) => {
-      acc[category.key] = parseNumber(row[category.key])
-      return acc
-    }, {} as Record<MeatCategoryKey, number>)
+const makeYearCountryKey = (year: number, country: string): string => `${year}::${country}`
+
+const emptyKgRecord = (): Record<MeatCategoryKey, number> => {
+  return MEAT_CATEGORIES.reduce<Record<MeatCategoryKey, number>>((acc, category) => {
+    acc[category.key] = 0
+    return acc
+  }, {} as Record<MeatCategoryKey, number>)
+}
+
+const buildDatasetForYear = (
+  year: number,
+  selectedCountries: SelectedCountry[],
+  rowsByYearCountry: Map<string, MeatCsvRow>
+): MeatDataset => {
+  const countries: MeatCountryDatum[] = selectedCountries.map(countryMeta => {
+    const row = rowsByYearCountry.get(makeYearCountryKey(year, countryMeta.country))
+    const kg = row
+      ? MEAT_CATEGORIES.reduce<Record<MeatCategoryKey, number>>((acc, category) => {
+          acc[category.key] = parseNumber(row[category.key])
+          return acc
+        }, {} as Record<MeatCategoryKey, number>)
+      : emptyKgRecord()
 
     const totalKg = d3.sum(MEAT_CATEGORIES, category => kg[category.key])
     const percent = MEAT_CATEGORIES.reduce<Record<MeatCategoryKey, number>>((acc, category) => {
@@ -138,27 +180,95 @@ const buildDataset = (rows: MeatCsvRow[]): MeatDataset | null => {
     }, {} as Record<MeatCategoryKey, number>)
 
     return {
-      country: row.Entity,
-      code: row.Code,
-      year: row.Year,
+      country: countryMeta.country,
+      code: row?.Code ?? countryMeta.code,
+      year,
       kg,
       percent,
       totalKg
     }
   })
 
-  const maxTotalKg = d3.max(countries, d => d.totalKg) ?? 1
+  const maxTotalKg = d3.max(countries, datum => datum.totalKg) ?? 1
   const maxCategoryKg =
-    d3.max(
-      countries.flatMap(country => MEAT_CATEGORIES.map(category => country.kg[category.key]))
-    ) ?? 1
+    d3.max(countries.flatMap(country => MEAT_CATEGORIES.map(category => country.kg[category.key]))) ?? 1
 
   return {
-    year: latestYear,
+    year,
     categories: MEAT_CATEGORIES,
     countries,
-    maxTotalKg,
-    maxCategoryKg
+    maxTotalKg: maxTotalKg > 0 ? maxTotalKg : 1,
+    maxCategoryKg: maxCategoryKg > 0 ? maxCategoryKg : 1
+  }
+}
+
+const buildDataBundle = (rows: MeatCsvRow[]): MeatDataBundle => {
+  if (!rows.length) {
+    return {
+      dataset: null,
+      years: [],
+      datasetsByYear: new Map<number, MeatDataset>(),
+      timeSeries: [],
+      latestYear: null
+    }
+  }
+
+  const latestYear = d3.max(rows, row => row.Year) ?? null
+  if (latestYear === null) {
+    return {
+      dataset: null,
+      years: [],
+      datasetsByYear: new Map<number, MeatDataset>(),
+      timeSeries: [],
+      latestYear: null
+    }
+  }
+
+  const selectedCountries = buildCountrySelection(rows, latestYear)
+  const allYears = Array.from(new Set(rows.map(row => row.Year))).sort((a, b) => a - b)
+  const boundedYears = allYears.filter(year => year >= 1994 && year <= 2022)
+  const years = boundedYears.length > 0 ? boundedYears : allYears
+
+  const rowsByYearCountry = new Map<string, MeatCsvRow>()
+  rows.forEach(row => {
+    rowsByYearCountry.set(makeYearCountryKey(row.Year, row.Entity), row)
+  })
+
+  const datasetsByYear = new Map<number, MeatDataset>()
+  years.forEach(year => {
+    datasetsByYear.set(year, buildDatasetForYear(year, selectedCountries, rowsByYearCountry))
+  })
+
+  if (!datasetsByYear.has(latestYear)) {
+    datasetsByYear.set(
+      latestYear,
+      buildDatasetForYear(latestYear, selectedCountries, rowsByYearCountry)
+    )
+  }
+
+  const dataset = datasetsByYear.get(latestYear) ?? null
+  const totalsByYearCountry = new Map<string, number>()
+  datasetsByYear.forEach((yearDataset, year) => {
+    yearDataset.countries.forEach(country => {
+      totalsByYearCountry.set(makeYearCountryKey(year, country.country), country.totalKg)
+    })
+  })
+
+  const timeSeries: MeatCountryTimeSeries[] = selectedCountries.map(country => ({
+    country: country.country,
+    code: country.code,
+    values: years.map(year => ({
+      year,
+      totalKg: totalsByYearCountry.get(makeYearCountryKey(year, country.country)) ?? 0
+    }))
+  }))
+
+  return {
+    dataset,
+    years,
+    datasetsByYear,
+    timeSeries,
+    latestYear
   }
 }
 
@@ -177,11 +287,19 @@ const normalizeSeedRows = (seedData: MeatCsvRow[]): MeatCsvRow[] => {
 }
 
 export const useMeatTypeData = (seedData?: MeatCsvRow[]) => {
-  const [dataset, setDataset] = useState<MeatDataset | null>(() => {
-    if (!seedData || seedData.length === 0) return null
-    return buildDataset(normalizeSeedRows(seedData))
-  })
-  const [loading, setLoading] = useState(!dataset)
+  const initialData = useMemo(() => {
+    if (!seedData || seedData.length === 0) {
+      return buildDataBundle([])
+    }
+    return buildDataBundle(normalizeSeedRows(seedData))
+  }, [seedData])
+
+  const [dataset, setDataset] = useState<MeatDataset | null>(initialData.dataset)
+  const [years, setYears] = useState<number[]>(initialData.years)
+  const [datasetsByYear, setDatasetsByYear] = useState<Map<number, MeatDataset>>(initialData.datasetsByYear)
+  const [timeSeries, setTimeSeries] = useState<MeatCountryTimeSeries[]>(initialData.timeSeries)
+  const [latestYear, setLatestYear] = useState<number | null>(initialData.latestYear)
+  const [loading, setLoading] = useState(!initialData.dataset)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -199,10 +317,14 @@ export const useMeatTypeData = (seedData?: MeatCsvRow[]) => {
           .csvParse(text, raw => parseRow(raw))
           .filter((d): d is MeatCsvRow => d !== null)
 
-        const built = buildDataset(rows)
+        const built = buildDataBundle(rows)
         if (!disposed) {
-          if (built) {
-            setDataset(built)
+          if (built.dataset) {
+            setDataset(built.dataset)
+            setYears(built.years)
+            setDatasetsByYear(built.datasetsByYear)
+            setTimeSeries(built.timeSeries)
+            setLatestYear(built.latestYear)
             setError(null)
           } else {
             setError('No usable rows were found in per-capita-meat-type.csv.')
@@ -213,9 +335,13 @@ export const useMeatTypeData = (seedData?: MeatCsvRow[]) => {
         if (disposed) return
 
         if (seedData && seedData.length > 0) {
-          const fallback = buildDataset(normalizeSeedRows(seedData))
-          if (fallback) {
-            setDataset(fallback)
+          const fallback = buildDataBundle(normalizeSeedRows(seedData))
+          if (fallback.dataset) {
+            setDataset(fallback.dataset)
+            setYears(fallback.years)
+            setDatasetsByYear(fallback.datasetsByYear)
+            setTimeSeries(fallback.timeSeries)
+            setLatestYear(fallback.latestYear)
             setError(null)
             setLoading(false)
             return
@@ -235,5 +361,5 @@ export const useMeatTypeData = (seedData?: MeatCsvRow[]) => {
     }
   }, [seedData])
 
-  return { dataset, loading, error }
+  return { dataset, years, datasetsByYear, timeSeries, latestYear, loading, error }
 }

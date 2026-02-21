@@ -14,6 +14,7 @@ import {
   playAfricanSound,
   playClickSound,
   playColorConfirmSound,
+  playDingdong4Sound,
   playHoverSound,
   playPreviewCueSound,
   playWhooshSound
@@ -23,11 +24,12 @@ import {
   type MeatCategoryDef,
   type MeatCategoryKey,
   type MeatCountryDatum,
+  type MeatCountryTimeSeries,
   type MeatCsvRow,
   useMeatTypeData
 } from './useMeatTypeData'
 
-type Representation = 'stacked-bar' | 'stacked-100' | 'donut' | 'heatmap'
+type Representation = 'timeline-total' | 'stacked-bar' | 'stacked-100' | 'donut' | 'heatmap'
 type Measure = 'kg' | 'percent'
 type FocusCategory = 'All' | MeatCategoryKey
 type TransitionDirection = 'next' | 'prev'
@@ -55,6 +57,14 @@ interface TooltipDisplay {
   kg: number
   percent: number
   encoded: number
+}
+
+interface TimelineTooltipDatum {
+  country: string
+  year: number
+  totalKg: number
+  clientX: number
+  clientY: number
 }
 
 interface ParticleState {
@@ -87,7 +97,31 @@ interface ChartSnapshot {
   colors: Record<MeatCategoryKey, string>
 }
 
+interface TimelineLayout {
+  years: number[]
+  plotX: number
+  plotY: number
+  plotWidth: number
+  plotHeight: number
+  bandWidth: number
+  xScale: d3.ScaleLinear<number, number>
+  yScale: d3.ScaleLinear<number, number>
+}
+
+interface EncodeCarryOverlay {
+  key: number
+  fromLeft: number
+  fromWidth: number
+  plotLeft: number
+  plotTop: number
+  plotWidth: number
+  plotHeight: number
+  centerLeft: number
+  year: number
+}
+
 const REPRESENTATION_OPTIONS: Array<{ value: Representation; label: string }> = [
+  { value: 'timeline-total', label: 'Total over time (kg)' },
   { value: 'stacked-bar', label: 'Stacked Bar (kg)' },
   { value: 'stacked-100', label: '100% Stacked (percent)' },
   { value: 'donut', label: 'Donut (percent)' },
@@ -111,6 +145,14 @@ const REP_THUMB_SIZE_PX = 18
 const TRANSITION_PARTICLE_CAP = 24
 const PARTICLE_LIFETIME_MS = 700
 const PARTICLE_MAX_COUNT = 180
+const YEAR_CARRY_OVERLAY_MS = 360
+
+const TIMELINE_MARGIN = {
+  top: 176,
+  right: 72,
+  bottom: 118,
+  left: 86
+}
 
 const INITIAL_CATEGORY_COLORS: Record<MeatCategoryKey, string> = MEAT_CATEGORIES.reduce(
   (acc, category) => {
@@ -158,12 +200,13 @@ const directionBetweenIndexes = (
 
 const encodedLabelByRepresentation = (representation: Representation): string => {
   if (representation === 'heatmap') return 'Color intensity'
+  if (representation === 'timeline-total') return 'Relative trend level'
   if (representation === 'stacked-bar') return 'Relative bar length'
   return 'Angular share'
 }
 
 const measureForRepresentation = (representation: Representation, currentMeasure: Measure): Measure => {
-  if (representation === 'stacked-bar') return 'kg'
+  if (representation === 'timeline-total' || representation === 'stacked-bar') return 'kg'
   if (representation === 'stacked-100' || representation === 'donut') return 'percent'
   return currentMeasure
 }
@@ -177,11 +220,12 @@ const isWheelExcludedElement = (element: Element | null): boolean => {
 }
 
 export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
-  const { dataset, loading, error } = useMeatTypeData(data)
+  const { dataset, years, datasetsByYear, timeSeries, latestYear, loading, error } = useMeatTypeData(data)
 
-  const [representation, setRepresentation] = useState<Representation>('stacked-bar')
+  const [representation, setRepresentation] = useState<Representation>('timeline-total')
   const [measure, setMeasure] = useState<Measure>('kg')
   const [focusCategory, setFocusCategory] = useState<FocusCategory>('All')
+  const [selectedYear, setSelectedYear] = useState<number>(2022)
   const [categoryColors, setCategoryColors] = useState<Record<MeatCategoryKey, string>>(() => ({
     ...INITIAL_CATEGORY_COLORS
   }))
@@ -189,6 +233,10 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const [legendHoverCategory, setLegendHoverCategory] = useState<MeatCategoryKey | null>(null)
   const [markHoverCategory, setMarkHoverCategory] = useState<MeatCategoryKey | null>(null)
   const [hoveredDatum, setHoveredDatum] = useState<HoverDatum | null>(null)
+  const [hoveredTimelineCountry, setHoveredTimelineCountry] = useState<string | null>(null)
+  const [hoveredTimelineBandYear, setHoveredTimelineBandYear] = useState<number | null>(null)
+  const [timelineTooltip, setTimelineTooltip] = useState<TimelineTooltipDatum | null>(null)
+  const [timelineBandPulseYear, setTimelineBandPulseYear] = useState<number | null>(null)
   const [tooltipDisplay, setTooltipDisplay] = useState<TooltipDisplay>({
     kg: 0,
     percent: 0,
@@ -220,6 +268,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const [colorPulseCategory, setColorPulseCategory] = useState<MeatCategoryKey | null>(null)
   const [colorPulseId, setColorPulseId] = useState(0)
   const [globalParticles, setGlobalParticles] = useState<ParticleState[]>([])
+  const [encodeCarryOverlay, setEncodeCarryOverlay] = useState<EncodeCarryOverlay | null>(null)
 
   const chartSurfaceRef = useRef<HTMLDivElement | null>(null)
   const chartStageRef = useRef<HTMLDivElement | null>(null)
@@ -228,6 +277,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const colorInputRefs = useRef<Partial<Record<MeatCategoryKey, HTMLInputElement | null>>>({})
 
   const tooltipDisplayRef = useRef<TooltipDisplay>(tooltipDisplay)
+  const selectedYearInitializedRef = useRef(false)
   const sliderVisualPercentRef = useRef(0)
   const wheelAccumulatorRef = useRef(0)
   const wheelSwitchTimestampRef = useRef(0)
@@ -242,9 +292,11 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const colorChangeAnchorRectRef = useRef<DOMRect | null>(null)
 
   const transitionTimeoutRef = useRef<number | null>(null)
+  const encodeCarryOverlayTimeoutRef = useRef<number | null>(null)
   const wheelPreviewExpiryTimeoutRef = useRef<number | null>(null)
   const transitionRingFadeTimeoutRef = useRef<number | null>(null)
   const focusPulseTimeoutRef = useRef<number | null>(null)
+  const timelineBandPulseTimeoutRef = useRef<number | null>(null)
   const colorPulseTimeoutRef = useRef<number | null>(null)
   const projectorFlashTimeoutRef = useRef<number | null>(null)
   const chartShakeTimeoutRef = useRef<number | null>(null)
@@ -262,16 +314,71 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     return map
   }, [])
 
+  const yearDataset = useMemo(
+    () => datasetsByYear.get(selectedYear) ?? dataset,
+    [datasetsByYear, selectedYear, dataset]
+  )
+
   const countryByName = useMemo(() => {
     const map = new Map<string, MeatCountryDatum>()
-    dataset?.countries.forEach(country => map.set(country.country, country))
+    yearDataset?.countries.forEach(country => map.set(country.country, country))
     return map
-  }, [dataset])
+  }, [yearDataset])
+
+  const timelineValueLookup = useMemo(() => {
+    const map = new Map<string, Map<number, number>>()
+    timeSeries.forEach(series => {
+      const values = new Map<number, number>()
+      series.values.forEach(value => {
+        values.set(value.year, value.totalKg)
+      })
+      map.set(series.country, values)
+    })
+    return map
+  }, [timeSeries])
+
+  const timelineLayout = useMemo<TimelineLayout | null>(() => {
+    if (years.length === 0 || timeSeries.length === 0) return null
+
+    const plotX = TIMELINE_MARGIN.left
+    const plotY = TIMELINE_MARGIN.top
+    const plotWidth = SVG_WIDTH - TIMELINE_MARGIN.left - TIMELINE_MARGIN.right
+    const plotHeight = SVG_HEIGHT - TIMELINE_MARGIN.top - TIMELINE_MARGIN.bottom
+    const minYear = years[0]
+    const maxYear = years[years.length - 1]
+    const safeMaxYear = maxYear > minYear ? maxYear : minYear + 1
+    const xScale = d3
+      .scaleLinear()
+      .domain([minYear, safeMaxYear])
+      .range([plotX, plotX + plotWidth])
+    const maxTotalKg =
+      d3.max(timeSeries, series => d3.max(series.values, value => value.totalKg) ?? 0) ?? 0
+    const safeMaxTotalKg = maxTotalKg > 0 ? maxTotalKg : 1
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, safeMaxTotalKg])
+      .nice()
+      .range([plotY + plotHeight, plotY])
+    const bandWidth =
+      years.length > 1 ? Math.abs(xScale(years[1]) - xScale(years[0])) : Math.max(24, plotWidth)
+
+    return {
+      years,
+      plotX,
+      plotY,
+      plotWidth,
+      plotHeight,
+      bandWidth,
+      xScale,
+      yScale
+    }
+  }, [timeSeries, years])
 
   const measureLocked = representation !== 'heatmap'
   const activeMeasure: Measure = measureForRepresentation(representation, measure)
   const juicyActive = juicy && !prefersReducedMotion
   const motionSafe = !prefersReducedMotion
+  const isYearPicker = representation === 'timeline-total'
   const representationIndex = representationToIndex(representation)
   const sliderFillPercent = (representationIndex / (REPRESENTATION_ORDER.length - 1)) * 100
   const sliderDisplayPercent = juicyActive && motionSafe ? sliderVisualPercent : sliderFillPercent
@@ -334,7 +441,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   }
 
   const tooltipTarget = useMemo<TooltipDatum | null>(() => {
-    if (!dataset || !hoveredDatum) return null
+    if (!yearDataset || !hoveredDatum || representation === 'timeline-total') return null
     const country = countryByName.get(hoveredDatum.country)
     if (!country) return null
 
@@ -343,12 +450,12 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     let encoded = percent
 
     if (representation === 'stacked-bar') {
-      encoded = dataset.maxTotalKg > 0 ? (kg / dataset.maxTotalKg) * 100 : 0
+      encoded = yearDataset.maxTotalKg > 0 ? (kg / yearDataset.maxTotalKg) * 100 : 0
     } else if (representation === 'heatmap') {
       const intensity =
         activeMeasure === 'kg'
-          ? dataset.maxCategoryKg > 0
-            ? kg / dataset.maxCategoryKg
+          ? yearDataset.maxCategoryKg > 0
+            ? kg / yearDataset.maxCategoryKg
             : 0
           : percent / 100
       encoded = intensity * 100
@@ -360,7 +467,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
       percent,
       encoded: clamp01(encoded / 100) * 100
     }
-  }, [activeMeasure, countryByName, dataset, hoveredDatum, representation])
+  }, [activeMeasure, countryByName, hoveredDatum, representation, yearDataset])
 
   const tooltipSignature = tooltipTarget
     ? `${tooltipTarget.country}|${tooltipTarget.category}|${tooltipTarget.kg.toFixed(4)}|${tooltipTarget.percent.toFixed(4)}|${tooltipTarget.encoded.toFixed(4)}`
@@ -686,11 +793,52 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
       setTransitionRingVisible(juicyActive && motionSafe)
       setHoveredDatum(null)
       setMarkHoverCategory(null)
+      setHoveredTimelineCountry(null)
+      setHoveredTimelineBandYear(null)
+      setTimelineTooltip(null)
+      clearTimeoutRef(encodeCarryOverlayTimeoutRef)
+      const stageElement = chartStageRef.current
+      if (
+        juicyActive &&
+        motionSafe &&
+        representation === 'timeline-total' &&
+        nextRepresentation !== 'timeline-total' &&
+        timelineLayout &&
+        stageElement
+      ) {
+        const stage = stageElement.getBoundingClientRect()
+        const selectedX = timelineLayout.xScale(selectedYear)
+        const bandWidthSvg = Math.max(12, timelineLayout.bandWidth)
+        const fromWidth = Math.max(6, (bandWidthSvg / SVG_WIDTH) * stage.width)
+        const fromLeftRaw = ((selectedX - bandWidthSvg * 0.5) / SVG_WIDTH) * stage.width
+        const fromLeft = Math.max(0, Math.min(stage.width - fromWidth, fromLeftRaw))
+        const plotLeft = (timelineLayout.plotX / SVG_WIDTH) * stage.width
+        const plotTop = (timelineLayout.plotY / SVG_HEIGHT) * stage.height
+        const plotWidth = (timelineLayout.plotWidth / SVG_WIDTH) * stage.width
+        const plotHeight = (timelineLayout.plotHeight / SVG_HEIGHT) * stage.height
+        const centerLeft = plotLeft + plotWidth * 0.5 - 40
+        setEncodeCarryOverlay({
+          key: Date.now(),
+          fromLeft,
+          fromWidth,
+          plotLeft,
+          plotTop,
+          plotWidth,
+          plotHeight,
+          centerLeft,
+          year: selectedYear
+        })
+        encodeCarryOverlayTimeoutRef.current = window.setTimeout(() => {
+          setEncodeCarryOverlay(null)
+        }, YEAR_CARRY_OVERLAY_MS + 80)
+      } else {
+        setEncodeCarryOverlay(null)
+      }
 
       if (juicyActive && motionSafe) {
         setGhostSnapshot(currentSnapshot)
         runRepresentationFeedback()
-        if (origin === 'wheel' || origin === 'slider') {
+        if (origin === 'wheel' || origin === 'slider' || origin === 'tick') {
           scheduleWindingClicks()
         }
       } else {
@@ -745,6 +893,8 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
       juicyActive,
       motionSafe,
       representation,
+      selectedYear,
+      timelineLayout,
       runRepresentationFeedback,
       scheduleWindingClicks
     ]
@@ -897,6 +1047,93 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     setTransitionKey(key => key + 1)
   }
 
+  const findNearestTimelineYear = useCallback(
+    (svgX: number): number => {
+      if (!timelineLayout || timelineLayout.years.length === 0) return selectedYear
+      const approxYear = timelineLayout.xScale.invert(svgX)
+      let nearestYear = timelineLayout.years[0]
+      let nearestDistance = Math.abs(nearestYear - approxYear)
+      timelineLayout.years.forEach(year => {
+        const distance = Math.abs(year - approxYear)
+        if (distance < nearestDistance) {
+          nearestYear = year
+          nearestDistance = distance
+        }
+      })
+      return nearestYear
+    },
+    [selectedYear, timelineLayout]
+  )
+
+  const getSvgPointFromEvent = (event: MouseEvent<SVGElement>): { x: number; y: number } | null => {
+    const svg = event.currentTarget.ownerSVGElement
+    if (!svg) return null
+    const ctm = svg.getScreenCTM()
+    if (!ctm) return null
+    const point = svg.createSVGPoint()
+    point.x = event.clientX
+    point.y = event.clientY
+    const converted = point.matrixTransform(ctm.inverse())
+    return { x: converted.x, y: converted.y }
+  }
+
+  const handleTimelineLineEnter = (country: string, event: MouseEvent<SVGElement>) => {
+    setHoveredTimelineCountry(country)
+    const point = getSvgPointFromEvent(event)
+    if (!point) return
+    const nearestYear = findNearestTimelineYear(point.x)
+    const totalKg = timelineValueLookup.get(country)?.get(nearestYear) ?? 0
+    setTimelineTooltip({
+      country,
+      year: nearestYear,
+      totalKg,
+      clientX: event.clientX,
+      clientY: event.clientY
+    })
+  }
+
+  const handleTimelineLineMove = (country: string, event: MouseEvent<SVGElement>) => {
+    const point = getSvgPointFromEvent(event)
+    if (!point) return
+    const nearestYear = findNearestTimelineYear(point.x)
+    const totalKg = timelineValueLookup.get(country)?.get(nearestYear) ?? 0
+    setTimelineTooltip({
+      country,
+      year: nearestYear,
+      totalKg,
+      clientX: event.clientX,
+      clientY: event.clientY
+    })
+  }
+
+  const handleTimelineLineLeave = () => {
+    setHoveredTimelineCountry(null)
+    setTimelineTooltip(null)
+  }
+
+  const handleTimelineBandEnter = (year: number) => {
+    setHoveredTimelineBandYear(year)
+    if (!(juicyActive && motionSafe)) return
+    const now = performance.now()
+    if (now - hoverSoundTimestampRef.current > 120) {
+      hoverSoundTimestampRef.current = now
+      playHoverSound()
+    }
+  }
+
+  const handleTimelineBandClick = (year: number, event: MouseEvent<SVGElement>) => {
+    setSelectedYear(year)
+    if (!(juicyActive && motionSafe)) return
+    playClickSound()
+    playDingdong4Sound()
+    emitParticlesFromClient(event.clientX, event.clientY, 10, 'burst', '#4f7dd1')
+    setTimelineBandPulseYear(year)
+    clearTimeoutRef(timelineBandPulseTimeoutRef)
+    timelineBandPulseTimeoutRef.current = window.setTimeout(() => {
+      setTimelineBandPulseYear(null)
+    }, 420)
+  }
+
   const handleMarkEnter = (
     event: MouseEvent<SVGElement>,
     country: string,
@@ -968,6 +1205,9 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const handleChartMouseLeave = () => {
     setMarkHoverCategory(null)
     setHoveredDatum(null)
+    setHoveredTimelineCountry(null)
+    setHoveredTimelineBandYear(null)
+    setTimelineTooltip(null)
     setIsCursorInsideStage(false)
     if (previewMode === 'hover') {
       setPreviewRepresentation(null)
@@ -981,6 +1221,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     color: string,
     sourceElement?: HTMLElement | null
   ) => {
+    if (isYearPicker) return
     if (sourceElement instanceof HTMLInputElement) {
       colorChangeAnchorRectRef.current = sourceElement.getBoundingClientRect()
     }
@@ -1011,6 +1252,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   ) => {
     event.preventDefault()
     event.stopPropagation()
+    if (isYearPicker) return
     openColorPickerFromLabel(category)
   }
 
@@ -1020,6 +1262,25 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   ) => {
     colorChangeAnchorRectRef.current = event.currentTarget.getBoundingClientRect()
   }
+
+  useEffect(() => {
+    if (selectedYearInitializedRef.current) return
+    if (!latestYear) return
+    setSelectedYear(latestYear)
+    selectedYearInitializedRef.current = true
+  }, [latestYear])
+
+  useEffect(() => {
+    if (isYearPicker) {
+      setLegendHoverCategory(null)
+      setMarkHoverCategory(null)
+      setHoveredDatum(null)
+      return
+    }
+    setHoveredTimelineCountry(null)
+    setHoveredTimelineBandYear(null)
+    setTimelineTooltip(null)
+  }, [isYearPicker])
 
   useEffect(() => {
     tooltipDisplayRef.current = tooltipDisplay
@@ -1054,6 +1315,8 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     setWheelPendingTarget(null)
     setProjectorFlashActive(false)
     setTransitionRingVisible(false)
+    setTimelineBandPulseYear(null)
+    setEncodeCarryOverlay(null)
     colorChangeAnchorRectRef.current = null
   }, [juicyActive])
 
@@ -1205,9 +1468,11 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   useEffect(() => {
     return () => {
       clearTimeoutRef(transitionTimeoutRef)
+      clearTimeoutRef(encodeCarryOverlayTimeoutRef)
       clearTimeoutRef(wheelPreviewExpiryTimeoutRef)
       clearTimeoutRef(transitionRingFadeTimeoutRef)
       clearTimeoutRef(focusPulseTimeoutRef)
+      clearTimeoutRef(timelineBandPulseTimeoutRef)
       clearTimeoutRef(colorPulseTimeoutRef)
       clearTimeoutRef(projectorFlashTimeoutRef)
       clearTimeoutRef(chartShakeTimeoutRef)
@@ -1228,8 +1493,8 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     ghost: boolean,
     mode: 'kg' | 'percent'
   ) => {
-    if (!dataset) return null
-    const countries = dataset.countries
+    if (!yearDataset) return null
+    const countries = yearDataset.countries
 
     const margin = { top: 108, right: 104, bottom: 130, left: 292 }
     const plotWidth = SVG_WIDTH - margin.left - margin.right
@@ -1238,7 +1503,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     const plotTop = margin.top
     const plotBottom = plotTop + chartHeight
 
-    const xMax = mode === 'kg' ? dataset.maxTotalKg : 100
+    const xMax = mode === 'kg' ? yearDataset.maxTotalKg : 100
     const xScale = d3.scaleLinear().domain([0, xMax]).range([margin.left, margin.left + plotWidth])
     if (mode === 'kg') xScale.nice()
     const yScale = d3
@@ -1361,7 +1626,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
           x2={margin.left + plotWidth}
           y2={plotBottom}
         />
-        {dataset.countries.map(country => {
+        {yearDataset.countries.map(country => {
           const y = yScale(country.country)
           if (y === undefined) return null
           return (
@@ -1393,8 +1658,8 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   }
 
   const renderHeatmap = (snapshot: ChartSnapshot, ghost: boolean) => {
-    if (!dataset) return null
-    const countries = dataset.countries
+    if (!yearDataset) return null
+    const countries = yearDataset.countries
     const categories = MEAT_CATEGORIES
 
     const cellWidth = 126
@@ -1414,8 +1679,8 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
         const percent = country.percent[category.key]
         const intensity =
           snapshot.measure === 'kg'
-            ? dataset.maxCategoryKg > 0
-              ? kg / dataset.maxCategoryKg
+            ? yearDataset.maxCategoryKg > 0
+              ? kg / yearDataset.maxCategoryKg
               : 0
             : percent / 100
         const normalized = clamp01(intensity)
@@ -1507,8 +1772,8 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   }
 
   const renderMultiRingDonut = (snapshot: ChartSnapshot, ghost: boolean) => {
-    if (!dataset) return null
-    const countries = dataset.countries
+    if (!yearDataset) return null
+    const countries = yearDataset.countries
     const countryCount = countries.length
 
     const donutCenterX = SVG_WIDTH * 0.5
@@ -1638,7 +1903,206 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     )
   }
 
+  const renderTimelineTotal = (_snapshot: ChartSnapshot, ghost: boolean) => {
+    if (!timelineLayout || timeSeries.length === 0) {
+      return (
+        <g className={ghost ? 'encode-chart-layer is-ghost' : 'encode-chart-layer'}>
+          <text
+            className="encode-timeline-empty-label"
+            x={SVG_WIDTH * 0.5}
+            y={SVG_HEIGHT * 0.5}
+            textAnchor="middle"
+          >
+            Timeline data unavailable.
+          </text>
+        </g>
+      )
+    }
+
+    const { years: timelineYears, plotX, plotY, plotWidth, plotHeight, xScale, yScale } = timelineLayout
+    const plotBottom = plotY + plotHeight
+    const plotRight = plotX + plotWidth
+    const yTicks = yScale.ticks(6)
+    const xTicks = timelineYears
+    const lineGenerator = d3
+      .line<MeatCountryTimeSeries['values'][number]>()
+      .x(value => xScale(value.year))
+      .y(value => yScale(value.totalKg))
+      .curve(d3.curveMonotoneX)
+    const colorScale = d3
+      .scaleLinear<string>()
+      .domain([0, Math.max(1, timeSeries.length - 1)])
+      .range(['#111827', '#d1d5db'])
+      .interpolate(d3.interpolateRgb)
+
+    const yearBands = timelineYears.map((year, index) => {
+      if (timelineYears.length === 1) {
+        return { year, x: plotX, width: plotWidth }
+      }
+      const currentX = xScale(year)
+      const previousX = index > 0 ? xScale(timelineYears[index - 1]) : null
+      const nextX = index < timelineYears.length - 1 ? xScale(timelineYears[index + 1]) : null
+      const left = previousX === null ? plotX : (previousX + currentX) * 0.5
+      const right = nextX === null ? plotRight : (currentX + nextX) * 0.5
+      return {
+        year,
+        x: left,
+        width: Math.max(2, right - left)
+      }
+    })
+
+    return (
+      <g className={ghost ? 'encode-chart-layer is-ghost' : 'encode-chart-layer'}>
+        <rect className="encode-timeline-plot-bg" x={plotX} y={plotY} width={plotWidth} height={plotHeight} />
+
+        {yearBands.map(band => {
+          const isSelected = selectedYear === band.year
+          const isHovered = hoveredTimelineBandYear === band.year
+          const bandClasses = [
+            'encode-year-band',
+            isSelected ? 'is-selected' : '',
+            isHovered ? 'is-hovered' : '',
+            juicyActive && timelineBandPulseYear === band.year ? 'is-pulse' : ''
+          ]
+            .filter(Boolean)
+            .join(' ')
+          return (
+            <rect
+              key={`timeline-band-${band.year}`}
+              className={bandClasses}
+              x={band.x}
+              y={plotY}
+              width={band.width}
+              height={plotHeight}
+              onMouseEnter={ghost ? undefined : () => handleTimelineBandEnter(band.year)}
+              onMouseLeave={ghost ? undefined : () => setHoveredTimelineBandYear(null)}
+              onClick={ghost ? undefined : event => handleTimelineBandClick(band.year, event)}
+            />
+          )
+        })}
+
+        {yTicks.map(tick => (
+          <line
+            key={`timeline-grid-y-${tick}`}
+            className="encode-timeline-grid-line"
+            x1={plotX}
+            y1={yScale(tick)}
+            x2={plotRight}
+            y2={yScale(tick)}
+          />
+        ))}
+
+        {yTicks.map(tick => (
+          <text
+            key={`timeline-axis-y-${tick}`}
+            className="encode-timeline-axis-tick"
+            x={plotX - 12}
+            y={yScale(tick)}
+            textAnchor="end"
+            dominantBaseline="middle"
+          >
+            {formatKg(tick)}
+          </text>
+        ))}
+
+        {xTicks.map(year => (
+          (() => {
+            const isHoveredTick = juicyActive && hoveredTimelineBandYear === year
+            const isSelectedTick = juicyActive && selectedYear === year
+            const xTickClassName = [
+              'encode-timeline-axis-tick',
+              'encode-timeline-axis-year',
+              isHoveredTick ? 'is-hovered' : '',
+              isSelectedTick ? 'is-selected' : ''
+            ]
+              .filter(Boolean)
+              .join(' ')
+            return (
+              <text
+                key={`timeline-axis-x-${year}`}
+                className={xTickClassName}
+                x={xScale(year)}
+                y={plotBottom + 28}
+                textAnchor="middle"
+              >
+                {year}
+              </text>
+            )
+          })()
+        ))}
+
+        <line className="encode-timeline-axis-line" x1={plotX} y1={plotBottom} x2={plotRight} y2={plotBottom} />
+        <line className="encode-timeline-axis-line" x1={plotX} y1={plotY} x2={plotX} y2={plotBottom} />
+
+        {timeSeries.map((series, index) => {
+          const path = lineGenerator(series.values) ?? ''
+          const color = colorScale(index)
+          const hasHoveredCountry = hoveredTimelineCountry !== null
+          const isHovered = hoveredTimelineCountry === series.country
+          const opacity = hasHoveredCountry ? (isHovered ? 1 : 0.12) : 0.88
+          const effectiveOpacity = ghost ? opacity * 0.5 : opacity
+          const strokeWidth = isHovered ? 3.4 : 2.2
+          const lastValue = series.values[series.values.length - 1] ?? {
+            year: timelineYears[timelineYears.length - 1],
+            totalKg: 0
+          }
+          const labelOffset = ((index % 4) - 1.5) * 8
+          const labelY = yScale(lastValue.totalKg) + labelOffset
+          return (
+            <g key={`timeline-series-${series.country}`}>
+              <path
+                className="encode-timeline-line"
+                d={path}
+                fill="none"
+                stroke={color}
+                strokeWidth={strokeWidth}
+                opacity={effectiveOpacity}
+              />
+              {!ghost && (
+                <path
+                  className="encode-timeline-hit-path"
+                  d={path}
+                  fill="none"
+                  stroke="transparent"
+                  strokeWidth={14}
+                  onMouseEnter={event => handleTimelineLineEnter(series.country, event)}
+                  onMouseMove={event => handleTimelineLineMove(series.country, event)}
+                  onMouseLeave={handleTimelineLineLeave}
+                />
+              )}
+              <text
+                className="encode-timeline-line-label"
+                x={xScale(lastValue.year) + 9}
+                y={Math.max(plotY + 10, Math.min(plotBottom - 4, labelY))}
+                textAnchor="start"
+                dominantBaseline="middle"
+                fill={color}
+                opacity={effectiveOpacity}
+              >
+                {series.country}
+              </text>
+            </g>
+          )
+        })}
+
+        <text className="encode-timeline-axis-label" x={plotX + plotWidth * 0.5} y={plotBottom + 76} textAnchor="middle">
+          Year
+        </text>
+        <text
+          className="encode-timeline-axis-label"
+          transform={`translate(${plotX - 78}, ${plotY + plotHeight * 0.5}) rotate(-90)`}
+          textAnchor="middle"
+        >
+          kg per person per year
+        </text>
+      </g>
+    )
+  }
+
   const renderSnapshot = (snapshot: ChartSnapshot, ghost: boolean) => {
+    if (snapshot.representation === 'timeline-total') {
+      return renderTimelineTotal(snapshot, ghost)
+    }
     if (snapshot.representation === 'stacked-100') {
       return renderStackedBars(snapshot, ghost, 'percent')
     }
@@ -1664,12 +2128,14 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
     return <div className="encode-loading">Loading Encode data...</div>
   }
 
-  if (error || !dataset) {
+  if (error || !dataset || !yearDataset) {
     return <div className="encode-error">Encode data error: {error ?? 'Unknown data error.'}</div>
   }
 
   const tooltipLeft = (tooltipTarget?.clientX ?? 0) + 14
   const tooltipTop = (tooltipTarget?.clientY ?? 0) - 20
+  const timelineTooltipLeft = (timelineTooltip?.clientX ?? 0) + 14
+  const timelineTooltipTop = (timelineTooltip?.clientY ?? 0) - 20
   const previewHalfWidth = SVG_WIDTH * 0.5
   const previewScaledWidth = SVG_WIDTH * PREVIEW_SCALE
   const previewLeftX = (previewHalfWidth - previewScaledWidth) * 0.5
@@ -1693,10 +2159,14 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
       >
         <div className="encode-chart-head">
           <h2 className="encode-chart-head-title">
-            Per capita meat and fish consumption ({dataset.year})
+            Per capita meat and fish consumption ({yearDataset.year})
           </h2>
           <p className="encode-chart-head-subtitle">{chartSubtitle}</p>
-          <div className="encode-inline-legend" role="group" aria-label="Category legend">
+          <div
+            className={`encode-inline-legend ${isYearPicker ? 'is-disabled' : ''}`}
+            role="group"
+            aria-label="Category legend"
+          >
             {MEAT_CATEGORIES.map(category => {
               const isFocused = focusCategory === category.key
               const isActive = activeHoverCategory === category.key || isFocused
@@ -1708,14 +2178,22 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
                   className={`encode-legend-item ${isFocused ? 'is-focused' : ''} ${
                     isActive ? 'is-active' : ''
                   }`}
-                  onMouseEnter={() => setLegendHoverCategory(category.key)}
-                  onMouseLeave={() => setLegendHoverCategory(null)}
-                  onClick={event =>
+                  disabled={isYearPicker}
+                  onMouseEnter={() => {
+                    if (isYearPicker) return
+                    setLegendHoverCategory(category.key)
+                  }}
+                  onMouseLeave={() => {
+                    if (isYearPicker) return
+                    setLegendHoverCategory(null)
+                  }}
+                  onClick={event => {
+                    if (isYearPicker) return
                     handleFocusCategoryChange(
                       focusCategory === category.key ? 'All' : category.key,
                       event.currentTarget
                     )
-                  }
+                  }}
                 >
                   <span className="encode-legend-swatch" style={{ backgroundColor: displayColor }} />
                   <span>{category.label}</span>
@@ -1740,6 +2218,9 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
           }}
           onMouseLeave={() => {
             setIsCursorInsideStage(false)
+            setTimelineTooltip(null)
+            setHoveredTimelineCountry(null)
+            setHoveredTimelineBandYear(null)
             if (previewMode === 'hover') {
               setPreviewRepresentation(null)
               setPreviewMode(null)
@@ -1784,6 +2265,45 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
               </g>
             )}
           </svg>
+
+          {isYearPicker && (
+            <div className="encode-timeline-selection-head" aria-live="polite">
+              <div className="encode-timeline-selection-title">Currently selected: {selectedYear}</div>
+              <div className="encode-timeline-selection-subtitle">
+                Use the slider or mouse wheel to view details for the selected year.
+              </div>
+            </div>
+          )}
+
+          {juicyActive && encodeCarryOverlay && (
+            <div className="encode-year-carry-layer" aria-hidden="true">
+              <div
+                key={`carry-overlay-${encodeCarryOverlay.key}`}
+                className="encode-year-carry-overlay"
+                style={
+                  {
+                    top: `${encodeCarryOverlay.plotTop}px`,
+                    height: `${encodeCarryOverlay.plotHeight}px`,
+                    '--encode-year-from-left': `${encodeCarryOverlay.fromLeft}px`,
+                    '--encode-year-from-width': `${encodeCarryOverlay.fromWidth}px`,
+                    '--encode-year-center-left': `${encodeCarryOverlay.centerLeft}px`,
+                    '--encode-year-plot-left': `${encodeCarryOverlay.plotLeft}px`,
+                    '--encode-year-plot-width': `${encodeCarryOverlay.plotWidth}px`
+                  } as CSSProperties
+                }
+              />
+              <div
+                key={`carry-label-${encodeCarryOverlay.key}`}
+                className="encode-year-carry-label"
+                style={{
+                  left: `${encodeCarryOverlay.fromLeft + encodeCarryOverlay.fromWidth * 0.5}px`,
+                  top: `${Math.max(8, encodeCarryOverlay.plotTop - 28)}px`
+                }}
+              >
+                {encodeCarryOverlay.year}
+              </div>
+            </div>
+          )}
 
           {previewActive && previewRepresentation && (
             <div className="encode-preview-arrow" aria-hidden="true">
@@ -1976,7 +2496,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
           </select>
         </div>
 
-        <div className="encode-color-editor">
+        <div className={`encode-color-editor ${isYearPicker ? 'is-disabled' : ''}`}>
           <div className="encode-control-label">Color Encoding</div>
           <div className="encode-color-hint">Click swatches to edit colors</div>
           <div className="encode-color-list">
@@ -1989,6 +2509,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
                   className="encode-color-input encode-color-swatch"
                   type="color"
                   value={categoryColors[category.key]}
+                  disabled={isYearPicker}
                   onFocus={event => handleColorInputFocus(event, category.key)}
                   onChange={event =>
                     handleCategoryColorChange(category.key, event.target.value, event.currentTarget)
@@ -2026,7 +2547,18 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
         </div>
       )}
 
-      {tooltipTarget && (
+      {isYearPicker && timelineTooltip && (
+        <div
+          className={`encode-tooltip encode-tooltip-timeline ${juicyActive ? 'is-juicy' : ''}`}
+          style={{ left: `${timelineTooltipLeft}px`, top: `${timelineTooltipTop}px` }}
+        >
+          <div className="encode-tooltip-country">{timelineTooltip.country}</div>
+          <div className="encode-tooltip-category">Year: {timelineTooltip.year}</div>
+          <div className="encode-tooltip-metric">total kg: {formatKg(timelineTooltip.totalKg)}</div>
+        </div>
+      )}
+
+      {!isYearPicker && tooltipTarget && (
         <div
           className={`encode-tooltip ${juicyActive ? 'is-juicy' : ''}`}
           style={{ left: `${tooltipLeft}px`, top: `${tooltipTop}px` }}

@@ -89,6 +89,13 @@
   border-color: #2b5ea9;
 }
 
+.encode-legend-item:disabled {
+  cursor: not-allowed;
+  color: #6b7a92;
+  border-color: #cfd7e6;
+  background: #f6f8fc;
+}
+
 .encode-legend-swatch {
   width: 14px;
   height: 14px;
@@ -138,6 +145,11 @@
   padding: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.encode-color-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .encode-color-input::-webkit-color-swatch-wrapper {
@@ -199,6 +211,11 @@
   padding-top: 2px;
 }
 
+.encode-inline-legend.is-disabled {
+  opacity: 0.5;
+  filter: grayscale(0.32);
+}
+
 .encode-chart-stage {
   position: relative;
   border-radius: 8px;
@@ -208,6 +225,28 @@
   overflow: hidden;
   flex: 1;
   min-height: 0;
+}
+
+.encode-timeline-selection-head {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  pointer-events: none;
+  text-align: center;
+}
+
+.encode-timeline-selection-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #18375f;
+}
+
+.encode-timeline-selection-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #4e6688;
 }
 
 .encode-svg {
@@ -237,6 +276,73 @@
   font-size: 24px;
   font-weight: 600;
   fill: #1f3655;
+}
+
+.encode-timeline-plot-bg {
+  fill: #fbfdff;
+}
+
+.encode-year-band {
+  fill: transparent;
+  cursor: pointer;
+  transition: fill 140ms ease, opacity 140ms ease;
+}
+
+.encode-year-band.is-hovered {
+  fill: rgba(88, 145, 240, 0.16);
+}
+
+.encode-year-band.is-selected {
+  fill: rgba(88, 145, 240, 0.24);
+}
+
+.encode-timeline-grid-line {
+  stroke: #dfe7f3;
+  stroke-dasharray: 4 4;
+}
+
+.encode-timeline-axis-line {
+  stroke: #6a7d99;
+  stroke-width: 1.2;
+}
+
+.encode-timeline-axis-tick {
+  font-size: 15px;
+  font-weight: 600;
+  fill: #335173;
+}
+
+.encode-timeline-axis-year {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.encode-timeline-axis-label {
+  font-size: 18px;
+  font-weight: 700;
+  fill: #213c5e;
+}
+
+.encode-timeline-line {
+  transition: opacity 140ms ease, stroke-width 140ms ease;
+}
+
+.encode-timeline-hit-path {
+  pointer-events: stroke;
+}
+
+.encode-timeline-line-label {
+  font-size: 13px;
+  font-weight: 700;
+  paint-order: stroke fill;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 2px;
+}
+
+.encode-timeline-empty-label {
+  font-size: 20px;
+  font-weight: 600;
+  fill: #436085;
 }
 
 .encode-country-label {
@@ -577,6 +683,10 @@
   font-size: 12px;
 }
 
+.encode-tooltip-timeline {
+  min-width: 164px;
+}
+
 .encode-cursor-layer {
   position: absolute;
   inset: 0;
@@ -589,6 +699,31 @@
   width: 52px;
   height: 52px;
   transform: translate(-50%, -50%);
+}
+
+.encode-year-carry-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.encode-year-carry-overlay {
+  position: absolute;
+  left: var(--encode-year-from-left, 0px);
+  width: var(--encode-year-from-width, 12px);
+  border-radius: 8px;
+  background: rgba(74, 132, 236, 0.24);
+  opacity: 0;
+}
+
+.encode-year-carry-label {
+  position: absolute;
+  transform: translateX(-50%);
+  color: #24539d;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0;
 }
 
 .encode-transition-ring-fill {
@@ -672,6 +807,19 @@
   border: 1px solid #d7deea;
   background: #ffffff;
   color: #243a59;
+}
+
+.encode-color-editor.is-disabled {
+  opacity: 0.58;
+  filter: grayscale(0.35);
+}
+
+.encode-color-editor.is-disabled .encode-color-row {
+  cursor: not-allowed;
+}
+
+.encode-color-editor.is-disabled .encode-color-name {
+  cursor: not-allowed;
 }
 
 .encode-global-fx-layer {

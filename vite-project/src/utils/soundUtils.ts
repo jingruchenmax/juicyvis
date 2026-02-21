@@ -109,3 +109,6 @@ export const playColorConfirmSound = createPlayer('click8.mp3', 0.24, {
 // African sound for slider animation end
 export const playAfricanSound = createPlayer('dingdong2.mp3', 0.9)
 
+// Timeline year selection confirmation
+export const playDingdong4Sound = createPlayer('dingdong4.mp3', 0.9)
+
