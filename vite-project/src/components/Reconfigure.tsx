@@ -30,7 +30,8 @@ const COLORS: Record<EnergySource, string> = {
   'Other renewables': '#90EE90',
 }
 
-const SVG_WIDTH = 1400
+const DEFAULT_SVG_WIDTH = 1400
+const MIN_SVG_WIDTH = 900
 const SVG_HEIGHT = 600
 const MARGIN = { top: 80, right: 200, bottom: 80, left: 60 }
 
@@ -53,10 +54,29 @@ interface TooltipData {
 
 function Reconfigure({ data }: ReconfigureProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const chartHostRef = useRef<HTMLDivElement>(null)
+  const [svgWidth, setSvgWidth] = useState(DEFAULT_SVG_WIDTH)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ type: 'total', direction: 'desc' })
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const [highlightedSource, setHighlightedSource] = useState<SortConfig['type']>('total')
   const [sliderPosition, setSliderPosition] = useState<'left' | 'middle' | 'right'>('middle')
+
+  useEffect(() => {
+    const host = chartHostRef.current
+    if (!host || typeof ResizeObserver === 'undefined') return
+
+    const updateWidth = () => {
+      const hostWidth = host.clientWidth
+      if (!hostWidth) return
+      const nextWidth = Math.max(MIN_SVG_WIDTH, Math.round(hostWidth))
+      setSvgWidth(prev => (prev === nextWidth ? prev : nextWidth))
+    }
+
+    updateWidth()
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(host)
+    return () => observer.disconnect()
+  }, [])
 
   // Get latest year data for the top countries
   const getLatestYearData = () => {
@@ -98,7 +118,7 @@ function Reconfigure({ data }: ReconfigureProps) {
   useEffect(() => {
     if (!sortedData || sortedData.length === 0) return
 
-    const width = SVG_WIDTH - MARGIN.left - MARGIN.right
+    const width = svgWidth - MARGIN.left - MARGIN.right
     const height = SVG_HEIGHT - MARGIN.top - MARGIN.bottom
 
     // Calculate max stacked value
@@ -114,12 +134,12 @@ function Reconfigure({ data }: ReconfigureProps) {
 
     // Set SVG dimensions
     svg
-      .attr('width', SVG_WIDTH)
+      .attr('width', svgWidth)
       .attr('height', SVG_HEIGHT)
 
     // Add title
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', 25)
       .style('font-size', '16px')
       .style('font-weight', 'bold')
@@ -129,7 +149,7 @@ function Reconfigure({ data }: ReconfigureProps) {
     const instructionBoxW = 560
     const instructionBoxH = 22
     const instructionBoxY = 44
-    const instructionBoxX = SVG_WIDTH / 2 - instructionBoxW / 2
+    const instructionBoxX = svgWidth / 2 - instructionBoxW / 2
 
     svg.append('rect')
       .attr('x', instructionBoxX)
@@ -143,7 +163,7 @@ function Reconfigure({ data }: ReconfigureProps) {
       .attr('fill', '#ffffff')
 
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
       .style('font-size', '12px')
       .style('font-weight', '600')
@@ -310,7 +330,7 @@ function Reconfigure({ data }: ReconfigureProps) {
         .text(item.name)
     })
 
-  }, [sortedData, sortConfig.type, highlightedSource])
+  }, [sortedData, sortConfig.type, highlightedSource, svgWidth])
 
   const handleSortChange = (type: SortConfig['type']) => {
     // Only update selection, do NOT sort yet
@@ -338,50 +358,52 @@ function Reconfigure({ data }: ReconfigureProps) {
 
   return (
     <div className="bar-chart-container">
-      <div
-        className="chart-wrapper"
-        style={{ position: 'relative' }}
-        onMouseMove={(event) => {
-          const target = event.target as Element
-          if (!target.closest('rect')) {
-            setTooltip(null)
-          }
-        }}
-        onMouseLeave={() => setTooltip(null)}
-      >
-        <svg ref={svgRef} className="bar-svg"></svg>
+      <div className="reconfigure-main" ref={chartHostRef}>
+        <div
+          className="reconfigure-chart-wrapper"
+          style={{ width: svgWidth }}
+          onMouseMove={(event) => {
+            const target = event.target as Element
+            if (!target.closest('rect')) {
+              setTooltip(null)
+            }
+          }}
+          onMouseLeave={() => setTooltip(null)}
+        >
+          <svg ref={svgRef} className="bar-svg"></svg>
         
-        {tooltip && (
-          <div 
-            className="tooltip" 
-            style={{
-              position: 'absolute',
-              left: `${tooltip.x + 10}px`,
-              top: `${tooltip.y - 30}px`,
-              backgroundColor: 'white',
-              border: '1px solid #333',
-              borderRadius: '4px',
-              padding: '8px 12px',
-              fontSize: '12px',
-              fontFamily: 'sans-serif',
-              zIndex: 1000,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              pointerEvents: 'none',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '13px' }}>
-              {tooltip.entity}
+          {tooltip && (
+            <div 
+              className="tooltip" 
+              style={{
+                position: 'absolute',
+                left: `${tooltip.x + 10}px`,
+                top: `${tooltip.y - 30}px`,
+                backgroundColor: 'white',
+                border: '1px solid #333',
+                borderRadius: '4px',
+                padding: '8px 12px',
+                fontSize: '12px',
+                fontFamily: 'sans-serif',
+                zIndex: 1000,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <div style={{ fontWeight: 'bold', marginBottom: '2px', fontSize: '13px' }}>
+                {tooltip.entity}
+              </div>
+              <div style={{ fontSize: '11px', color: '#555' }}>
+                <span style={{ color: COLORS[tooltip.source], fontWeight: 'bold' }}>
+                  {tooltip.source}:
+                </span>
+                {' '}
+                <strong>{tooltip.value.toFixed(1)} kWh</strong>
+              </div>
             </div>
-            <div style={{ fontSize: '11px', color: '#555' }}>
-              <span style={{ color: COLORS[tooltip.source], fontWeight: 'bold' }}>
-                {tooltip.source}:
-              </span>
-              {' '}
-              <strong>{tooltip.value.toFixed(1)} kWh</strong>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="controls">

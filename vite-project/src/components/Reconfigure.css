@@ -4,6 +4,13 @@
   gap: 20px;
   padding: 20px;
   background-color: #fff;
+  width: 100%;
+  min-width: 0;
+}
+
+.reconfigure-main {
+  width: 100%;
+  min-width: 0;
 }
 
 .controls {
@@ -116,10 +123,12 @@
   background-color: #1565c0;
 }
 
-.chart-wrapper {
-  display: inline-block;
+.reconfigure-chart-wrapper {
+  position: relative;
+  display: block;
   width: 100%;
-  overflow-x: auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .bar-svg {

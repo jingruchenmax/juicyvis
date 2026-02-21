@@ -31,7 +31,8 @@ const COLORS: Record<EnergySource, string> = {
   'Other renewables': '#90EE90',
 }
 
-const SVG_WIDTH = 1400
+const DEFAULT_SVG_WIDTH = 1400
+const MIN_SVG_WIDTH = 900
 const SVG_HEIGHT = 600
 const MARGIN = { top: 80, right: 200, bottom: 80, left: 60 }
 
@@ -54,6 +55,7 @@ interface TooltipData {
 
 function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const chartHostRef = useRef<HTMLDivElement>(null)
   const sliderContainerRef = useRef<HTMLDivElement>(null)
   const soundPlaybackRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const dimResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -78,6 +80,24 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
   const shakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const screenShakeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [isScreenShaking, setIsScreenShaking] = useState(false)
+  const [svgWidth, setSvgWidth] = useState(DEFAULT_SVG_WIDTH)
+
+  useEffect(() => {
+    const host = chartHostRef.current
+    if (!host || typeof ResizeObserver === 'undefined') return
+
+    const updateWidth = () => {
+      const hostWidth = host.clientWidth
+      if (!hostWidth) return
+      const nextWidth = Math.max(MIN_SVG_WIDTH, Math.round(hostWidth))
+      setSvgWidth(prev => (prev === nextWidth ? prev : nextWidth))
+    }
+
+    updateWidth()
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(host)
+    return () => observer.disconnect()
+  }, [])
 
   // Get latest year data for the top countries
   const getLatestYearData = () => {
@@ -128,7 +148,7 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       setSliderProgress(50)
     }
 
-    const width = SVG_WIDTH - MARGIN.left - MARGIN.right
+    const width = svgWidth - MARGIN.left - MARGIN.right
     const height = SVG_HEIGHT - MARGIN.top - MARGIN.bottom
 
     // Calculate max stacked value
@@ -144,12 +164,12 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
 
     // Set SVG dimensions
     svg
-      .attr('width', SVG_WIDTH)
+      .attr('width', svgWidth)
       .attr('height', SVG_HEIGHT)
 
     // Add title
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', 25)
       .style('font-size', '16px')
       .style('font-weight', 'bold')
@@ -160,7 +180,7 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
     const instructionBoxW = 560
     const instructionBoxH = 22
     const instructionBoxY = 44
-    const instructionBoxX = SVG_WIDTH / 2 - instructionBoxW / 2
+    const instructionBoxX = svgWidth / 2 - instructionBoxW / 2
 
     svg.append('rect')
       .attr('x', instructionBoxX)
@@ -174,7 +194,7 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       .attr('fill', '#ffffff')
 
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
       .style('font-size', '12px')
       .style('font-weight', '600')
@@ -436,7 +456,7 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       }
     }
 
-  }, [displayData, hoveredBar, highlightedSource, dimLevel, sliderHovered, previewData, sliderProgress, sliderPosition])
+  }, [displayData, hoveredBar, highlightedSource, dimLevel, sliderHovered, previewData, sliderProgress, sliderPosition, svgWidth])
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -836,55 +856,56 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
 
   return (
     <div className={`bar-chart-juicy-container ${isScreenShaking ? 'bar-chart-screen-shake' : ''}`}>
-
-      <div
-        className="chart-wrapper-juicy"
-        style={{ position: 'relative' }}
-        onMouseMove={(event) => {
-          const target = event.target as Element
-          if (!target.closest('rect')) {
+      <div className="reconfigure-main-juicy" ref={chartHostRef}>
+        <div
+          className="chart-wrapper-juicy"
+          style={{ width: svgWidth }}
+          onMouseMove={(event) => {
+            const target = event.target as Element
+            if (!target.closest('rect')) {
+              setHoveredBar(null)
+              setTooltip(null)
+            }
+          }}
+          onMouseLeave={() => {
             setHoveredBar(null)
             setTooltip(null)
-          }
-        }}
-        onMouseLeave={() => {
-          setHoveredBar(null)
-          setTooltip(null)
-        }}
-      >
-        <svg ref={svgRef} className={`bar-svg-juicy ${isSvgShaking ? 'bar-svg-juicy-shaking' : ''}`}></svg>
+          }}
+        >
+          <svg ref={svgRef} className={`bar-svg-juicy ${isSvgShaking ? 'bar-svg-juicy-shaking' : ''}`}></svg>
         
-        {tooltip && (
-          <div 
-            className="tooltip-juicy" 
-            style={{
-              position: 'absolute',
-              left: `${tooltip.x + 10}px`,
-              top: `${tooltip.y - 30}px`,
-              backgroundColor: 'white',
-              border: `2px solid ${COLORS[tooltip.source]}`,
-              borderRadius: '8px',
-              padding: '12px 16px',
-              fontSize: '12px',
-              fontFamily: 'sans-serif',
-              zIndex: 1000,
-              boxShadow: `0 8px 24px rgba(255, 107, 107, 0.3)`,
-              pointerEvents: 'none',
-            }}
-          >
-            <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '14px', color: '#333' }}>
-              {tooltip.entity}
+          {tooltip && (
+            <div 
+              className="tooltip-juicy" 
+              style={{
+                position: 'absolute',
+                left: `${tooltip.x + 10}px`,
+                top: `${tooltip.y - 30}px`,
+                backgroundColor: 'white',
+                border: `2px solid ${COLORS[tooltip.source]}`,
+                borderRadius: '8px',
+                padding: '12px 16px',
+                fontSize: '12px',
+                fontFamily: 'sans-serif',
+                zIndex: 1000,
+                boxShadow: `0 8px 24px rgba(255, 107, 107, 0.3)`,
+                pointerEvents: 'none',
+              }}
+            >
+              <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '14px', color: '#333' }}>
+                {tooltip.entity}
+              </div>
+              <div style={{ fontSize: '12px', color: '#555', marginBottom: '4px' }}>
+                <span style={{ color: COLORS[tooltip.source], fontWeight: 'bold' }}>
+                  {tooltip.source}
+                </span>
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: COLORS[tooltip.source] }}>
+                {tooltip.value.toFixed(1)} kWh
+              </div>
             </div>
-            <div style={{ fontSize: '12px', color: '#555', marginBottom: '4px' }}>
-              <span style={{ color: COLORS[tooltip.source], fontWeight: 'bold' }}>
-                {tooltip.source}
-              </span>
-            </div>
-            <div style={{ fontSize: '13px', fontWeight: '600', color: COLORS[tooltip.source] }}>
-              {tooltip.value.toFixed(1)} kWh
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="controls-juicy">

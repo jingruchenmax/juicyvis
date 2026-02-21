@@ -21,7 +21,8 @@ interface TooltipData {
   data: DataRow
 }
 
-const SVG_WIDTH = 1200
+const DEFAULT_SVG_WIDTH = 1200
+const MIN_SVG_WIDTH = 900
 const SVG_HEIGHT = 800
 const MARGIN = { top: 100, right: 40, bottom: 80, left: 80 }
 
@@ -81,13 +82,33 @@ interface ScatterDot extends DataRow {
 
 function SelectJuicy({ data }: SelectProps) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const mainRef = useRef<HTMLDivElement>(null)
+  const [svgWidth, setSvgWidth] = useState(DEFAULT_SVG_WIDTH)
   const [selectedDots, setSelectedDots] = useState<Set<string>>(new Set())
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const [selectedTooltips, setSelectedTooltips] = useState<Record<string, TooltipData>>({})
+
+  useEffect(() => {
+    const host = mainRef.current
+    if (!host || typeof ResizeObserver === 'undefined') return
+
+    const updateWidth = () => {
+      const hostWidth = host.clientWidth
+      if (!hostWidth) return
+      const nextWidth = Math.max(MIN_SVG_WIDTH, Math.round(hostWidth))
+      setSvgWidth(prev => (prev === nextWidth ? prev : nextWidth))
+    }
+
+    updateWidth()
+    const observer = new ResizeObserver(updateWidth)
+    observer.observe(host)
+    return () => observer.disconnect()
+  }, [])
+
   useEffect(() => {
     if (!data || data.length === 0) return
 
-    const width = SVG_WIDTH - MARGIN.left - MARGIN.right
+    const width = svgWidth - MARGIN.left - MARGIN.right
     const height = SVG_HEIGHT - MARGIN.top - MARGIN.bottom
 
     // Create scales
@@ -109,12 +130,12 @@ function SelectJuicy({ data }: SelectProps) {
 
     // Set SVG dimensions
     svg
-      .attr('width', SVG_WIDTH)
+      .attr('width', svgWidth)
       .attr('height', SVG_HEIGHT)
 
     // Add title
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', 25)
       .style('font-size', '16px')
       .style('font-weight', 'bold')
@@ -123,7 +144,7 @@ function SelectJuicy({ data }: SelectProps) {
 
     // Add subtitle lines
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', 45)
       .style('font-size', '12px')
       .style('text-anchor', 'middle')
@@ -131,7 +152,7 @@ function SelectJuicy({ data }: SelectProps) {
       .text('Computation is measured in total petaFLOP (10¹⁵ floating-point operations), estimated from AI literature with some uncertainty.')
 
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', 62)
       .style('font-size', '12px')
       .style('text-anchor', 'middle')
@@ -141,7 +162,7 @@ function SelectJuicy({ data }: SelectProps) {
     const instructionBoxW = 520
     const instructionBoxH = 22
     const instructionBoxY = 74
-    const instructionBoxX = SVG_WIDTH / 2 - instructionBoxW / 2
+    const instructionBoxX = svgWidth / 2 - instructionBoxW / 2
 
     svg.append('rect')
       .attr('x', instructionBoxX)
@@ -155,7 +176,7 @@ function SelectJuicy({ data }: SelectProps) {
       .attr('fill', '#ffffff')
 
     svg.append('text')
-      .attr('x', SVG_WIDTH / 2)
+      .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
       .style('font-size', '12px')
       .style('font-weight', '600')
@@ -482,11 +503,9 @@ function SelectJuicy({ data }: SelectProps) {
       })
     highlightCircles.exit().remove()
 
-    // Legend will be displayed in React JSX above, no need to generate in d3
+  }, [data, selectedDots, svgWidth])
 
-  }, [data, selectedDots])
-
-  // legend数据用于上方和右侧显示
+  // Legend entries shown in the side panel.
   const legendDataArray = [
     { name: 'Academia', color: COLORS['Academia'] },
     { name: 'Academia and industry collaboration', color: COLORS['Academia and industry collaboration'] },
@@ -506,10 +525,10 @@ function SelectJuicy({ data }: SelectProps) {
   }
 
   return (
-    <div className="scatter-plot-container" style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', flexDirection: 'row', flex: 1, alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', flex: '0 0 auto' }}>
-          <div className="chart-wrapper" style={{ position: 'relative', width: SVG_WIDTH }}>  
+    <div className="scatter-plot-container">
+      <div className="select-layout">
+        <div className="select-main" ref={mainRef}>
+          <div className="select-chart-wrapper" style={{ width: svgWidth }}>
             <svg ref={svgRef} className="scatter-svg"></svg>
             {Object.entries(selectedTooltips).map(([dotId, selectedTip]) => (
               <div
@@ -572,7 +591,7 @@ function SelectJuicy({ data }: SelectProps) {
             )}
           </div>
         </div>
-        <div className="side-panel" style={{ width: 220, padding: '20px 12px 12px 12px', background: '#fff', borderLeft: '1px solid #e0e0e0', minHeight: SVG_HEIGHT - 100, boxSizing: 'border-box', overflowY: 'auto' }}>
+        <div className="select-side-panel" style={{ minHeight: SVG_HEIGHT - 100 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
             {legendDataArray.map(item => (
               <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -3,11 +3,6 @@ import * as d3 from 'd3'
 import { playHoverSound, playClickSound, playGrabSound, playReleaseSound, playZoomSound, playDragStartSound } from '../utils/soundUtils'
 import './Explore.css'
 
-interface ExploreProps {
-  width?: number
-  height?: number
-}
-
 interface MortalityData {
   [countryCode: string]: number
 }
@@ -23,6 +18,16 @@ interface LabelDatum {
 const CODE_TO_ID: { [code: string]: number } = {
   'AFG': 4, 'ALB': 8, 'DZA': 12, 'AND': 20, 'AGO': 24, 'AIA': 660, 'ATG': 28, 'ARG': 32, 'ARM': 51, 'ABW': 533, 'AUS': 36, 'AUT': 40, 'AZE': 31, 'BHS': 44, 'BHR': 48, 'BGD': 50, 'BRB': 52, 'BLR': 112, 'BEL': 56, 'BLZ': 84, 'BEN': 204, 'BMU': 60, 'BTN': 64, 'BOL': 68, 'BIH': 70, 'BWA': 72, 'BRA': 76, 'BRN': 96, 'BGR': 100, 'BFA': 854, 'BDI': 108, 'KHM': 116, 'CMR': 120, 'CAN': 124, 'CPV': 132, 'CYM': 136, 'CAF': 140, 'TCD': 148, 'CHL': 152, 'CHN': 156, 'CXR': 162, 'CCK': 166, 'COL': 170, 'COM': 174, 'COG': 178, 'COR': 184, 'CIV': 384, 'HRV': 191, 'CUB': 192, 'CYP': 196, 'CZE': 203, 'DNK': 208, 'DJI': 262, 'DMA': 212, 'DOM': 214, 'ECU': 218, 'EGY': 818, 'SLV': 222, 'GNQ': 226, 'ERI': 232, 'EST': 233, 'SWZ': 748, 'ETH': 231, 'FLK': 238, 'FRO': 234, 'FJI': 242, 'FIN': 246, 'FRA': 250, 'PYF': 258, 'GAB': 266, 'GMB': 270, 'GEO': 268, 'DEU': 276, 'GHA': 288, 'GIB': 292, 'GRC': 300, 'GRL': 304, 'GRD': 308, 'GUM': 316, 'GTM': 320, 'GGY': 831, 'GIN': 324, 'GNB': 624, 'GUY': 328, 'HTI': 332, 'HND': 340, 'HKG': 344, 'HUN': 348, 'ISL': 352, 'IND': 356, 'IDN': 360, 'IRN': 364, 'IRQ': 368, 'IRL': 372, 'IMN': 833, 'ISR': 376, 'ITA': 380, 'JAM': 388, 'JPN': 392, 'JEY': 832, 'JOR': 400, 'KAZ': 398, 'KEN': 404, 'KIR': 296, 'KWT': 414, 'KGZ': 417, 'LAO': 418, 'LVA': 428, 'LBN': 422, 'LSO': 426, 'LBR': 430, 'LBY': 434, 'LIE': 438, 'LTU': 440, 'LUX': 442, 'MAC': 446, 'MKD': 807, 'MDG': 450, 'MWI': 454, 'MYS': 458, 'MDV': 462, 'MLI': 466, 'MLT': 470, 'MHL': 584, 'MTQ': 474, 'MRT': 478, 'MUS': 480, 'MYT': 175, 'MEX': 484, 'FSM': 583, 'MDA': 498, 'MCO': 492, 'MNG': 496, 'MNE': 499, 'MAR': 504, 'MOZ': 508, 'MMR': 104, 'NAM': 516, 'NRU': 520, 'NPL': 524, 'NLD': 528, 'NCL': 540, 'NZL': 554, 'NIC': 558, 'NER': 562, 'NGA': 566, 'PRK': 408, 'NMK': 570, 'MNP': 580, 'NOR': 578, 'OMN': 512, 'PAK': 586, 'PLW': 585, 'PSE': 275, 'PAN': 591, 'PNG': 598, 'PRY': 600, 'PER': 604, 'PHL': 608, 'PCN': 612, 'POL': 616, 'PRT': 620, 'PRI': 630, 'QAT': 634, 'ROU': 642, 'RUS': 643, 'RWA': 646, 'SHN': 654, 'KNA': 659, 'LCA': 662, 'MAF': 663, 'SPM': 666, 'VCT': 670, 'WSM': 882, 'SMR': 674, 'STP': 678, 'SAU': 682, 'SEN': 686, 'SRB': 688, 'SYC': 690, 'SLE': 694, 'SGP': 702, 'SVK': 703, 'SVN': 705, 'SLB': 90, 'SOM': 706, 'ZAF': 710, 'KOR': 410, 'SSD': 728, 'ESP': 724, 'LKA': 144, 'SDN': 729, 'SUR': 740, 'SWE': 752, 'CHE': 756, 'SYR': 760, 'TWN': 158, 'TJK': 762, 'TZA': 834, 'THA': 764, 'TLS': 626, 'TGO': 768, 'TON': 776, 'TTO': 780, 'TUN': 788, 'TUR': 792, 'TKM': 795, 'TUV': 798, 'UGA': 800, 'UKR': 804, 'ARE': 784, 'GBR': 826, 'USA': 840, 'URY': 858, 'UZB': 860, 'VUT': 548, 'VEN': 862, 'VNM': 704, 'VGB': 92, 'VIR': 850, 'WLF': 876, 'ESH': 732, 'YEM': 887, 'ZMB': 894, 'ZWE': 716
 }
+
+const BASE_MAP_WIDTH = 975
+const BASE_MAP_HEIGHT = 610
+const MAP_ASPECT_RATIO = BASE_MAP_HEIGHT / BASE_MAP_WIDTH
+const MIN_MAP_WIDTH = 320
+const MAX_MAP_WIDTH = 1700
+const HEIGHT_SCALE = 0.7
+const MIN_MAP_HEIGHT = 260
+const MIN_MAX_HEIGHT = 420
+const MAX_HEIGHT_RATIO = 0.78
 
 
 const loadTopojson = () => {
@@ -41,9 +46,10 @@ const loadTopojson = () => {
   })
 }
 
-function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
+function ExploreJuicy() {
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const canvasHostRef = useRef<HTMLDivElement>(null)
   const pathRef = useRef<d3.GeoPath<any, d3.GeoPermissibleObjects> | null>(null)
   const selectedRef = useRef<Set<number>>(new Set())
   const dragStartRef = useRef<{ x: number; y: number; k: number } | null>(null)
@@ -61,6 +67,8 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
   const [currentZoom, setCurrentZoom] = useState(1)
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [viewTransform, setViewTransform] = useState<{ x: number; y: number; k: number }>({ x: 0, y: 0, k: 1 })
+  const [mapSize, setMapSize] = useState({ width: BASE_MAP_WIDTH, height: BASE_MAP_HEIGHT })
+  const { width, height } = mapSize
 
   const idToCode = useMemo(() => {
     const map: { [id: number]: string } = {}
@@ -75,6 +83,47 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
     labels.forEach(l => map.set(l.id, l))
     return map
   }, [labels])
+
+  useEffect(() => {
+    const host = canvasHostRef.current
+    if (!host || typeof ResizeObserver === 'undefined') return
+
+    const updateSize = () => {
+      const hostWidth = host.clientWidth
+      if (!hostWidth) return
+
+      const nextWidth = Math.max(MIN_MAP_WIDTH, Math.min(MAX_MAP_WIDTH, Math.round(hostWidth)))
+      const baseMapHeight = Math.round(nextWidth * MAP_ASPECT_RATIO)
+      const scaledHeight = Math.round(baseMapHeight * HEIGHT_SCALE)
+      const containerHeightSource =
+        containerRef.current?.parentElement?.clientHeight ||
+        containerRef.current?.clientHeight ||
+        window.innerHeight
+      const maxH = Math.max(MIN_MAX_HEIGHT, Math.floor(containerHeightSource * MAX_HEIGHT_RATIO))
+      const nextHeight = Math.max(MIN_MAP_HEIGHT, Math.min(scaledHeight, maxH))
+      setMapSize(prev =>
+        prev.width === nextWidth && prev.height === nextHeight
+          ? prev
+          : { width: nextWidth, height: nextHeight }
+      )
+    }
+
+    updateSize()
+    const observer = new ResizeObserver(updateSize)
+    observer.observe(host)
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+    if (containerRef.current?.parentElement) {
+      observer.observe(containerRef.current.parentElement)
+    }
+    return () => observer.disconnect()
+  }, [loading])
+
+  useEffect(() => {
+    setViewTransform({ x: 0, y: 0, k: 1 })
+    setCurrentZoom(1)
+  }, [width, height])
 
   // Load world TopoJSON data and child mortality data
   useEffect(() => {
@@ -344,7 +393,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
       .attr('viewBox', [0, 0, width, height])
       .attr('width', width)
       .attr('height', height)
-      .attr('style', 'max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; cursor: grab;')
       .on('click', reset)
       .on('mouseenter', () => {
         svg.style('cursor', 'grab')
@@ -834,23 +882,25 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
         </div>
       </div>
       <div className="globe-layout">
-        <div className="globe-canvas-wrapper">
-        <svg ref={svgRef} className="globe-svg"></svg>
-        <div className="globe-overlay">
-          {selectedList.map(({ id, label, code }) => {
-            const mortality = code ? mortalityData[code] : undefined
-            if (!label || mortality === undefined) return null
-            const [px, py] = projectPoint(label.centroid)
-            return (
-              <div className="globe-popup" key={`popup-${id}`} style={{ left: px, top: py - 8 }}>
-                <div className="title">{label.name}</div>
-                <div className="metric">{mortality.toFixed(2)} deaths per 100 live births</div>
-              </div>
-            )
-          })}
+        <div ref={canvasHostRef} className="globe-canvas-host">
+          <div className="globe-canvas-wrapper" style={{ width, height }}>
+            <svg ref={svgRef} className="globe-svg"></svg>
+            <div className="globe-overlay">
+              {selectedList.map(({ id, label, code }) => {
+                const mortality = code ? mortalityData[code] : undefined
+                if (!label || mortality === undefined) return null
+                const [px, py] = projectPoint(label.centroid)
+                return (
+                  <div className="globe-popup" key={`popup-${id}`} style={{ left: px, top: py - 8 }}>
+                    <div className="title">{label.name}</div>
+                    <div className="metric">{mortality.toFixed(2)} deaths per 100 live births</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
-        </div>
-        <div className="globe-info">
+        <div className="globe-info" style={{ height }}>
         <div className="globe-hover-status">
           {hoveredCountry ? (
             <div>
