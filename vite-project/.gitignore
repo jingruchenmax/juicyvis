@@ -33,3 +33,11 @@ desktop.ini
 
 # Testing
 coverage/
+
+# Codex temp folders
+.codex_tmp/
+.codex_tmp_new2/
+
+# Temp artifacts
+*.tmp
+*.bak

@@ -2,12 +2,40 @@
 .globe-container {
   position: relative;
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 18px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
   padding: 16px;
   background-color: #f5f5f5;
   border-radius: 8px;
+}
+
+.globe-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 18px;
+  width: 100%;
+}
+
+.globe-instruction-bar {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.globe-instruction-pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #c9d8ee;
+  background: #f6f9ff;
+  color: #27456f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .globe-canvas-wrapper {
@@ -38,12 +66,19 @@
   font-family: monospace;
 }
 
-.globe-info p {
+.globe-hover-status {
   margin: 0;
+  min-height: 44px;
   padding: 8px 16px;
   background: white;
   border-radius: 4px;
   border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+}
+
+.globe-hover-placeholder {
+  color: #6b7280;
 }
 
 .country {

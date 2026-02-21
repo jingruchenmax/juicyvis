@@ -389,6 +389,12 @@ function Explore({ width = 975, height = 610 }: ExploreProps) {
 
   return (
     <div ref={containerRef} className="globe-container">
+      <div className="globe-instruction-bar">
+        <div className="globe-instruction-pill">
+          Click to select countries | Drag to pan | Scroll to zoom | Click background to reset view
+        </div>
+      </div>
+      <div className="globe-layout">
       <div className="globe-canvas-wrapper">
         <svg ref={svgRef} className="globe-svg"></svg>
         <div className="globe-overlay">
@@ -406,13 +412,13 @@ function Explore({ width = 975, height = 610 }: ExploreProps) {
         </div>
       </div>
       <div className="globe-info">
-        <div>
+        <div className="globe-hover-status">
           {hoveredCountry ? (
             <div>
               <strong>{hoveredCountry.name}</strong>: {hoveredCountry.mortality.toFixed(2)} deaths per 100 live births
             </div>
           ) : (
-            <p>Click on countries to multi-select • Scroll to zoom • Drag to pan • Click background to reset view</p>
+            <div className="globe-hover-placeholder">Hover over a country to see details.</div>
           )}
         </div>
 
@@ -462,10 +468,9 @@ function Explore({ width = 975, height = 610 }: ExploreProps) {
           </div>
         </div>
       </div>
+      </div>
     </div>
   )
 }
 
 export default Explore
-
-

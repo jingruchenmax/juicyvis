@@ -226,6 +226,8 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const [measure, setMeasure] = useState<Measure>('kg')
   const [focusCategory, setFocusCategory] = useState<FocusCategory>('All')
   const [selectedYear, setSelectedYear] = useState<number>(2022)
+  const [displayYear, setDisplayYear] = useState<number>(selectedYear)
+  const [yearAnimNonce, setYearAnimNonce] = useState<number>(0)
   const [categoryColors, setCategoryColors] = useState<Record<MeatCategoryKey, string>>(() => ({
     ...INITIAL_CATEGORY_COLORS
   }))
@@ -278,6 +280,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
 
   const tooltipDisplayRef = useRef<TooltipDisplay>(tooltipDisplay)
   const selectedYearInitializedRef = useRef(false)
+  const displayYearRef = useRef<number>(selectedYear)
   const sliderVisualPercentRef = useRef(0)
   const wheelAccumulatorRef = useRef(0)
   const wheelSwitchTimestampRef = useRef(0)
@@ -292,6 +295,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const colorChangeAnchorRectRef = useRef<DOMRect | null>(null)
 
   const transitionTimeoutRef = useRef<number | null>(null)
+  const yearAnimIntervalRef = useRef<number | null>(null)
   const encodeCarryOverlayTimeoutRef = useRef<number | null>(null)
   const wheelPreviewExpiryTimeoutRef = useRef<number | null>(null)
   const transitionRingFadeTimeoutRef = useRef<number | null>(null)
@@ -1271,6 +1275,50 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   }, [latestYear])
 
   useEffect(() => {
+    if (yearAnimIntervalRef.current !== null) {
+      window.clearInterval(yearAnimIntervalRef.current)
+      yearAnimIntervalRef.current = null
+    }
+
+    if (!juicyActive || !isYearPicker) {
+      displayYearRef.current = selectedYear
+      setDisplayYear(selectedYear)
+      return
+    }
+
+    const targetYear = selectedYear
+    let currentYear = displayYearRef.current
+
+    if (currentYear === targetYear) {
+      setDisplayYear(targetYear)
+      return
+    }
+
+    const stepCount = Math.abs(targetYear - currentYear)
+    const intervalMs = Math.max(18, Math.min(60, Math.floor(360 / Math.max(stepCount, 1))))
+    const direction = targetYear > currentYear ? 1 : -1
+
+    yearAnimIntervalRef.current = window.setInterval(() => {
+      currentYear += direction
+      displayYearRef.current = currentYear
+      setDisplayYear(currentYear)
+      setYearAnimNonce(value => value + 1)
+
+      if (currentYear === targetYear && yearAnimIntervalRef.current !== null) {
+        window.clearInterval(yearAnimIntervalRef.current)
+        yearAnimIntervalRef.current = null
+      }
+    }, intervalMs)
+
+    return () => {
+      if (yearAnimIntervalRef.current !== null) {
+        window.clearInterval(yearAnimIntervalRef.current)
+        yearAnimIntervalRef.current = null
+      }
+    }
+  }, [isYearPicker, juicyActive, selectedYear])
+
+  useEffect(() => {
     if (isYearPicker) {
       setLegendHoverCategory(null)
       setMarkHoverCategory(null)
@@ -1468,6 +1516,10 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   useEffect(() => {
     return () => {
       clearTimeoutRef(transitionTimeoutRef)
+      if (yearAnimIntervalRef.current !== null) {
+        window.clearInterval(yearAnimIntervalRef.current)
+        yearAnimIntervalRef.current = null
+      }
       clearTimeoutRef(encodeCarryOverlayTimeoutRef)
       clearTimeoutRef(wheelPreviewExpiryTimeoutRef)
       clearTimeoutRef(transitionRingFadeTimeoutRef)
@@ -2142,6 +2194,7 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
   const previewRightX = previewHalfWidth + previewLeftX
   const wheelPreviewActive = previewActive && previewMode === 'wheel'
   const sliderAlignedLeft = `${sliderDisplayPercent}%`
+  const timelineHeaderYear = juicyActive && isYearPicker ? displayYear : selectedYear
   const currentLayerClass = juicyActive
     ? `encode-current-layer ${
         isTransitioning ? `is-juicy-enter is-juicy-enter-${transitionDirection}` : ''
@@ -2268,9 +2321,19 @@ export default function EncodeBase({ juicy, data }: EncodeBaseProps) {
 
           {isYearPicker && (
             <div className="encode-timeline-selection-head" aria-live="polite">
-              <div className="encode-timeline-selection-title">Currently selected: {selectedYear}</div>
+              <div className="encode-timeline-selection-title">
+                Select a year in the chart to begin exploring the data (Currently Selected:{' '}
+                <span
+                  key={`year-${timelineHeaderYear}-${yearAnimNonce}`}
+                  className="encode-timeline-year-number"
+                >
+                  {timelineHeaderYear}
+                </span>
+                )
+              </div>
               <div className="encode-timeline-selection-subtitle">
-                Use the slider or mouse wheel to view details for the selected year.
+                Select a year and then use the <strong>[slider]</strong> below or{' '}
+                <strong>[mouse wheel]</strong> to view details for the selected year.
               </div>
             </div>
           )}

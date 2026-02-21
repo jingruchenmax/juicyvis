@@ -116,15 +116,6 @@
   background-color: #1565c0;
 }
 
-.chart-info {
-  font-size: 12px;
-  color: #666;
-  padding: 10px 15px;
-  background-color: #fafafa;
-  border-left: 3px solid #2196f3;
-  border-radius: 2px;
-}
-
 .chart-wrapper {
   display: inline-block;
   width: 100%;

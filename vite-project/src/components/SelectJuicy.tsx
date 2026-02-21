@@ -138,6 +138,31 @@ function SelectJuicy({ data }: SelectProps) {
       .style('fill', '#666')
       .text('Parameters are variables adjusted during training to transform input data into desired output.')
 
+    const instructionBoxW = 520
+    const instructionBoxH = 22
+    const instructionBoxY = 74
+    const instructionBoxX = SVG_WIDTH / 2 - instructionBoxW / 2
+
+    svg.append('rect')
+      .attr('x', instructionBoxX)
+      .attr('y', instructionBoxY)
+      .attr('width', instructionBoxW)
+      .attr('height', instructionBoxH)
+      .attr('rx', 8)
+      .attr('ry', 8)
+      .attr('stroke', '#8fb3e8')
+      .attr('stroke-width', 1.5)
+      .attr('fill', '#ffffff')
+
+    svg.append('text')
+      .attr('x', SVG_WIDTH / 2)
+      .attr('y', instructionBoxY + 15)
+      .style('font-size', '12px')
+      .style('font-weight', '600')
+      .style('text-anchor', 'middle')
+      .style('fill', '#244a7a')
+      .text('Click a point to view details and pin-highlight it.')
+
     // Clip path so dots don't overflow chart bounds during zoom
     svg.append('defs').append('clipPath')
       .attr('id', 'scatter-juicy-clip')

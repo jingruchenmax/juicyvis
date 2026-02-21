@@ -99,7 +99,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
           if (trimmed.includes('Under-five mortality')) mortalityIdx = idx
         })
 
-        console.log('CSV header indices:', { entityIdx, codeIdx, yearIdx, mortalityIdx })
 
         // Parse data rows
         const dataByCode: { [code: string]: { year: number; value: number; entity: string } } = {}
@@ -129,8 +128,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
           }
         }
         
-        console.log('Parsed mortality data for countries:', Object.keys(dataByCode).length)
-        console.log('Sample data:', Object.entries(dataByCode).slice(0, 5))
 
         // Create mortality object using code as key
         const mortality: MortalityData = {}
@@ -223,7 +220,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
     // Circle parameters for drag feedback
     const DRAG_CIRCLE_RADIUS = 12.5
     const circleCircumference = 2 * Math.PI * DRAG_CIRCLE_RADIUS
-    console.log('Circle circumference:', circleCircumference)
 
     // Create SVG
     const svg = d3.select(svgRef.current)
@@ -277,11 +273,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
           const svgNode = svg.node() as SVGSVGElement
           const mousePos = d3.pointer(event.sourceEvent, svgNode)
           
-          // Debug logs
-          console.log('Mouse pos from d3.pointer:', mousePos)
-          console.log('SVG node:', svgNode)
-          console.log('SVG viewBox:', svgNode.getAttribute('viewBox'))
-          console.log('Event sourceEvent:', event.sourceEvent?.type)
           
           d3.select('#dragCircle')
             .attr('cx', mousePos[0])
@@ -293,9 +284,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
             .transition('draw') // Named transition for draw animation
             .duration(250)
             .attr('stroke-dashoffset', 0)
-            .on('end', () => {
-              console.log('Circle draw animation completed')
-            })
             // Keep circle visible after drawing completes, don't fade out automatically
         }
         
@@ -325,7 +313,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
         if (shouldDrawCircleRef.current) {
           // Scale up and fade out drag circle when mouse is released
           const dragCircle = d3.select('#dragCircle')
-          console.log('End event - current circle opacity:', dragCircle.attr('opacity'))
           dragCircle
             .interrupt('draw') // Interrupt only the draw transition
             .interrupt('fadeout') // Cancel any previous fadeout
@@ -334,7 +321,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
             .attr('opacity', 0)
             .attr('r', DRAG_CIRCLE_RADIUS * 1.5) // Scale up by 1.5x
             .on('end', () => {
-              console.log('Circle fadeout animation completed')
               d3.select('#dragCircle')
                 .attr('r', DRAG_CIRCLE_RADIUS) // Reset radius for next time
                 .attr('opacity', 0) // Ensure opacity is 0
@@ -379,7 +365,7 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
       .style('font-weight', 'bold')
       .style('fill', '#333')
       .style('pointer-events', 'none')
-      .text('Child Mortality Rate by Country (Latest Data) - Juicy Edition')
+      .text('Child Mortality Rate by Country (Latest Data)')
 
     const countriesGroup = g.append('g')
       .attr('cursor', 'pointer')
@@ -638,10 +624,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
       .attr('stroke', '#000')
       .attr('stroke-width', 2)
 
-    // Four corner zoom arrows (different style - double arrow)
-    // Removed: corner zoom arrows
-    // The corner arrows have been disabled in favor of drag-start circle effect
-
     function reset() {
       playReleaseSound()
       setCurrentZoom(1)
@@ -728,7 +710,6 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
         // Update drag circle position to follow mouse cursor only if it should be drawn
         if (shouldDrawCircleRef.current) {
           const mousePos = d3.pointer(event.sourceEvent, svg.node() as SVGSVGElement)
-          console.log('Zoomed - Mouse pos:', mousePos)
           d3.select('#dragCircle')
             .attr('cx', mousePos[0])
             .attr('cy', mousePos[1])
@@ -847,7 +828,13 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
 
   return (
     <div ref={containerRef} className="globe-container">
-      <div className="globe-canvas-wrapper">
+      <div className="globe-instruction-bar">
+        <div className="globe-instruction-pill">
+          Click to select countries | Drag to pan | Scroll to zoom | Click background to reset view
+        </div>
+      </div>
+      <div className="globe-layout">
+        <div className="globe-canvas-wrapper">
         <svg ref={svgRef} className="globe-svg"></svg>
         <div className="globe-overlay">
           {selectedList.map(({ id, label, code }) => {
@@ -862,16 +849,16 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
             )
           })}
         </div>
-      </div>
-      <div className="globe-info">
-        <div style={{ marginBottom: '10px' }}>
+        </div>
+        <div className="globe-info">
+        <div className="globe-hover-status">
           {hoveredCountry ? (
             <div>
               <strong>{hoveredCountry.name}</strong>: {hoveredCountry.mortality.toFixed(2)} deaths per 100 live births
-              {selectedRef.current.has(hoveredCountry.id) && <span style={{ marginLeft: '10px', color: '#00a0ff' }}>★ Selected</span>}
+              {selectedRef.current.has(hoveredCountry.id) && <span style={{ marginLeft: '10px', color: '#00a0ff' }}>Selected</span>}
             </div>
           ) : (
-            <p>🖱️ Drag to pan • Scroll to zoom • Click anywhere to reset</p>
+            <div className="globe-hover-placeholder">Hover over a country to see details.</div>
           )}
         </div>
         <div style={{ fontSize: '12px', color: '#666' }}>
@@ -952,6 +939,7 @@ function ExploreJuicy({ width = 975, height = 610 }: ExploreProps) {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

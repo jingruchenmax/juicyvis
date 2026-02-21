@@ -241,12 +241,17 @@
   font-size: 14px;
   font-weight: 700;
   color: #18375f;
+  white-space: nowrap;
 }
 
 .encode-timeline-selection-subtitle {
   margin-top: 2px;
   font-size: 12px;
   color: #4e6688;
+}
+
+.encode-timeline-selection-subtitle strong {
+  font-weight: 700;
 }
 
 .encode-svg {

@@ -126,6 +126,31 @@ function Reconfigure({ data }: ReconfigureProps) {
       .style('text-anchor', 'middle')
       .text('Per Capita Energy Consumption by Source (Latest Year)')
 
+    const instructionBoxW = 560
+    const instructionBoxH = 22
+    const instructionBoxY = 44
+    const instructionBoxX = SVG_WIDTH / 2 - instructionBoxW / 2
+
+    svg.append('rect')
+      .attr('x', instructionBoxX)
+      .attr('y', instructionBoxY)
+      .attr('width', instructionBoxW)
+      .attr('height', instructionBoxH)
+      .attr('rx', 8)
+      .attr('ry', 8)
+      .attr('stroke', '#8fb3e8')
+      .attr('stroke-width', 1.5)
+      .attr('fill', '#ffffff')
+
+    svg.append('text')
+      .attr('x', SVG_WIDTH / 2)
+      .attr('y', instructionBoxY + 15)
+      .style('font-size', '12px')
+      .style('font-weight', '600')
+      .style('text-anchor', 'middle')
+      .style('fill', '#244a7a')
+      .text('Select an energy source below, then drag the slider to reorder the countries.')
+
     const g = svg
       .append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
@@ -311,14 +336,8 @@ function Reconfigure({ data }: ReconfigureProps) {
     }))
   ]
 
-  const latestYear = Math.max(...data.map(d => d.Year))
-
   return (
     <div className="bar-chart-container">
-      <div className="chart-info">
-        Data from {latestYear} | Sorted by {sortConfig.type === 'total' ? 'Total Energy' : sortConfig.type}
-      </div>
-      
       <div
         className="chart-wrapper"
         style={{ position: 'relative' }}

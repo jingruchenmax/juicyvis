@@ -287,6 +287,11 @@
   animation: encode-year-band-pulse 360ms ease-out;
 }
 
+.encode-shell-juicy .encode-timeline-year-number {
+  display: inline-block;
+  animation: encodeYearBump 140ms ease-out;
+}
+
 .encode-shell-juicy .encode-timeline-axis-year.is-hovered {
   fill: #1e64d0;
   font-weight: 800;
@@ -671,6 +676,18 @@
   }
 }
 
+@keyframes encodeYearBump {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-2px) scale(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes encode-year-carry {
   0% {
     left: var(--encode-year-from-left, 0px);
@@ -732,6 +749,7 @@
   .encode-shell-juicy .encode-transition-ring.is-fading,
   .encode-shell-juicy .encode-rep-direction,
   .encode-shell-juicy .encode-year-band.is-pulse,
+  .encode-shell-juicy .encode-timeline-year-number,
   .encode-shell-juicy .encode-year-carry-overlay,
   .encode-shell-juicy .encode-year-carry-label {
     animation: none !important;
