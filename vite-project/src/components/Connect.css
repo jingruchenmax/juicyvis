@@ -1,0 +1,503 @@
+.connect-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 10px;
+  border: 1px solid #d7deea;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.connect-shell * {
+  box-sizing: border-box;
+}
+
+.connect-layout {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+}
+
+.connect-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.connect-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 10px;
+  border: 1px solid #d8e1ee;
+  background: #f7f9fc;
+  padding: 6px;
+  overflow: hidden;
+}
+
+.connect-stage-status {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #284265;
+  font-size: 15px;
+}
+
+.connect-stage-status.is-error {
+  color: #9a2b39;
+}
+
+.connect-impact-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 8px;
+  opacity: 0;
+}
+
+.connect-svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.connect-title {
+  font-size: 20px;
+  font-weight: 700;
+  fill: #12253f;
+}
+
+.connect-subtitle {
+  font-size: 12px;
+  fill: #5a6f8f;
+}
+
+.connect-instruction-box {
+  fill: #ffffff;
+  stroke: #8fb3e8;
+  stroke-width: 1.4;
+}
+
+.connect-instruction {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #244a7a;
+}
+
+.connect-view-box {
+  fill: #fbfdff;
+  stroke: #d9e4f3;
+  stroke-width: 1;
+}
+
+.connect-view-title {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #38609a;
+  letter-spacing: 0.01em;
+}
+
+.connect-view-divider {
+  stroke: #4f688b;
+  stroke-width: 2.6;
+  opacity: 1;
+  pointer-events: none;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.06));
+}
+
+.connect-grid-line {
+  stroke: #e3ebf7;
+  stroke-dasharray: 4 4;
+}
+
+.connect-grid-line.is-view-a {
+  opacity: 0.9;
+}
+
+.connect-grid-line.is-view-b {
+  opacity: 0.85;
+}
+
+.connect-axis-line {
+  stroke: #5d7699;
+  stroke-width: 1.2;
+}
+
+.connect-axis-tick-line {
+  stroke: #6881a2;
+  stroke-width: 1;
+}
+
+.connect-axis-tick {
+  font-size: 11px;
+  fill: #3d577b;
+}
+
+.connect-axis-label {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #1b365b;
+}
+
+.connect-focus-line {
+  stroke: #3a6199;
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+  opacity: 0.94;
+  transition: opacity 180ms ease, stroke-width 180ms ease;
+  pointer-events: none;
+}
+
+.connect-lines-layer,
+.connect-marker-layer,
+.connect-arc-layer,
+.connect-dots-layer {
+  isolation: isolate;
+}
+
+.connect-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 180ms ease, stroke 180ms ease, stroke-width 180ms ease, filter 180ms ease;
+}
+
+.connect-line.is-context {
+  stroke: #bac4d3;
+  stroke-width: 1.1;
+  opacity: 0.16;
+}
+
+.connect-line.is-related {
+  stroke: var(--connect-emphasis-color, #2f6fed);
+  stroke-width: 2.2;
+  opacity: 0.95;
+}
+
+.connect-line.is-selected {
+  stroke: var(--connect-emphasis-color, #f08a2c);
+  stroke-width: 2.8;
+  opacity: 1;
+}
+
+.connect-line.is-hovered {
+  stroke: #1f5bd8;
+  stroke-width: 2.9;
+  opacity: 1;
+}
+
+.connect-line-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14px;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.connect-focus-marker {
+  fill: #2f6fed;
+  stroke: #ffffff;
+  stroke-width: 1.6px;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.connect-focus-marker.is-selected {
+  fill: var(--connect-emphasis-color, #f08a2c);
+}
+
+.connect-focus-marker.is-hovered {
+  fill: var(--connect-emphasis-color, #2066d1);
+}
+
+.connect-related-arc {
+  fill: none;
+  stroke: var(--connect-emphasis-color, #2f6fed);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  opacity: 0.75;
+  pointer-events: none;
+  transition: opacity 180ms ease, stroke-width 180ms ease;
+}
+
+.connect-dot-halo {
+  fill: rgba(47, 111, 237, 0.18);
+  stroke: rgba(47, 111, 237, 0.4);
+  stroke-width: 1.2;
+  pointer-events: none;
+}
+
+.connect-dot {
+  cursor: pointer;
+  transition: fill 150ms ease, stroke 150ms ease, opacity 160ms ease, r 160ms ease, filter 180ms ease;
+}
+
+.connect-dot.is-context {
+  fill: #9cb1cc;
+  stroke: #ffffff;
+  stroke-width: 1.1px;
+  opacity: 0.7;
+}
+
+.connect-dot.is-related {
+  fill: var(--connect-emphasis-color, #2f6fed);
+  stroke: #ffffff;
+  stroke-width: 1.2px;
+  opacity: 0.96;
+}
+
+.connect-dot.is-selected {
+  fill: var(--connect-emphasis-color, #f08a2c);
+  stroke: #ffffff;
+  stroke-width: 1.4px;
+  opacity: 1;
+}
+
+.connect-dot.is-hovered {
+  fill: #1f5bd8;
+  stroke: #ffffff;
+  stroke-width: 1.4px;
+  opacity: 1;
+}
+
+.connect-selected-ring,
+.connect-energy-bridge {
+  pointer-events: none;
+}
+
+.connect-selected-ring {
+  fill: none;
+  stroke: rgba(47, 111, 237, 0.45);
+  stroke-width: 2;
+}
+
+.connect-energy-bridge {
+  fill: none;
+  stroke: rgba(47, 111, 237, 0.5);
+  stroke-width: 1.6;
+  opacity: 0.55;
+}
+
+.connect-tooltip {
+  position: absolute;
+  z-index: 12;
+  min-width: 180px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #2a3d5e;
+  background: #12233c;
+  color: #f4f7fb;
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.connect-tooltip-country {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.connect-tooltip-code {
+  color: #c9d8ee;
+  margin-bottom: 4px;
+}
+
+.connect-tooltip-value {
+  color: #f1f7ff;
+}
+
+.connect-panel {
+  width: 284px;
+  min-width: 268px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #dce4f1;
+  background: #f8fbff;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.connect-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #d8e1ee;
+  background: #ffffff;
+}
+
+.connect-control-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #20324d;
+}
+
+.connect-status-line {
+  font-size: 12px;
+  color: #35547c;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.connect-status-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d3a63;
+  word-break: break-word;
+}
+
+.connect-empty-note {
+  font-size: 12px;
+  color: #7a4b66;
+}
+
+.connect-range {
+  width: 100%;
+  accent-color: #2f6fed;
+}
+
+.connect-context-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1b334f;
+}
+
+.connect-context-row input {
+  accent-color: #2f6fed;
+}
+
+.connect-text-input {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid #c4cfdf;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #12243e;
+  background: #ffffff;
+}
+
+.connect-search-empty {
+  font-size: 12px;
+  color: #6f5d78;
+}
+
+.connect-search-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.connect-search-item {
+  width: 100%;
+  border: 1px solid #d4e0f0;
+  border-radius: 7px;
+  background: #f7fbff;
+  color: #193658;
+  font-size: 12px;
+  padding: 6px 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.connect-search-item:hover {
+  border-color: #9dbce5;
+  background: #eef5ff;
+}
+
+.connect-search-item.is-selected {
+  border-color: #2f6fed;
+  background: #eaf2ff;
+  font-weight: 700;
+}
+
+.connect-related-list {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.connect-related-item {
+  list-style: decimal;
+  font-size: 12px;
+  color: #27496d;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 4px 6px;
+  background: #f6faff;
+  border: 1px solid #deebf8;
+}
+
+.connect-related-name {
+  font-weight: 600;
+}
+
+.connect-related-value {
+  color: #245f9d;
+  font-weight: 700;
+}
+
+.connect-clear-btn {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2f6fed;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.connect-clear-btn:hover:not(:disabled) {
+  background: #245dd1;
+}
+
+.connect-clear-btn:disabled {
+  cursor: not-allowed;
+  background: #a2b6d6;
+}
+
+@media (max-width: 1120px) {
+  .connect-layout {
+    flex-direction: column;
+  }
+
+  .connect-panel {
+    width: 100%;
+    min-width: 0;
+    max-height: 42%;
+  }
+}

@@ -11,6 +11,8 @@ import Abstract from './components/Abstract'
 import AbstractJuicy from './components/AbstractJuicy'
 import Filter from './components/Filter'
 import FilterJuicy from './components/FilterJuicy'
+import Connect from './components/Connect'
+import ConnectJuicy from './components/ConnectJuicy'
 import './App.css'
 
 interface DataRow {
@@ -208,6 +210,10 @@ function App() {
         {juicy ? <FilterJuicy /> : <Filter />}
       </div>
     )
+  }
+
+  if (chart === '7') {
+    return <div className="app">{juicy ? <ConnectJuicy /> : <Connect />}</div>
   }
 
   if (chart === '5') {

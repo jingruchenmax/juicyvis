@@ -1,0 +1,352 @@
+.connect-shell-juicy {
+  --neon-cyan: #23d5ff;
+  --neon-teal: #18c9b1;
+  --neon-blue: #2f6fff;
+  --neon-lime: #b8ff56;
+  --glow-cyan: rgba(35, 213, 255, 0.52);
+  --glow-blue: rgba(47, 111, 255, 0.48);
+  background: linear-gradient(180deg, #f8fdff 0%, #eef8ff 100%);
+}
+
+.connect-shell-juicy .connect-stage {
+  isolation: isolate;
+  border-color: rgba(36, 167, 230, 0.34);
+  background: linear-gradient(180deg, rgba(248, 254, 255, 0.97) 0%, rgba(239, 248, 255, 0.96) 100%);
+  transition: border-color 160ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.connect-shell-juicy .connect-stage:hover {
+  border-color: rgba(25, 176, 245, 0.58);
+  box-shadow: 0 10px 24px rgba(33, 122, 214, 0.17), inset 0 0 0 1px rgba(35, 213, 255, 0.14);
+}
+
+.connect-shell-juicy.is-scrubbing .connect-stage,
+.connect-shell-juicy .connect-stage.is-scrubbing {
+  border-color: rgba(25, 176, 245, 0.8);
+  box-shadow: 0 0 0 1px rgba(35, 213, 255, 0.24), 0 14px 30px rgba(26, 116, 218, 0.24),
+    inset 0 0 0 1px rgba(24, 201, 177, 0.22);
+}
+
+.connect-shell-juicy .connect-svg {
+  background: linear-gradient(180deg, #ffffff 0%, #f2fbff 100%);
+}
+
+.connect-shell-juicy .connect-view-box {
+  fill: rgba(251, 255, 255, 0.96);
+  stroke: rgba(36, 144, 208, 0.24);
+}
+
+.connect-shell-juicy .connect-title {
+  fill: #0f3864;
+}
+
+.connect-shell-juicy .connect-subtitle {
+  fill: #1f6ea0;
+}
+
+.connect-shell-juicy .connect-instruction-box {
+  fill: rgba(255, 255, 255, 0.95);
+  stroke: rgba(31, 127, 196, 0.72);
+}
+
+.connect-shell-juicy .connect-instruction {
+  fill: #1b6799;
+}
+
+.connect-shell-juicy .connect-view-title {
+  fill: #1a6fa7;
+}
+
+.connect-shell-juicy .connect-axis-line {
+  stroke: #4e7ea9;
+}
+
+.connect-shell-juicy .connect-axis-tick-line {
+  stroke: #5c8ab3;
+}
+
+.connect-shell-juicy .connect-axis-tick {
+  fill: #355f88;
+}
+
+.connect-shell-juicy .connect-axis-label {
+  fill: #18456f;
+}
+
+.connect-shell-juicy .connect-focus-line {
+  stroke: var(--neon-blue);
+  opacity: 0.9;
+}
+
+.connect-shell-juicy .connect-line.is-context {
+  stroke: #b6c6d7;
+  opacity: 0.14;
+}
+
+.connect-shell-juicy .connect-line.is-related {
+  stroke: var(--connect-emphasis-color, var(--neon-teal));
+  stroke-width: 2.4;
+  opacity: 1;
+  filter: drop-shadow(0 0 5px rgba(30, 180, 212, 0.26));
+}
+
+.connect-shell-juicy .connect-line.is-selected {
+  stroke: var(--neon-lime);
+  stroke-width: 3;
+  opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(184, 255, 86, 0.52));
+}
+
+.connect-shell-juicy .connect-line.is-hovered {
+  stroke: var(--neon-cyan);
+  stroke-width: 3.1;
+  opacity: 1;
+  filter: drop-shadow(0 0 10px var(--glow-cyan));
+}
+
+.connect-shell-juicy .connect-focus-marker.is-selected {
+  fill: var(--neon-lime);
+  filter: drop-shadow(0 0 8px rgba(184, 255, 86, 0.54));
+}
+
+.connect-shell-juicy .connect-focus-marker.is-hovered {
+  fill: var(--neon-cyan);
+  filter: drop-shadow(0 0 8px var(--glow-cyan));
+}
+
+.connect-shell-juicy .connect-related-arc {
+  stroke: var(--connect-emphasis-color, var(--neon-teal));
+  stroke-width: 2;
+  opacity: 0.82;
+  filter: drop-shadow(0 0 4px rgba(24, 201, 177, 0.26));
+}
+
+.connect-shell-juicy .connect-related-arc.is-draw {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  animation: connect-related-arc-draw 320ms ease-out forwards;
+  animation-delay: var(--arc-delay, 0ms);
+}
+
+.connect-shell-juicy .connect-dot.is-context {
+  fill: #a6bdd3;
+  opacity: 0.64;
+}
+
+.connect-shell-juicy .connect-dot.is-related {
+  fill: var(--connect-emphasis-color, var(--neon-teal));
+  filter: drop-shadow(0 0 7px rgba(24, 201, 177, 0.35));
+}
+
+.connect-shell-juicy .connect-dot.is-selected {
+  fill: var(--neon-lime);
+  filter: drop-shadow(0 0 10px rgba(184, 255, 86, 0.62));
+}
+
+.connect-shell-juicy .connect-dot.is-hovered {
+  fill: var(--neon-cyan);
+  filter: drop-shadow(0 0 10px var(--glow-cyan));
+}
+
+.connect-shell-juicy .connect-dot-halo {
+  fill: rgba(35, 213, 255, 0.2);
+  stroke: rgba(35, 213, 255, 0.62);
+  stroke-width: 1.4;
+}
+
+.connect-shell-juicy .connect-energy-bridge {
+  stroke: var(--neon-cyan);
+  stroke-width: 2.2;
+  opacity: 0;
+  stroke-dasharray: 6 10;
+  filter: drop-shadow(0 0 8px var(--glow-cyan));
+  animation: connect-energy-bridge 220ms ease-out forwards;
+}
+
+.connect-shell-juicy .connect-selected-ring {
+  stroke: var(--neon-lime);
+  stroke-width: 2;
+  opacity: 0;
+  animation: connect-selected-ring 300ms ease-out forwards;
+}
+
+.connect-shell-juicy .connect-impact-flash {
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(255, 255, 255, 0.76) 0%,
+    rgba(35, 213, 255, 0.32) 32%,
+    rgba(47, 111, 255, 0.16) 54%,
+    rgba(47, 111, 255, 0) 76%
+  );
+  mix-blend-mode: screen;
+  animation: connect-impact-flash 150ms ease-out forwards;
+}
+
+.connect-shell-juicy .connect-panel {
+  background: linear-gradient(180deg, #f7fdff 0%, #ecf7ff 100%);
+  border-color: rgba(33, 143, 214, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(35, 213, 255, 0.08);
+}
+
+.connect-shell-juicy .connect-panel-section {
+  border-color: rgba(33, 143, 214, 0.25);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(245, 252, 255, 0.97) 100%);
+}
+
+.connect-shell-juicy .connect-control-label {
+  color: #184a76;
+}
+
+.connect-shell-juicy .connect-status-value {
+  color: #15558a;
+}
+
+.connect-shell-juicy .connect-range,
+.connect-shell-juicy .connect-context-row input {
+  accent-color: var(--neon-blue);
+}
+
+.connect-shell-juicy .connect-search-item {
+  border-color: rgba(42, 144, 220, 0.3);
+  background: rgba(246, 253, 255, 0.94);
+}
+
+.connect-shell-juicy .connect-search-item:hover {
+  border-color: rgba(35, 213, 255, 0.68);
+  background: rgba(236, 249, 255, 0.98);
+  box-shadow: 0 6px 14px rgba(40, 134, 205, 0.18);
+}
+
+.connect-shell-juicy .connect-search-item.is-selected {
+  border-color: rgba(47, 111, 255, 0.78);
+  background: rgba(226, 242, 255, 0.97);
+}
+
+.connect-shell-juicy .connect-related-item {
+  border-color: rgba(31, 134, 206, 0.3);
+  background: rgba(243, 251, 255, 0.96);
+}
+
+.connect-shell-juicy .connect-related-item.is-reveal {
+  animation: connect-related-item-in 320ms cubic-bezier(0.2, 0.88, 0.28, 1.1) both;
+  animation-delay: var(--related-delay, 0ms);
+}
+
+.connect-shell-juicy .connect-tooltip.is-juicy {
+  border-color: rgba(35, 213, 255, 0.74);
+  background: linear-gradient(180deg, rgba(9, 36, 68, 0.95) 0%, rgba(14, 53, 96, 0.94) 100%);
+  box-shadow: 0 8px 24px rgba(15, 76, 140, 0.35), 0 0 0 1px rgba(35, 213, 255, 0.18);
+  animation: connect-tooltip-pop 140ms ease-out;
+}
+
+.connect-shell-juicy .connect-clear-btn {
+  background: linear-gradient(135deg, #2784ff 0%, #1bcbb8 100%);
+  box-shadow: 0 8px 18px rgba(25, 122, 210, 0.3);
+  transition: transform 120ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.connect-shell-juicy .connect-clear-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(23, 125, 208, 0.34), 0 0 0 1px rgba(35, 213, 255, 0.24);
+  filter: saturate(1.07);
+}
+
+.connect-shell-juicy .connect-clear-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+@keyframes connect-impact-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes connect-energy-bridge {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 48;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes connect-selected-ring {
+  0% {
+    opacity: 0.65;
+    transform: scale(0.76);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@keyframes connect-related-arc-draw {
+  0% {
+    stroke-dashoffset: 220;
+    opacity: 0.15;
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.82;
+  }
+}
+
+@keyframes connect-related-item-in {
+  0% {
+    opacity: 0;
+    transform: translateX(14px) scale(0.97);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-1px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes connect-tooltip-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.93);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connect-shell-juicy .connect-impact-flash,
+  .connect-shell-juicy .connect-energy-bridge,
+  .connect-shell-juicy .connect-selected-ring,
+  .connect-shell-juicy .connect-related-arc.is-draw,
+  .connect-shell-juicy .connect-related-item.is-reveal,
+  .connect-shell-juicy .connect-tooltip.is-juicy {
+    animation: none !important;
+  }
+
+  .connect-shell-juicy .connect-stage,
+  .connect-shell-juicy .connect-line,
+  .connect-shell-juicy .connect-dot,
+  .connect-shell-juicy .connect-search-item,
+  .connect-shell-juicy .connect-clear-btn {
+    transition: none !important;
+  }
+}
