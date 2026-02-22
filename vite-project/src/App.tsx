@@ -9,6 +9,8 @@ import Encode from './components/Encode'
 import EncodeJuicy from './components/EncodeJuicy'
 import Abstract from './components/Abstract'
 import AbstractJuicy from './components/AbstractJuicy'
+import Filter from './components/Filter'
+import FilterJuicy from './components/FilterJuicy'
 import './App.css'
 
 interface DataRow {
@@ -197,6 +199,16 @@ function App() {
   const params = new URLSearchParams(window.location.search)
   const chart = params.get('chart') || '1'
   const juicy = params.get('juicy') === '1'
+
+  if (chart === '6') {
+    return (
+      <div className="app">
+        <h1>Income inequality: Gini coefficient</h1>
+        <p className="subtitle">Filter</p>
+        {juicy ? <FilterJuicy /> : <Filter />}
+      </div>
+    )
+  }
 
   if (chart === '5') {
     return (

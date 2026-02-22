@@ -1,0 +1,573 @@
+.filter-shell-juicy {
+  --neon-pink: #ff4fd8;
+  --neon-pink2: #ff2fcf;
+  --neon-purple: #b84dff;
+  --neon-violet: #7c3aed;
+  --neon-indigo: #6366f1;
+  --glow-pink: rgba(255, 79, 216, 0.55);
+  --glow-purple: rgba(184, 77, 255, 0.48);
+  --glow-violet: rgba(124, 58, 237, 0.45);
+  background: linear-gradient(180deg, #fffaff 0%, #f8f3ff 100%);
+}
+
+.filter-shell-juicy .filter-stage {
+  isolation: isolate;
+  border-color: rgba(184, 77, 255, 0.28);
+  background: linear-gradient(180deg, rgba(255, 247, 255, 0.96) 0%, rgba(244, 236, 255, 0.95) 100%);
+  transition: border-color 160ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.filter-shell-juicy .filter-stage:hover {
+  border-color: rgba(184, 77, 255, 0.52);
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.18), inset 0 0 0 1px rgba(255, 79, 216, 0.14);
+}
+
+.filter-shell-juicy.is-scrubbing .filter-stage,
+.filter-shell-juicy .filter-stage.is-scrubbing {
+  border-color: rgba(184, 77, 255, 0.86);
+  box-shadow: 0 0 0 1px rgba(255, 79, 216, 0.26), 0 14px 30px rgba(124, 58, 237, 0.24),
+    inset 0 0 0 1px rgba(255, 79, 216, 0.24);
+}
+
+.filter-shell-juicy .filter-svg {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, #ffffff 0%, #fff7ff 100%);
+}
+
+.filter-shell-juicy .filter-vignette,
+.filter-shell-juicy .filter-impact-flash,
+.filter-shell-juicy .filter-scrub-bump {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+.filter-shell-juicy .filter-vignette {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0) 46%,
+    rgba(83, 32, 130, 0.13) 82%,
+    rgba(55, 20, 98, 0.22) 100%
+  );
+  opacity: 0.16;
+  transition: opacity 160ms ease;
+}
+
+.filter-shell-juicy .filter-vignette.is-scrub {
+  opacity: 0.22;
+}
+
+.filter-shell-juicy.is-line-hovering .filter-vignette {
+  opacity: 0 !important;
+}
+
+.filter-shell-juicy .filter-impact-flash {
+  background: radial-gradient(
+    circle at 50% 44%,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 79, 216, 0.3) 36%,
+    rgba(184, 77, 255, 0.18) 58%,
+    rgba(184, 77, 255, 0) 78%
+  );
+  mix-blend-mode: screen;
+  animation: filter-impact-flash 280ms ease-out forwards;
+}
+
+.filter-shell-juicy .filter-scrub-bump {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 79, 216, 0.06));
+  opacity: 0;
+  animation: filter-scrub-bump 150ms ease-out forwards;
+}
+
+.filter-shell-juicy .filter-panel {
+  background: linear-gradient(180deg, #fff8ff 0%, #f4eeff 100%);
+  border-color: rgba(184, 77, 255, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(255, 79, 216, 0.06);
+  transition: border-color 160ms ease, box-shadow 180ms ease;
+}
+
+.filter-shell-juicy.is-scrubbing .filter-panel {
+  border-color: rgba(184, 77, 255, 0.68);
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.18), inset 0 0 0 1px rgba(255, 79, 216, 0.22);
+}
+
+.filter-shell-juicy .filter-panel-section {
+  border-color: rgba(184, 77, 255, 0.24);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 246, 255, 0.96) 100%);
+}
+
+.filter-shell-juicy .filter-title {
+  fill: #2c1446;
+}
+
+.filter-shell-juicy .filter-subtitle {
+  fill: #6c3f95;
+}
+
+.filter-shell-juicy .filter-instruction-box {
+  fill: rgba(255, 255, 255, 0.94);
+  stroke: rgba(184, 77, 255, 0.7);
+}
+
+.filter-shell-juicy .filter-instruction {
+  fill: #6a2d9b;
+}
+
+.filter-shell-juicy .filter-axis-line {
+  stroke: #8257aa;
+}
+
+.filter-shell-juicy .filter-axis-tick-line {
+  stroke: #9468b8;
+}
+
+.filter-shell-juicy .filter-axis-tick {
+  fill: #633f86;
+}
+
+.filter-shell-juicy .filter-axis-label {
+  fill: #4a276c;
+}
+
+.filter-shell-juicy .filter-focus-line {
+  stroke: var(--neon-violet);
+  opacity: 0.9;
+}
+
+.filter-shell-juicy .filter-focus-line.is-attention {
+  stroke: var(--neon-pink);
+  opacity: 1;
+  filter: drop-shadow(0 0 6px var(--glow-pink));
+  animation: filter-attention-blink 520ms ease-in-out infinite alternate;
+}
+
+.filter-shell-juicy .filter-focus-line.is-dragging {
+  stroke: var(--neon-purple);
+  stroke-width: 1.9;
+  opacity: 1;
+  filter: drop-shadow(0 0 7px var(--glow-purple));
+}
+
+.filter-shell-juicy .filter-focus-line.is-attention.is-dragging {
+  stroke: var(--neon-purple);
+  filter: drop-shadow(0 0 8px var(--glow-purple));
+}
+
+.filter-shell-juicy .filter-threshold-line {
+  stroke: var(--neon-violet);
+  stroke-width: 1.4;
+  opacity: 0.9;
+}
+
+.filter-shell-juicy .filter-threshold-label {
+  fill: rgba(92, 63, 132, 0.88);
+  stroke: rgba(255, 255, 255, 0.88);
+}
+
+.filter-shell-juicy .filter-threshold-line.is-attention {
+  stroke: var(--neon-pink);
+  stroke-width: 1.8;
+  filter: drop-shadow(0 0 6px var(--glow-pink));
+  animation: filter-attention-blink 520ms ease-in-out infinite alternate;
+}
+
+.filter-shell-juicy .filter-threshold-label.is-attention {
+  fill: #8d45d6;
+  text-shadow: 0 0 8px rgba(255, 79, 216, 0.34);
+  animation: filter-attention-label-blink 520ms ease-in-out infinite alternate;
+}
+
+.filter-shell-juicy .filter-plot-outline {
+  transition: opacity 140ms ease, stroke 140ms ease, stroke-width 140ms ease, filter 140ms ease;
+}
+
+.filter-shell-juicy .filter-plot-outline.is-attention {
+  opacity: 1;
+  stroke: rgba(110, 180, 255, 0.72);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px rgba(85, 150, 255, 0.4));
+}
+
+.filter-shell-juicy .filter-plot-outline.is-scrubbing {
+  opacity: 1;
+  stroke: rgba(51, 102, 235, 0.9);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 10px rgba(44, 96, 235, 0.44));
+}
+
+.filter-shell-juicy .filter-focus-dot {
+  fill: var(--neon-violet);
+  stroke: #fff7ff;
+}
+
+.filter-shell-juicy .filter-line.is-matched {
+  stroke: var(--neon-indigo);
+  filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.24));
+}
+
+.filter-shell-juicy .filter-line.is-context {
+  stroke: #c7bbd6;
+  opacity: 0.28;
+}
+
+.filter-shell-juicy .filter-line.is-hovered.is-matched {
+  stroke: var(--neon-pink);
+  stroke-width: 2.9;
+  opacity: 1;
+  filter: drop-shadow(0 0 8px var(--glow-pink)) drop-shadow(0 0 4px var(--glow-purple));
+  animation: filter-hover-burst 220ms ease-out;
+}
+
+.filter-shell-juicy .filter-line.is-enter {
+  animation: filter-line-enter 340ms ease-out both;
+}
+
+.filter-shell-juicy .filter-line.is-pulse {
+  animation: filter-line-pulse 380ms ease-out;
+}
+
+.filter-shell-juicy .filter-line.filter-line-exit {
+  stroke: var(--neon-purple);
+  stroke-width: 2.2;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 7px var(--glow-purple));
+  animation: filter-line-exit 420ms ease-out forwards;
+}
+
+.filter-shell-juicy .filter-count-badge {
+  border-color: rgba(184, 77, 255, 0.64);
+  background: linear-gradient(90deg, rgba(255, 79, 216, 0.14) 0%, rgba(184, 77, 255, 0.22) 100%);
+  color: #4b216e;
+  box-shadow: inset 0 0 0 1px rgba(255, 79, 216, 0.12), 0 4px 14px rgba(124, 58, 237, 0.18);
+}
+
+.filter-shell-juicy .filter-count-badge.is-pop {
+  animation: filter-count-pop 220ms ease-out;
+}
+
+.filter-shell-juicy .filter-count-divider,
+.filter-shell-juicy .filter-count-total {
+  color: #7a4ea5;
+}
+
+.filter-shell-juicy .filter-tooltip.is-juicy {
+  border-color: rgba(255, 79, 216, 0.78);
+  background: linear-gradient(180deg, rgba(35, 13, 57, 0.96) 0%, rgba(52, 19, 86, 0.95) 100%);
+  box-shadow: 0 8px 24px rgba(62, 20, 111, 0.34), 0 0 0 1px rgba(255, 79, 216, 0.16);
+  transform-origin: top left;
+  animation: filter-tooltip-pop 140ms ease-out;
+}
+
+.filter-shell-juicy .filter-range,
+.filter-shell-juicy .filter-region-row input,
+.filter-shell-juicy .filter-context-row input {
+  accent-color: var(--neon-purple);
+}
+
+.filter-shell-juicy .filter-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.24) 0%, rgba(255, 79, 216, 0.34) 100%);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.filter-shell-juicy .filter-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, var(--neon-pink2) 0%, var(--neon-purple) 100%);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.4), 0 2px 6px rgba(85, 23, 154, 0.28);
+  transition: box-shadow 120ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.filter-shell-juicy .filter-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.24) 0%, rgba(255, 79, 216, 0.34) 100%);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.filter-shell-juicy .filter-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, var(--neon-pink2) 0%, var(--neon-purple) 100%);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.4), 0 2px 6px rgba(85, 23, 154, 0.28);
+  transition: box-shadow 120ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.filter-shell-juicy .filter-range:hover::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, rgba(255, 148, 54, 0.78) 0%, rgba(255, 244, 170, 0.88) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.filter-shell-juicy .filter-range:hover::-moz-range-track {
+  background: linear-gradient(90deg, rgba(255, 148, 54, 0.78) 0%, rgba(255, 244, 170, 0.88) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.filter-shell-juicy .filter-range:hover::-webkit-slider-thumb {
+  background: linear-gradient(180deg, rgba(255, 120, 48, 0.98) 0%, rgba(255, 205, 112, 0.96) 55%, rgba(255, 245, 178, 0.98) 100%);
+  box-shadow: 0 0 0 1px rgba(255, 171, 92, 0.9), 0 0 0 4px rgba(255, 158, 73, 0.34),
+    0 0 14px rgba(255, 186, 96, 0.42), 0 3px 9px rgba(157, 83, 24, 0.34);
+}
+
+.filter-shell-juicy .filter-range:hover::-moz-range-thumb {
+  background: linear-gradient(180deg, rgba(255, 120, 48, 0.98) 0%, rgba(255, 205, 112, 0.96) 55%, rgba(255, 245, 178, 0.98) 100%);
+  box-shadow: 0 0 0 1px rgba(255, 171, 92, 0.9), 0 0 0 4px rgba(255, 158, 73, 0.34),
+    0 0 14px rgba(255, 186, 96, 0.42), 0 3px 9px rgba(157, 83, 24, 0.34);
+}
+
+.filter-shell-juicy.is-scrubbing .filter-range::-webkit-slider-thumb,
+.filter-shell-juicy.is-scrubbing .filter-range::-moz-range-thumb {
+  background: linear-gradient(180deg, #5784ff 0%, #3f6dff 55%, #3559d5 100%);
+  box-shadow: 0 0 0 1px rgba(129, 174, 255, 0.88), 0 0 0 5px rgba(70, 136, 255, 0.34),
+    0 0 16px rgba(46, 106, 235, 0.45), 0 3px 10px rgba(34, 77, 182, 0.45);
+}
+
+.filter-shell-juicy .filter-region-row,
+.filter-shell-juicy .filter-context-row {
+  position: relative;
+  border-radius: 8px;
+  border: 1px solid rgba(184, 77, 255, 0.18);
+  background: rgba(255, 255, 255, 0.64);
+  padding: 6px 8px;
+  transition: transform 120ms ease, box-shadow 160ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.filter-shell-juicy .filter-region-row:hover,
+.filter-shell-juicy .filter-context-row:hover {
+  border-color: rgba(184, 77, 255, 0.44);
+  background: rgba(255, 246, 255, 0.9);
+  box-shadow: 0 6px 14px rgba(124, 58, 237, 0.16);
+  transform: translateY(-1px);
+}
+
+.filter-shell-juicy .filter-region-row:active,
+.filter-shell-juicy .filter-context-row:active {
+  transform: scale(0.985);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.14);
+}
+
+.filter-shell-juicy .filter-region-row.is-flash,
+.filter-shell-juicy .filter-context-row.is-flash {
+  animation: filter-control-flash 200ms ease-out;
+}
+
+.filter-shell-juicy .filter-text-input {
+  border-color: rgba(184, 77, 255, 0.36);
+  background: rgba(255, 252, 255, 0.98);
+}
+
+.filter-shell-juicy .filter-text-input:focus {
+  outline: none;
+  border-color: rgba(255, 79, 216, 0.78);
+  box-shadow: 0 0 0 2px rgba(255, 79, 216, 0.14);
+}
+
+.filter-shell-juicy .filter-clear-btn {
+  background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-pink2) 100%);
+  box-shadow: 0 7px 16px rgba(124, 58, 237, 0.26);
+  transition: transform 120ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+
+.filter-shell-juicy .filter-clear-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3), 0 0 0 1px rgba(255, 79, 216, 0.24);
+  filter: saturate(1.08);
+}
+
+.filter-shell-juicy .filter-clear-btn:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.filter-shell-juicy .filter-clear-btn.is-flash:not(:disabled) {
+  animation: filter-control-flash 200ms ease-out;
+}
+
+.filter-shell-juicy .filter-clear-btn:disabled {
+  background: linear-gradient(135deg, #b5a3c8 0%, #cdb8dd 100%);
+}
+
+@keyframes filter-impact-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes filter-attention-blink {
+  0% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes filter-attention-label-blink {
+  0% {
+    opacity: 0.76;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes filter-scrub-bump {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes filter-line-enter {
+  0% {
+    opacity: 0.05;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 0.92;
+    transform: translateY(0);
+  }
+}
+
+@keyframes filter-line-pulse {
+  0% {
+    stroke-width: 2;
+    opacity: 0.9;
+  }
+  40% {
+    stroke-width: 3;
+    opacity: 1;
+    filter: drop-shadow(0 0 10px var(--glow-purple));
+  }
+  100% {
+    stroke-width: 2;
+    opacity: 0.92;
+    filter: drop-shadow(0 0 4px rgba(99, 102, 241, 0.24));
+  }
+}
+
+@keyframes filter-line-exit {
+  0% {
+    opacity: 0.92;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px var(--glow-purple));
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 0 rgba(184, 77, 255, 0));
+  }
+}
+
+@keyframes filter-hover-burst {
+  0% {
+    opacity: 0.82;
+    stroke-width: 2.2;
+  }
+  45% {
+    opacity: 1;
+    stroke-width: 3.2;
+  }
+  100% {
+    opacity: 1;
+    stroke-width: 2.9;
+  }
+}
+
+@keyframes filter-count-pop {
+  0% {
+    transform: scale(1);
+    box-shadow: inset 0 0 0 1px rgba(255, 79, 216, 0.12), 0 4px 14px rgba(124, 58, 237, 0.18);
+  }
+  46% {
+    transform: scale(1.11);
+    box-shadow: inset 0 0 0 1px rgba(255, 79, 216, 0.36), 0 0 18px var(--glow-pink),
+      0 8px 22px rgba(124, 58, 237, 0.32);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: inset 0 0 0 1px rgba(255, 79, 216, 0.12), 0 4px 14px rgba(124, 58, 237, 0.18);
+  }
+}
+
+@keyframes filter-tooltip-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes filter-control-flash {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 79, 216, 0);
+    border-color: rgba(184, 77, 255, 0.18);
+    background: rgba(255, 255, 255, 0.64);
+  }
+  35% {
+    box-shadow: 0 0 0 1px rgba(255, 79, 216, 0.5), 0 0 18px rgba(184, 77, 255, 0.3);
+    border-color: rgba(255, 79, 216, 0.82);
+    background: rgba(255, 233, 250, 0.94);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(255, 79, 216, 0);
+    border-color: rgba(184, 77, 255, 0.3);
+    background: rgba(255, 251, 255, 0.86);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-shell-juicy .filter-impact-flash,
+  .filter-shell-juicy .filter-scrub-bump,
+  .filter-shell-juicy .filter-line.is-enter,
+  .filter-shell-juicy .filter-line.is-pulse,
+  .filter-shell-juicy .filter-line.filter-line-exit,
+  .filter-shell-juicy .filter-line.is-hovered.is-matched,
+  .filter-shell-juicy .filter-count-badge.is-pop,
+  .filter-shell-juicy .filter-tooltip.is-juicy,
+  .filter-shell-juicy .filter-threshold-line.is-attention,
+  .filter-shell-juicy .filter-threshold-label.is-attention,
+  .filter-shell-juicy .filter-focus-line.is-attention,
+  .filter-shell-juicy .filter-region-row.is-flash,
+  .filter-shell-juicy .filter-context-row.is-flash,
+  .filter-shell-juicy .filter-clear-btn.is-flash {
+    animation: none !important;
+  }
+
+  .filter-shell-juicy .filter-stage,
+  .filter-shell-juicy .filter-panel,
+  .filter-shell-juicy .filter-region-row,
+  .filter-shell-juicy .filter-context-row,
+  .filter-shell-juicy .filter-clear-btn,
+  .filter-shell-juicy .filter-focus-line,
+  .filter-shell-juicy .filter-line {
+    transition: none !important;
+  }
+}

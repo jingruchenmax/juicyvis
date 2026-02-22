@@ -1,0 +1,375 @@
+.filter-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 10px;
+  border: 1px solid #d7deea;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.filter-shell * {
+  box-sizing: border-box;
+}
+
+.filter-layout {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  gap: 12px;
+}
+
+.filter-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.filter-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 10px;
+  border: 1px solid #d8e1ee;
+  background: #f7f9fc;
+  padding: 6px;
+  overflow: hidden;
+}
+
+.filter-stage-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #284265;
+  font-size: 15px;
+  z-index: 3;
+}
+
+.filter-stage-status.is-error {
+  color: #9a2b39;
+}
+
+.filter-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.filter-title {
+  font-size: 20px;
+  font-weight: 700;
+  fill: #12253f;
+}
+
+.filter-subtitle {
+  font-size: 12px;
+  fill: #5a6f8f;
+}
+
+.filter-instruction-box {
+  fill: #ffffff;
+  stroke: #8fb3e8;
+  stroke-width: 1.4;
+}
+
+.filter-instruction {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #244a7a;
+}
+
+.filter-grid-line {
+  stroke: #e0e7f2;
+  stroke-dasharray: 4 4;
+}
+
+.filter-axis-line {
+  stroke: #5d7699;
+  stroke-width: 1.2;
+}
+
+.filter-axis-tick-line {
+  stroke: #6881a2;
+  stroke-width: 1;
+}
+
+.filter-axis-tick {
+  font-size: 11px;
+  fill: #3d577b;
+}
+
+.filter-axis-label {
+  font-size: 14px;
+  font-weight: 700;
+  fill: #1b365b;
+}
+
+.filter-focus-line {
+  stroke: #3a6199;
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+  opacity: 0.95;
+  transition: stroke-width 180ms ease, opacity 180ms ease, filter 180ms ease;
+}
+
+.filter-threshold-line {
+  stroke: #3a6199;
+  stroke-dasharray: 4 4;
+  stroke-width: 1.4;
+  opacity: 0.95;
+  transition: stroke-width 180ms ease, opacity 180ms ease, filter 180ms ease;
+  pointer-events: none;
+}
+
+.filter-threshold-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: rgba(70, 70, 110, 0.85);
+  paint-order: stroke fill;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+.filter-plot-outline {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  shape-rendering: geometricPrecision;
+}
+
+.filter-lines-layer {
+  isolation: isolate;
+}
+
+.filter-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 180ms ease, stroke-width 180ms ease, stroke 180ms ease, filter 180ms ease,
+    transform 180ms ease;
+}
+
+.filter-line.is-matched {
+  stroke: #2f6fed;
+  stroke-width: 2;
+  opacity: 0.92;
+}
+
+.filter-line.is-context {
+  stroke: #aeb7c6;
+  stroke-width: 1.1;
+  opacity: 0.32;
+}
+
+.filter-line.is-hovered.is-matched {
+  stroke: #1f5bd8;
+  stroke-width: 2.6;
+  opacity: 1;
+}
+
+.filter-line-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14px;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.filter-focus-dot {
+  fill: #2f6fed;
+  stroke: #ffffff;
+  stroke-width: 1.6px;
+  opacity: 0.9;
+}
+
+.filter-empty-label {
+  font-size: 16px;
+  font-weight: 700;
+  fill: #49668e;
+}
+
+.filter-tooltip {
+  position: absolute;
+  z-index: 12;
+  min-width: 168px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #2a3d5e;
+  background: #12233c;
+  color: #f4f7fb;
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.filter-tooltip-country {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.filter-tooltip-region {
+  color: #c9d8ee;
+  margin-bottom: 4px;
+}
+
+.filter-tooltip-value {
+  color: #f1f7ff;
+}
+
+.filter-panel {
+  width: 264px;
+  min-width: 252px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #dce4f1;
+  background: #f8fbff;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.filter-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #d8e1ee;
+  background: #ffffff;
+}
+
+.filter-count-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #20344f;
+  letter-spacing: 0.02em;
+}
+
+.filter-count-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #b9cde9;
+  background: #edf4ff;
+  color: #18345c;
+}
+
+.filter-count-current {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.filter-count-divider {
+  font-size: 13px;
+  color: #5a7498;
+}
+
+.filter-count-total {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3f5f89;
+}
+
+.filter-control-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #20324d;
+}
+
+.filter-range {
+  width: 100%;
+  accent-color: #2f6fed;
+}
+
+.filter-region-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.filter-region-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1a304f;
+}
+
+.filter-region-row input {
+  accent-color: #2f6fed;
+}
+
+.filter-text-input {
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid #c4cfdf;
+  border-radius: 7px;
+  font-size: 13px;
+  color: #12243e;
+  background: #ffffff;
+}
+
+.filter-context-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1b334f;
+}
+
+.filter-context-row input {
+  accent-color: #2f6fed;
+}
+
+.filter-clear-btn {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2f6fed;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.filter-clear-btn:hover:not(:disabled) {
+  background: #245dd1;
+}
+
+.filter-clear-btn:disabled {
+  cursor: not-allowed;
+  background: #a2b6d6;
+}
+
+@media (max-width: 1120px) {
+  .filter-layout {
+    flex-direction: column;
+  }
+
+  .filter-panel {
+    width: 100%;
+    min-width: 0;
+    max-height: 42%;
+  }
+}

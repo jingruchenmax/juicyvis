@@ -118,3 +118,26 @@ export const playAfricanSound = createPlayer('dingdong2.mp3', 0.9)
 // Timeline year selection confirmation
 export const playDingdong4Sound = createPlayer('dingdong4.mp3', 0.9)
 
+// Chart 6 (Filter) neon pop set
+export const playPop1Sound = createPlayer('pop1.mp3', 0.52)
+export const playPop2Sound = createPlayer('pop2.mp3', 0.55)
+export const playPop3Sound = createPlayer('pop3.mp3', 0.58)
+export const playPop4Sound = createPlayer('pop4.mp3', 0.82)
+export const playClick5TickSound = createPlayer('click5.mp3', 0.62, {
+  fadeOutMs: 80,
+  maxDurationMs: 140
+})
+
+export const playPopHoverRandomSound = () => {
+  const random = Math.random()
+  if (random < 1 / 3) {
+    playPop1Sound()
+    return
+  }
+  if (random < 2 / 3) {
+    playPop2Sound()
+    return
+  }
+  playPop3Sound()
+}
+
