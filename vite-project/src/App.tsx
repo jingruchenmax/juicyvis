@@ -7,6 +7,8 @@ import Reconfigure from './components/Reconfigure'
 import ReconfigureJuicy from './components/ReconfigureJuicy'
 import Encode from './components/Encode'
 import EncodeJuicy from './components/EncodeJuicy'
+import Abstract from './components/Abstract'
+import AbstractJuicy from './components/AbstractJuicy'
 import './App.css'
 
 interface DataRow {
@@ -191,13 +193,23 @@ function App() {
       })
   }, [])
 
-  if (loading) return <div className="loading">Loading data...</div>
-  if (error) return <div className="error">Error: {error}</div>
-
   // Check URL parameters to determine which chart to show
   const params = new URLSearchParams(window.location.search)
   const chart = params.get('chart') || '1'
   const juicy = params.get('juicy') === '1'
+
+  if (chart === '5') {
+    return (
+      <div className="app">
+        <h1>Population</h1>
+        <p className="subtitle">Abstract/Elaborate</p>
+        {juicy ? <AbstractJuicy /> : <Abstract />}
+      </div>
+    )
+  }
+
+  if (loading) return <div className="loading">Loading data...</div>
+  if (error) return <div className="error">Error: {error}</div>
 
   // Chart 4: Meat Consumption
   if (chart === '4') {

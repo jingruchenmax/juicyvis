@@ -1,0 +1,257 @@
+.abstract-shell-juicy {
+  --abstractTransitionMs: 1200ms;
+}
+
+.abstract-shell-juicy .abstract-current-layer .abstract-main-tile-wrap {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: abstract-juicy-tile-enter 980ms cubic-bezier(0.2, 0.86, 0.28, 1.12) both;
+  animation-delay: var(--tile-delay);
+}
+
+@keyframes abstract-juicy-tile-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  64% {
+    opacity: 1;
+    transform: scale(1.02) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.abstract-shell-juicy .abstract-outgoing-tile-inner {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: abstract-juicy-outgoing-squash 1000ms cubic-bezier(0.22, 0.68, 0.3, 1) forwards;
+}
+
+@keyframes abstract-juicy-outgoing-squash {
+  0% {
+    opacity: 0.98;
+    transform: scaleY(1);
+  }
+  25% {
+    opacity: 0.94;
+    transform: scaleY(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0.88);
+  }
+}
+
+.abstract-shell-juicy .abstract-main-tile.is-hovered.is-drillable {
+  transform: translateY(-1px) scale(1.01);
+  stroke: #1e64d0;
+  filter: brightness(1.06) drop-shadow(0 2px 7px rgba(30, 100, 208, 0.3));
+}
+
+.abstract-shell-juicy .abstract-main-tile.is-hovered.is-non-drillable {
+  stroke: rgba(225, 89, 89, 0.86);
+  filter: drop-shadow(0 1px 4px rgba(225, 89, 89, 0.25));
+}
+
+.abstract-shell-juicy .abstract-tooltip {
+  animation: abstract-tooltip-pop 120ms ease-out;
+}
+
+@keyframes abstract-tooltip-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.93);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.abstract-shell-juicy .abstract-vignette.is-on {
+  /* Apply the 0% frame immediately so overlay opacity does not flash before animation starts. */
+  opacity: 0;
+  animation: abstract-juicy-vignette var(--abstractTransitionMs) ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes abstract-juicy-vignette {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.24;
+  }
+  70% {
+    opacity: 0.24;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.abstract-shell-juicy .abstract-stage-blur.is-on {
+  opacity: 0;
+  animation: abstract-juicy-blur var(--abstractTransitionMs) ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes abstract-juicy-blur {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  15% {
+    opacity: 0.72;
+    backdrop-filter: blur(0.8px);
+  }
+  70% {
+    opacity: 0.72;
+    backdrop-filter: blur(0.8px);
+  }
+  100% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+}
+
+.abstract-shell-juicy .abstract-stage-frame.is-on {
+  opacity: 0;
+  animation: abstract-juicy-frame var(--abstractTransitionMs) ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes abstract-juicy-frame {
+  0% {
+    border-color: rgba(255, 106, 61, 0);
+    box-shadow: 0 0 0 0 rgba(255, 106, 61, 0);
+  }
+  15% {
+    border-color: rgba(255, 106, 61, 0.85);
+    box-shadow: 0 0 0 4px rgba(255, 106, 61, 0.16);
+  }
+  70% {
+    border-color: rgba(255, 106, 61, 0.85);
+    box-shadow: 0 0 0 4px rgba(255, 106, 61, 0.16);
+  }
+  100% {
+    border-color: rgba(255, 106, 61, 0);
+    box-shadow: 0 0 0 0 rgba(255, 106, 61, 0);
+  }
+}
+
+.abstract-shell-juicy .abstract-chart-stage.is-invalid {
+  animation: abstract-juicy-invalid-shake 180ms ease;
+}
+
+@keyframes abstract-juicy-invalid-shake {
+  0% {
+    transform: translateX(0px);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+.abstract-shell-juicy .abstract-step-node.is-pop {
+  animation: abstract-step-node-pop 180ms ease;
+}
+
+.abstract-shell-juicy .abstract-step-node.is-pop::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(30, 100, 208, 0.4);
+  animation: abstract-step-ripple 180ms ease-out;
+}
+
+@keyframes abstract-step-node-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes abstract-step-ripple {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.75);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+.abstract-shell-juicy .abstract-minimap-outline.is-animated {
+  stroke-dasharray: 420;
+  stroke-dashoffset: 420;
+  animation: abstract-minimap-outline-draw 240ms ease-out forwards;
+}
+
+.abstract-shell-juicy .abstract-minimap-year-hover-outline {
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 5px rgba(245, 197, 66, 0.64));
+}
+
+.abstract-shell-juicy .abstract-minimap-click-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: abstract-minimap-click-pulse 320ms ease-out forwards;
+}
+
+@keyframes abstract-minimap-click-pulse {
+  0% {
+    opacity: 0.92;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes abstract-minimap-outline-draw {
+  0% {
+    stroke-dashoffset: 420;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abstract-shell-juicy .abstract-current-layer .abstract-main-tile-wrap,
+  .abstract-shell-juicy .abstract-outgoing-tile-inner,
+  .abstract-shell-juicy .abstract-main-tile,
+  .abstract-shell-juicy .abstract-tooltip,
+  .abstract-shell-juicy .abstract-vignette.is-on,
+  .abstract-shell-juicy .abstract-stage-blur.is-on,
+  .abstract-shell-juicy .abstract-stage-frame.is-on,
+  .abstract-shell-juicy .abstract-chart-stage.is-invalid,
+  .abstract-shell-juicy .abstract-step-node.is-pop,
+  .abstract-shell-juicy .abstract-step-node.is-pop::after,
+  .abstract-shell-juicy .abstract-minimap-outline.is-animated,
+  .abstract-shell-juicy .abstract-minimap-click-pulse {
+    animation: none !important;
+    transition: none !important;
+  }
+}

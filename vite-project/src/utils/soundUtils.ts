@@ -1,7 +1,7 @@
-// Sound utilities backed by lightweight HTMLAudio elements
+﻿// Sound utilities backed by lightweight HTMLAudio elements
 // Using files placed in /public so we can swap sounds without touching code
 
-const basePath = (import.meta.env.BASE_URL || '/')
+const basePath = import.meta.env.BASE_URL || '/'
 
 interface PlayerOptions {
   fadeInMs?: number
@@ -94,6 +94,11 @@ export const playZoomSound = createPlayer('click5.mp3', 0.7)
 // Bar chart wave animation
 export const playMinimalistSound = createPlayer('dingdong1.mp3', 0.6)
 
+// Chart 5 drill feedback helpers
+export const playDingdong1Sound = createPlayer('dingdong1.mp3', 0.66)
+export const playDingdong3Sound = createPlayer('dingdong3.mp3', 0.72)
+export const playWindupClickSound = createPlayer('click8.mp3', 0.75)
+
 // Optional transition cue used during representation switches
 export const playWhooshSound = createPlayer('folding2.mp3', 0.22, {
   fadeInMs: 24,
@@ -106,6 +111,7 @@ export const playColorConfirmSound = createPlayer('click8.mp3', 0.24, {
   fadeOutMs: 80,
   maxDurationMs: 200
 })
+
 // African sound for slider animation end
 export const playAfricanSound = createPlayer('dingdong2.mp3', 0.9)
 
