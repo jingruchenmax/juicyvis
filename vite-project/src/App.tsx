@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import type { DSVRowString } from 'd3'
 import Select from './components/Select'
 import SelectJuicy from './components/SelectJuicy'
 import Explore from './components/Explore'
@@ -13,6 +14,7 @@ import Filter from './components/Filter'
 import FilterJuicy from './components/FilterJuicy'
 import Connect from './components/Connect'
 import ConnectJuicy from './components/ConnectJuicy'
+import { parseCsv, toNumber } from './utils/csv'
 import './App.css'
 
 interface DataRow {
@@ -49,6 +51,96 @@ interface MeatData {
   'Fish and seafood': number
 }
 
+type CsvRow = DSVRowString<string>
+
+const CHARTS_REQUIRING_APP_DATA = new Set(['1', '2', '3', '4'])
+
+const ENERGY_VALUE_COLUMNS = [
+  'Coal',
+  'Oil',
+  'Gas',
+  'Nuclear',
+  'Hydropower',
+  'Wind',
+  'Solar',
+  'Other renewables'
+] as const
+
+const MEAT_VALUE_COLUMNS = [
+  'Poultry',
+  'Beef and buffalo',
+  'Sheep and goat',
+  'Pork',
+  'Other meats',
+  'Fish and seafood'
+] as const
+
+const readCell = (row: CsvRow, column: string): string => (row[column] ?? '').trim()
+
+const parseAiData = (csvText: string): DataRow[] => {
+  const parsed = parseCsv(csvText).map((row): DataRow => ({
+    Entity: readCell(row, 'Entity'),
+    Day: readCell(row, 'Day'),
+    'Training computation (petaFLOP)': toNumber(readCell(row, 'Training computation (petaFLOP)')),
+    'Number of parameters': toNumber(readCell(row, 'Number of parameters')),
+    'Researcher affiliation': readCell(row, 'Researcher affiliation')
+  }))
+
+  return parsed.filter(
+    d =>
+      d['Training computation (petaFLOP)'] !== null &&
+      d['Number of parameters'] !== null &&
+      d['Training computation (petaFLOP)'] > 0 &&
+      d['Number of parameters'] > 0
+  )
+}
+
+const parseEnergyData = (csvText: string): EnergyData[] => {
+  return parseCsv(csvText).map((row): EnergyData => {
+    const parsedRow: EnergyData = {
+      Entity: readCell(row, 'Entity'),
+      Code: readCell(row, 'Code'),
+      Year: Number.parseInt(readCell(row, 'Year'), 10),
+      Coal: 0,
+      Oil: 0,
+      Gas: 0,
+      Nuclear: 0,
+      Hydropower: 0,
+      Wind: 0,
+      Solar: 0,
+      'Other renewables': 0
+    }
+
+    ENERGY_VALUE_COLUMNS.forEach(column => {
+      parsedRow[column] = toNumber(readCell(row, column)) ?? 0
+    })
+
+    return parsedRow
+  })
+}
+
+const parseMeatData = (csvText: string): MeatData[] => {
+  return parseCsv(csvText).map((row): MeatData => {
+    const parsedRow: MeatData = {
+      Entity: readCell(row, 'Entity'),
+      Code: readCell(row, 'Code'),
+      Year: Number.parseInt(readCell(row, 'Year'), 10),
+      Poultry: 0,
+      'Beef and buffalo': 0,
+      'Sheep and goat': 0,
+      Pork: 0,
+      'Other meats': 0,
+      'Fish and seafood': 0
+    }
+
+    MEAT_VALUE_COLUMNS.forEach(column => {
+      parsedRow[column] = toNumber(readCell(row, column)) ?? 0
+    })
+
+    return parsedRow
+  })
+}
+
 function App() {
   const [data, setData] = useState<DataRow[]>([])
   const [energyData, setEnergyData] = useState<EnergyData[]>([])
@@ -56,151 +148,54 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let loadedScatter = false
-    let loadedEnergy = false
-    let loadedMeat = false
-
-    // Load AI training CSV file
-    fetch(`${import.meta.env.BASE_URL}ai-training-computation-vs-parameters-by-researcher-affiliation.csv`)
-      .then(res => res.text())
-      .then(csv => {
-        const lines = csv.trim().split('\n')
-        const headers = lines[0].split(',').map(h => h.trim())
-        
-        const parsed: DataRow[] = lines.slice(1).map(line => {
-          // Proper CSV parsing - handles quoted fields with commas
-          const values: string[] = []
-          let current = ''
-          let inQuotes = false
-          
-          for (let i = 0; i < line.length; i++) {
-            const char = line[i]
-            if (char === '"') {
-              inQuotes = !inQuotes
-            } else if (char === ',' && !inQuotes) {
-              values.push(current)
-              current = ''
-            } else {
-              current += char
-            }
-          }
-          values.push(current)
-          
-          const row: any = {}
-          headers.forEach((header, i) => {
-            let value = values[i] || ''
-            // Remove quotes if present
-            if (value.startsWith('"') && value.endsWith('"')) {
-              value = value.slice(1, -1)
-            }
-            value = value.trim()
-            
-            if (header.includes('computation') || header.includes('parameters')) {
-              row[header] = value === '' ? null : parseFloat(value)
-            } else {
-              row[header] = value
-            }
-          })
-          return row as DataRow
-        })
-        
-        // Filter out rows with missing computation or parameters
-        const filtered = parsed.filter(
-          d => d['Training computation (petaFLOP)'] !== null && 
-               d['Number of parameters'] !== null &&
-               d['Training computation (petaFLOP)'] > 0 &&
-               d['Number of parameters'] > 0
-        )
-        
-        setData(filtered)
-        loadedScatter = true
-        if (loadedScatter && loadedEnergy && loadedMeat) {
-          setLoading(false)
-        }
-      })
-      .catch(err => {
-        setError(err.message)
-        setLoading(false)
-      })
-
-    // Load energy CSV file
-    fetch(`${import.meta.env.BASE_URL}per-capita-energy-stacked.csv`)
-      .then(res => res.text())
-      .then(csv => {
-        const lines = csv.trim().split('\n')
-        const headers = lines[0].split(',').map(h => h.trim())
-        
-        const parsed: EnergyData[] = lines.slice(1).map(line => {
-          const values = line.split(',').map(v => v.trim())
-          
-          const row: any = {}
-          headers.forEach((header, i) => {
-            const value = values[i] || ''
-            
-            if (header === 'Year') {
-              row[header] = parseInt(value)
-            } else if (['Coal', 'Oil', 'Gas', 'Nuclear', 'Hydropower', 'Wind', 'Solar', 'Other renewables'].includes(header)) {
-              row[header] = value === '' ? 0 : parseFloat(value)
-            } else {
-              row[header] = value
-            }
-          })
-          return row as EnergyData
-        })
-        
-        setEnergyData(parsed)
-        loadedEnergy = true
-        if (loadedScatter && loadedEnergy && loadedMeat) {
-          setLoading(false)
-        }
-      })
-      .catch(err => {
-        setError(err.message)
-        setLoading(false)
-      })
-
-    // Load meat type CSV file
-    fetch(`${import.meta.env.BASE_URL}per-capita-meat-type.csv`)
-      .then(res => res.text())
-      .then(csv => {
-        const lines = csv.trim().split('\n')
-        const headers = lines[0].split(',').map(h => h.trim())
-        
-        const parsed: MeatData[] = lines.slice(1).map(line => {
-          const values = line.split(',').map(v => v.trim())
-          
-          const row: any = {}
-          headers.forEach((header, i) => {
-            const value = values[i] || ''
-            
-            if (header === 'Year') {
-              row[header] = parseInt(value)
-            } else if (['Poultry', 'Beef and buffalo', 'Sheep and goat', 'Pork', 'Other meats', 'Fish and seafood'].includes(header)) {
-              row[header] = value === '' ? 0 : parseFloat(value)
-            } else {
-              row[header] = value
-            }
-          })
-          return row as MeatData
-        })
-        
-        setMeatData(parsed)
-        loadedMeat = true
-        if (loadedScatter && loadedEnergy && loadedMeat) {
-          setLoading(false)
-        }
-      })
-      .catch(err => {
-        setError(err.message)
-        setLoading(false)
-      })
-  }, [])
-
-  // Check URL parameters to determine which chart to show
   const params = new URLSearchParams(window.location.search)
   const chart = params.get('chart') || '1'
   const juicy = params.get('juicy') === '1'
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!CHARTS_REQUIRING_APP_DATA.has(chart)) {
+      setLoading(false)
+      setError(null)
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const loadCsv = async (fileName: string): Promise<string> => {
+      const response = await fetch(`${import.meta.env.BASE_URL}${fileName}`)
+      if (!response.ok) {
+        throw new Error(`Failed to load ${fileName} (${response.status})`)
+      }
+      return response.text()
+    }
+
+    setLoading(true)
+    setError(null)
+
+    Promise.all([
+      loadCsv('ai-training-computation-vs-parameters-by-researcher-affiliation.csv').then(parseAiData),
+      loadCsv('per-capita-energy-stacked.csv').then(parseEnergyData),
+      loadCsv('per-capita-meat-type.csv').then(parseMeatData)
+    ])
+      .then(([scatterRows, energyRows, meatRows]) => {
+        if (cancelled) return
+        setData(scatterRows)
+        setEnergyData(energyRows)
+        setMeatData(meatRows)
+        setLoading(false)
+      })
+      .catch(loadError => {
+        if (cancelled) return
+        setError(loadError instanceof Error ? loadError.message : String(loadError))
+        setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [chart])
 
   if (chart === '6') {
     return (

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as d3 from 'd3'
+import { parseCsv, toNumber } from '../utils/csv'
 import './Explore.css'
 
 interface MortalityData {
@@ -124,36 +125,23 @@ function Explore() {
     ])
       .then(([world, csvText]) => {
         setWorldData(world)
-        
-        const lines = csvText.trim().split('\n')
-        const header = lines[0].split(',')
-        
-        let entityIdx = -1, codeIdx = -1, yearIdx = -1, mortalityIdx = -1
-        header.forEach((col, idx) => {
-          const trimmed = col.trim()
-          if (trimmed === 'Entity') entityIdx = idx
-          if (trimmed === 'Code') codeIdx = idx
-          if (trimmed === 'Year') yearIdx = idx
-          if (trimmed.includes('Under-five mortality')) mortalityIdx = idx
-        })
+
+        const rows = parseCsv(csvText)
+        const mortalityColumn = rows.columns.find(column => column.trim().includes('Under-five mortality')) ?? ''
 
         const dataByCode: { [code: string]: { year: number; value: number; entity: string } } = {}
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim()
-          if (!line) continue
-          const parts = line.split(',')
-          if (parts.length > Math.max(entityIdx, codeIdx, yearIdx, mortalityIdx)) {
-            const code = parts[codeIdx]?.trim() || ''
-            const year = parseInt(parts[yearIdx]?.trim() || '')
-            const mortality = parseFloat(parts[mortalityIdx]?.trim() || '')
-            if (code && !isNaN(mortality) && !isNaN(year) && code.length === 3) {
-              const existing = dataByCode[code]
-              if (!existing || existing.year < year) {
-                dataByCode[code] = { year, value: mortality, entity: parts[entityIdx]?.trim() || '' }
-              }
+        rows.forEach(row => {
+          const code = (row.Code ?? '').trim()
+          const year = Number.parseInt((row.Year ?? '').trim(), 10)
+          const mortality = mortalityColumn ? toNumber((row[mortalityColumn] ?? '').trim()) : null
+          const entity = (row.Entity ?? '').trim()
+          if (code && mortality !== null && !Number.isNaN(year) && code.length === 3) {
+            const existing = dataByCode[code]
+            if (!existing || existing.year < year) {
+              dataByCode[code] = { year, value: mortality, entity }
             }
           }
-        }
+        })
 
         const mortality: MortalityData = {}
         Object.entries(dataByCode).forEach(([code, data]) => {
