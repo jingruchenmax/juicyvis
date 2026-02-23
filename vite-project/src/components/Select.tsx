@@ -140,7 +140,7 @@ function Select({ data }: SelectProps) {
       .style('font-size', '12px')
       .style('text-anchor', 'middle')
       .style('fill', '#666')
-      .text('Computation is measured in total petaFLOP (10鹿鈦?floating-point operations), estimated from AI literature with some uncertainty.')
+      .text('Parameters are variables adjusted during training to transform input data into desired output.')
 
     svg.append('text')
       .attr('x', svgWidth / 2)
@@ -148,7 +148,7 @@ function Select({ data }: SelectProps) {
       .style('font-size', '12px')
       .style('text-anchor', 'middle')
       .style('fill', '#666')
-      .text('Parameters are variables adjusted during training to transform input data into desired output.')
+      .text('')
 
     const instructionBoxW = 520
     const instructionBoxH = 22
@@ -169,7 +169,7 @@ function Select({ data }: SelectProps) {
     svg.append('text')
       .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
-      .style('font-size', '12px')
+      .style('font-size', '16px')
       .style('font-weight', '600')
       .style('text-anchor', 'middle')
       .style('fill', '#244a7a')

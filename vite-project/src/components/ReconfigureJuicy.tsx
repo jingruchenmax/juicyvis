@@ -196,7 +196,7 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
     svg.append('text')
       .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
-      .style('font-size', '12px')
+      .style('font-size', '14px')
       .style('font-weight', '600')
       .style('text-anchor', 'middle')
       .style('fill', '#244a7a')
