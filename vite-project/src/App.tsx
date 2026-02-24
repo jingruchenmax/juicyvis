@@ -14,6 +14,7 @@ import Filter from './components/Filter'
 import FilterJuicy from './components/FilterJuicy'
 import Connect from './components/Connect'
 import ConnectJuicy from './components/ConnectJuicy'
+import Integrated from './components/Integrated'
 import { parseCsv, toNumber } from './utils/csv'
 import './App.css'
 
@@ -141,6 +142,11 @@ const parseMeatData = (csvText: string): MeatData[] => {
   })
 }
 
+const clampInt = (value: number, min: number, max: number): number => {
+  if (!Number.isFinite(value)) return min
+  return Math.max(min, Math.min(max, Math.trunc(value)))
+}
+
 function App() {
   const [data, setData] = useState<DataRow[]>([])
   const [energyData, setEnergyData] = useState<EnergyData[]>([])
@@ -149,8 +155,19 @@ function App() {
   const [error, setError] = useState<string | null>(null)
 
   const params = new URLSearchParams(window.location.search)
+  const juicyRaw = params.get('juicy') ?? '0'
   const chart = params.get('chart') || '1'
-  const juicy = params.get('juicy') === '1'
+
+  if (chart === '8') {
+    const juicyLevel = clampInt(Number.parseInt(juicyRaw, 10), 0, 7)
+    return (
+      <div className="app">
+        <Integrated juicyLevel={juicyLevel} />
+      </div>
+    )
+  }
+
+  const juicy = juicyRaw === '1'
 
   useEffect(() => {
     let cancelled = false

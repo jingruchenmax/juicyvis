@@ -1,0 +1,703 @@
+.integrated-shell.pre-on,
+.integrated-shell.in-on,
+.integrated-shell.post-on {
+  --ig-indigo: #4f46e5;
+  --ig-violet: #7c3aed;
+  --ig-cyan: #22d3ee;
+  --ig-amber: #f59e0b;
+  --ig-lime: #a3e635;
+  --ig-deep-blue: #3559d5;
+  --ig-electric-blue: #3f6dff;
+  --ig-glow-indigo: rgba(79, 70, 229, 0.38);
+  --ig-glow-violet: rgba(124, 58, 237, 0.35);
+  --ig-glow-amber: rgba(245, 158, 11, 0.35);
+}
+
+.integrated-shell.pre-on .integrated-stage,
+.integrated-shell.in-on .integrated-stage,
+.integrated-shell.post-on .integrated-stage {
+  border-color: rgba(79, 70, 229, 0.34);
+  background: linear-gradient(180deg, rgba(248, 252, 255, 0.98) 0%, rgba(238, 245, 255, 0.96) 100%);
+}
+
+.integrated-shell.pre-on .ig-pointer-ripple::before {
+  content: '';
+  position: absolute;
+  left: var(--ripple-x, 50%);
+  top: var(--ripple-y, 50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(245, 158, 11, 0.75);
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.34) 0%, rgba(245, 158, 11, 0) 66%);
+  animation: ig-ripple 360ms ease-out forwards;
+}
+
+.integrated-shell.pre-on .integrated-button.subtle:hover,
+.integrated-shell.pre-on .integrated-text:hover,
+.integrated-shell.pre-on .integrated-range:hover {
+  outline: 1px solid rgba(245, 158, 11, 0.72);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+}
+
+.integrated-shell.pre-on .integrated-region-chip:hover,
+.integrated-shell.pre-on .integrated-region-chip.is-hovered {
+  border-color: rgba(241, 141, 28, 0.94);
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.24), 0 0 10px rgba(245, 158, 11, 0.22);
+}
+
+.integrated-shell.pre-on .integrated-preview-glyph.is-visible {
+  animation: ig-preview-in 160ms ease-out;
+}
+
+.integrated-shell.pre-on .integrated-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  accent-color: var(--ig-indigo);
+}
+
+.integrated-shell.in-on .integrated-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  accent-color: var(--ig-deep-blue);
+}
+
+.integrated-shell.pre-on .integrated-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.24) 0%, rgba(79, 70, 229, 0.34) 100%);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.integrated-shell.pre-on .integrated-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.24) 0%, rgba(79, 70, 229, 0.34) 100%);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.integrated-shell.pre-on .integrated-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, rgba(146, 117, 255, 0.96) 0%, rgba(79, 70, 229, 0.98) 100%);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.4), 0 2px 6px rgba(85, 23, 154, 0.28);
+  transition: box-shadow 120ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.integrated-shell.pre-on .integrated-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, rgba(146, 117, 255, 0.96) 0%, rgba(79, 70, 229, 0.98) 100%);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.4), 0 2px 6px rgba(85, 23, 154, 0.28);
+  transition: box-shadow 120ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.integrated-shell.in-on .integrated-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(66, 115, 228, 0.24) 0%, rgba(44, 96, 222, 0.36) 100%);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.integrated-shell.in-on .integrated-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(66, 115, 228, 0.24) 0%, rgba(44, 96, 222, 0.36) 100%);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.integrated-shell.in-on .integrated-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, rgba(110, 144, 255, 0.96) 0%, rgba(55, 92, 207, 0.98) 100%);
+  box-shadow: 0 0 0 1px rgba(74, 109, 210, 0.48), 0 2px 6px rgba(37, 70, 162, 0.3);
+  transition: box-shadow 120ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.integrated-shell.in-on .integrated-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, rgba(110, 144, 255, 0.96) 0%, rgba(55, 92, 207, 0.98) 100%);
+  box-shadow: 0 0 0 1px rgba(74, 109, 210, 0.48), 0 2px 6px rgba(37, 70, 162, 0.3);
+  transition: box-shadow 120ms ease, filter 120ms ease, background 120ms ease;
+}
+
+.integrated-shell.pre-on .integrated-range:hover::-webkit-slider-runnable-track,
+.integrated-shell.pre-on .integrated-range.is-hot::-webkit-slider-runnable-track,
+.integrated-shell.pre-on .integrated-range:hover::-moz-range-track,
+.integrated-shell.pre-on .integrated-range.is-hot::-moz-range-track {
+  background: linear-gradient(90deg, #ff8b3d 0%, #ffe9a6 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+}
+
+.integrated-shell.pre-on .integrated-range:hover::-webkit-slider-thumb,
+.integrated-shell.pre-on .integrated-range.is-hot::-webkit-slider-thumb,
+.integrated-shell.pre-on .integrated-range:hover::-moz-range-thumb,
+.integrated-shell.pre-on .integrated-range.is-hot::-moz-range-thumb {
+  border: none;
+  background: #ffd166;
+  box-shadow:
+    0 0 0 5px rgba(255, 76, 36, 0.95),
+    0 0 12px rgba(255, 120, 40, 0.45),
+    0 3px 9px rgba(157, 83, 24, 0.34);
+}
+
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range:hover,
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range.is-hot {
+  accent-color: #ff3b1f !important;
+}
+
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range:hover::-webkit-slider-runnable-track,
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range.is-hot::-webkit-slider-runnable-track,
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range:hover::-moz-range-track,
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range.is-hot::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff3b1f 0%, #ff3b1f var(--ig-pct, 0%), #ff8b3d var(--ig-pct, 0%), #ffe9a6 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range:hover::-moz-range-progress,
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range.is-hot::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: #ff3b1f !important;
+}
+
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range:hover::-webkit-slider-thumb,
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range.is-hot::-webkit-slider-thumb {
+  width: 17px;
+  height: 17px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  border: none !important;
+  background: #ffd166 !important;
+  box-shadow:
+    0 0 0 6px rgba(255, 76, 36, 0.95),
+    0 0 0 2px rgba(255, 255, 255, 0.75),
+    0 0 16px rgba(255, 120, 40, 0.45),
+    0 4px 10px rgba(157, 83, 24, 0.34) !important;
+}
+
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range:hover::-moz-range-thumb,
+.integrated-shell.juicy-1.pre-on input[type='range'].integrated-range.is-hot::-moz-range-thumb {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: none !important;
+  background: #ffd166 !important;
+  box-shadow:
+    0 0 0 6px rgba(255, 76, 36, 0.95),
+    0 0 0 2px rgba(255, 255, 255, 0.75),
+    0 0 16px rgba(255, 120, 40, 0.45),
+    0 4px 10px rgba(157, 83, 24, 0.34) !important;
+}
+
+.integrated-shell.pre-on .integrated-stage.is-pre-hot-outline {
+  box-shadow:
+    0 0 0 1px rgba(123, 168, 244, 0.82),
+    inset 0 0 0 1px rgba(145, 200, 255, 0.54),
+    0 10px 20px rgba(106, 160, 242, 0.16);
+}
+
+.integrated-shell.pre-on .integrated-filter-guides.is-pre-hover .integrated-filter-guide-line {
+  stroke: #ff3b1f;
+  stroke-width: 2.8;
+  stroke-dasharray: 6 6;
+  animation: igPreBlink 600ms ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 80, 40, 0.35));
+}
+
+.integrated-shell.pre-on .integrated-explore-prehint .integrated-explore-hint-bracket {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+  animation: ig-bracket-hint 180ms ease-out 2;
+}
+
+.integrated-shell.pre-on .integrated-rank-preview-frame {
+  animation: ig-preview-frame 180ms ease-out;
+}
+
+.integrated-shell.pre-on .integrated-abstract-preview-card {
+  animation: ig-preview-in 140ms ease-out;
+}
+
+.integrated-shell.pre-on .integrated-abstract-anchor-ring {
+  animation: ig-guide-blink 900ms ease-in-out infinite;
+}
+
+.integrated-shell.pre-on .integrated-focus-line.is-pre-hot,
+.integrated-shell.pre-on .integrated-window-line.is-pre-hot {
+  stroke: #ff3b1f;
+  stroke-width: 2.8;
+  stroke-dasharray: 6 6;
+  filter: drop-shadow(0 0 6px rgba(255, 80, 40, 0.35));
+  animation: igPreBlink 600ms ease-in-out infinite;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-pre-arrow {
+  fill: rgba(255, 211, 102, 0.92);
+  stroke: rgba(255, 120, 40, 0.85);
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 4px rgba(255, 132, 44, 0.34));
+  animation: igPreArrowBlink 620ms ease-in-out infinite;
+}
+
+.integrated-shell.pre-on .integrated-bridge.is-pre-link {
+  stroke: rgba(82, 94, 214, 0.92);
+  stroke-width: 2;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 5px rgba(79, 70, 229, 0.34));
+}
+
+.integrated-shell.pre-on .integrated-ranking-content.is-previewing {
+  opacity: 0.18;
+}
+
+.integrated-shell.pre-on .integrated-rank-preview-bar {
+  fill: rgba(244, 158, 53, 0.3);
+  stroke: rgba(238, 145, 30, 0.9);
+}
+
+.integrated-shell.pre-on .ig-dot.is-region-hovered,
+.integrated-shell.pre-on .ig-bin.is-region-hovered {
+  stroke: rgba(255, 197, 106, 0.98);
+  stroke-width: 1.9;
+  opacity: 1;
+}
+
+.integrated-shell.pre-on .integrated-line.is-region-hovered {
+  stroke: rgba(243, 145, 36, 0.98);
+  stroke-width: 3.1;
+  opacity: 1;
+}
+
+.integrated-shell.pre-on .integrated-rank-row.is-region-hovered .integrated-rank-name,
+.integrated-shell.pre-on .integrated-rank-row.is-region-hovered .integrated-rank-metric {
+  font-weight: 700;
+}
+
+.integrated-shell.juicy-1.pre-on .ig-dot.is-region-hovered {
+  fill: rgba(79, 70, 229, 0.92);
+  stroke: rgba(255, 199, 110, 0.98);
+  stroke-width: 2.4px;
+  opacity: 1;
+}
+
+.integrated-shell.juicy-1.pre-on .ig-bin.is-region-hovered {
+  fill: rgba(92, 105, 208, 0.88);
+  stroke: rgba(255, 199, 110, 0.9);
+  stroke-width: 1.8px;
+  opacity: 1;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-line.is-region-hovered {
+  stroke: rgba(243, 145, 36, 0.98);
+  stroke-width: 3.4;
+  opacity: 1;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-line.is-region-dim,
+.integrated-shell.juicy-1.pre-on .ig-dot.is-region-dim,
+.integrated-shell.juicy-1.pre-on .ig-bin.is-region-dim {
+  opacity: 0.3;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-hovered .integrated-rank-hit {
+  fill: rgba(255, 180, 80, 0.15);
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-hovered .integrated-rank-bar {
+  stroke: rgba(255, 120, 40, 0.65);
+  stroke-width: 1.4;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-rank-bar.is-hovered {
+  fill: #ff3b1f;
+  stroke: #111827;
+  stroke-width: 1.8;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-lines-layer-base {
+  transition: opacity 140ms ease;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-lines-layer-region-overlay .integrated-line-region-overlay {
+  fill: none;
+  stroke: rgba(243, 145, 36, 0.98);
+  stroke-width: 3.2;
+  opacity: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-hovered .integrated-rank-name,
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-hovered .integrated-rank-metric {
+  font-weight: 800;
+  font-size: 13.5px;
+}
+
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-dim .integrated-rank-hit,
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-dim .integrated-rank-bar,
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-dim .integrated-rank-name,
+.integrated-shell.juicy-1.pre-on .integrated-rank-row.is-region-dim .integrated-rank-metric {
+  opacity: 0.32;
+}
+
+.integrated-shell.in-on .integrated-layout.is-scrubbing .integrated-range::-webkit-slider-thumb,
+.integrated-shell.in-on .integrated-layout.is-scrubbing .integrated-range::-moz-range-thumb {
+  background: linear-gradient(180deg, #5784ff 0%, var(--ig-electric-blue) 55%, var(--ig-deep-blue) 100%);
+  box-shadow:
+    0 0 0 1px rgba(129, 174, 255, 0.88),
+    0 0 0 5px rgba(70, 136, 255, 0.34),
+    0 0 16px rgba(46, 106, 235, 0.45),
+    0 3px 10px rgba(34, 77, 182, 0.45);
+}
+
+.integrated-shell.in-on .ig-vignette {
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(79, 70, 229, 0.22) 0%, rgba(79, 70, 229, 0) 55%),
+    radial-gradient(ellipse at 100% 0%, rgba(79, 70, 229, 0.2) 0%, rgba(79, 70, 229, 0) 55%),
+    radial-gradient(ellipse at 0% 100%, rgba(79, 70, 229, 0.18) 0%, rgba(79, 70, 229, 0) 60%),
+    radial-gradient(ellipse at 100% 100%, rgba(79, 70, 229, 0.22) 0%, rgba(79, 70, 229, 0) 60%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 42%, rgba(79, 70, 229, 0.06) 100%);
+  opacity: 0.28;
+}
+
+.integrated-shell.in-on .ig-impact-flash {
+  background:
+    radial-gradient(ellipse at 16% 18%, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0.06) 44%, rgba(255, 255, 255, 0) 78%),
+    radial-gradient(ellipse at 84% 82%, rgba(124, 58, 237, 0.18) 0%, rgba(124, 58, 237, 0.06) 42%, rgba(124, 58, 237, 0) 82%);
+  animation: ig-impact-flash 180ms ease-out forwards;
+}
+
+.integrated-shell.in-on .integrated-stage.is-scrubbing {
+  box-shadow: 0 0 0 1px rgba(63, 109, 255, 0.6), inset 0 0 0 1px rgba(34, 211, 238, 0.3), 0 10px 22px rgba(46, 106, 235, 0.24);
+}
+
+.integrated-shell.pre-on .integrated-stage.is-pre-explore .integrated-brush-layer .selection {
+  stroke: rgba(238, 145, 30, 0.9);
+}
+
+.integrated-shell.in-on .integrated-explore-band-box {
+  fill: rgba(39, 87, 201, 0.12);
+  stroke: rgba(38, 84, 196, 0.56);
+}
+
+.integrated-shell.in-on .integrated-explore-band-label {
+  fill: rgba(35, 81, 191, 0.92);
+}
+
+.integrated-shell.in-on .integrated-svg.is-encode-switching {
+  filter: blur(1.4px) saturate(1.06);
+  transform: scale(0.995);
+  transition: filter 260ms ease, transform 260ms ease;
+}
+
+.integrated-shell.in-on .integrated-bridge.is-drift {
+  animation: ig-dash-drift 900ms linear infinite;
+}
+
+.integrated-shell.in-on .integrated-rank-row.is-reorder {
+  transition: transform 260ms cubic-bezier(0.2, 0.88, 0.28, 1.08);
+}
+
+.integrated-shell.in-on .ig-select-commit-ring::before {
+  animation: ig-select-commit 260ms cubic-bezier(0.2, 0.82, 0.24, 1.16) forwards;
+}
+
+.integrated-shell.post-on .ig-settle-glow {
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 16% 22%, rgba(163, 230, 53, 0.1) 0%, rgba(163, 230, 53, 0) 62%),
+    radial-gradient(ellipse at 84% 28%, rgba(34, 211, 238, 0.08) 0%, rgba(34, 211, 238, 0) 58%),
+    radial-gradient(ellipse at 50% 60%, rgba(124, 58, 237, 0.08) 0%, rgba(124, 58, 237, 0) 76%);
+  animation: ig-settle 460ms ease-out forwards;
+}
+
+.integrated-shell.post-on .integrated-toast-chip.is-show {
+  animation: ig-toast-pop 220ms ease-out;
+}
+
+.integrated-shell.post-on .integrated-count-chip.is-pulse,
+.integrated-shell.post-on .integrated-view-title.is-pulse {
+  animation: ig-badge-pulse 280ms ease-out;
+}
+
+.integrated-shell.post-on .ig-bin.is-post-encode-bar {
+  transform-origin: center bottom;
+  animation: ig-bar-grow 420ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.integrated-shell.post-on .ig-dot.is-post-encode-dot {
+  transform-origin: center;
+  animation: ig-dot-pop 320ms cubic-bezier(0.2, 0.9, 0.25, 1.2) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.integrated-shell.post-on .integrated-rank-row.is-post-settle {
+  animation: ig-row-settle 320ms cubic-bezier(0.22, 0.88, 0.3, 1.1) both;
+  animation-delay: var(--row-delay, 0ms);
+}
+
+.integrated-shell.post-on .integrated-post-bracket {
+  stroke-dasharray: 36;
+  stroke-dashoffset: 36;
+  animation: ig-bracket-draw 360ms ease-out forwards;
+}
+
+.integrated-shell.post-on .integrated-count-chip.is-post-stamp::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(110deg, rgba(255, 255, 255, 0) 10%, rgba(255, 255, 255, 0.65) 45%, rgba(255, 255, 255, 0) 86%);
+  transform: translateX(-125%);
+  animation: ig-chip-sweep 460ms ease-out forwards;
+}
+
+.integrated-shell.post-on .integrated-count-chip.is-post-stamp .integrated-count-check {
+  animation: ig-check-draw 320ms ease-out forwards;
+  animation-delay: 140ms;
+}
+
+.integrated-shell.post-on .integrated-post-select-halo {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: ig-halo-ring 460ms ease-out forwards;
+}
+
+.integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-axis-label,
+.integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-point-label,
+.integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-rank-name,
+.integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-rank-metric,
+.integrated-shell.post-on .integrated-view-title.is-post-abstract {
+  animation: ig-abstract-shift 300ms ease-out;
+}
+
+.integrated-shell.post-on .integrated-related-list.is-post-connect,
+.integrated-shell.post-on .integrated-related-arc.is-post-connect {
+  animation: ig-connect-pulse 300ms ease-out;
+}
+
+.integrated-shell.in-on .integrated-line.is-selected,
+.integrated-shell.in-on .integrated-line.is-related,
+.integrated-shell.in-on .ig-dot.is-selected,
+.integrated-shell.in-on .ig-dot.is-related {
+  filter: drop-shadow(0 0 8px var(--ig-glow-indigo));
+}
+
+.integrated-shell.in-on .integrated-focus-line.is-pulse,
+.integrated-shell.in-on .integrated-window-line.is-pulse {
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 6px rgba(79, 70, 229, 0.45));
+}
+
+.integrated-shell.in-on .integrated-related-arc.is-draw {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  animation: ig-arc-draw 320ms ease-out forwards;
+  animation-delay: var(--arc-delay, 0ms);
+}
+
+@keyframes ig-impact-flash {
+  0% { opacity: 0; }
+  24% { opacity: 0.86; }
+  100% { opacity: 0; }
+}
+
+@keyframes ig-ripple {
+  0% { opacity: 0.8; transform: translate(-50%, -50%) scale(0.9); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.2); }
+}
+
+@keyframes ig-select-commit {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.82); }
+  65% { opacity: 0.92; transform: translate(-50%, -50%) scale(1.6); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+}
+
+@keyframes ig-preview-in {
+  0% { opacity: 0; transform: translateY(3px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ig-preview-frame {
+  0% { opacity: 0; transform: scale(0.99); transform-origin: center; }
+  100% { opacity: 1; transform: scale(1); transform-origin: center; }
+}
+
+@keyframes ig-guide-blink {
+  0% { opacity: 0.48; }
+  55% { opacity: 1; }
+  100% { opacity: 0.48; }
+}
+
+@keyframes igPreBlink {
+  0% { opacity: 0.35; }
+  50% { opacity: 1; }
+  100% { opacity: 0.35; }
+}
+
+@keyframes igPreArrowBlink {
+  0% { opacity: 0.32; }
+  52% { opacity: 1; }
+  100% { opacity: 0.32; }
+}
+
+@keyframes ig-bracket-hint {
+  0% { stroke-dashoffset: 26; opacity: 0.2; }
+  70% { stroke-dashoffset: 0; opacity: 0.95; }
+  100% { stroke-dashoffset: 0; opacity: 0.68; }
+}
+
+@keyframes ig-dash-drift {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -32; }
+}
+
+@keyframes ig-arc-draw {
+  0% { stroke-dashoffset: 220; opacity: 0.15; }
+  60% { opacity: 0.9; }
+  100% { stroke-dashoffset: 0; opacity: 0.82; }
+}
+
+@keyframes ig-settle {
+  0% { opacity: 0.75; }
+  100% { opacity: 0; }
+}
+
+@keyframes ig-toast-pop {
+  0% { opacity: 0; transform: translateY(-3px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ig-badge-pulse {
+  0% { transform: scale(1); }
+  55% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ig-bar-grow {
+  0% { transform: scaleY(0.2); opacity: 0.45; }
+  62% { transform: scaleY(1.08); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes ig-dot-pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  70% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ig-row-settle {
+  0% { transform: translateY(4px); }
+  60% { transform: translateY(-1px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes ig-bracket-draw {
+  0% { stroke-dashoffset: 36; opacity: 0.2; }
+  60% { stroke-dashoffset: 0; opacity: 0.95; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+@keyframes ig-chip-sweep {
+  0% { transform: translateX(-125%); opacity: 0.1; }
+  55% { opacity: 0.95; }
+  100% { transform: translateX(125%); opacity: 0; }
+}
+
+@keyframes ig-check-draw {
+  0% { opacity: 0; transform: scale(0.7); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ig-halo-ring {
+  0% { stroke-dashoffset: 48; opacity: 0.8; transform: scale(0.92); transform-origin: center; }
+  100% { stroke-dashoffset: 0; opacity: 0; transform: scale(1.36); transform-origin: center; }
+}
+
+@keyframes ig-abstract-shift {
+  0% { opacity: 0.48; transform: translateY(2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ig-connect-pulse {
+  0% { opacity: 0.5; transform: scale(0.985); }
+  60% { opacity: 1; transform: scale(1.015); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .integrated-shell.pre-on .ig-pointer-ripple::before,
+  .integrated-shell.pre-on .integrated-filter-guides.is-pre-hover .integrated-filter-guide-line,
+  .integrated-shell.pre-on .integrated-explore-prehint .integrated-explore-hint-bracket,
+  .integrated-shell.pre-on .integrated-rank-preview-frame,
+  .integrated-shell.pre-on .integrated-abstract-preview-card,
+  .integrated-shell.pre-on .integrated-abstract-anchor-ring,
+  .integrated-shell.pre-on .integrated-focus-line.is-pre-hot,
+  .integrated-shell.pre-on .integrated-window-line.is-pre-hot,
+  .integrated-shell.juicy-1.pre-on .integrated-pre-arrow,
+  .integrated-shell.in-on .ig-impact-flash,
+  .integrated-shell.in-on .ig-select-commit-ring::before,
+  .integrated-shell.in-on .integrated-svg.is-encode-switching,
+  .integrated-shell.in-on .integrated-bridge.is-drift,
+  .integrated-shell.in-on .integrated-related-arc.is-draw,
+  .integrated-shell.post-on .ig-settle-glow,
+  .integrated-shell.post-on .integrated-toast-chip.is-show,
+  .integrated-shell.post-on .integrated-count-chip.is-pulse,
+  .integrated-shell.post-on .integrated-view-title.is-pulse,
+  .integrated-shell.post-on .ig-bin.is-post-encode-bar,
+  .integrated-shell.post-on .ig-dot.is-post-encode-dot,
+  .integrated-shell.post-on .integrated-rank-row.is-post-settle,
+  .integrated-shell.post-on .integrated-post-bracket,
+  .integrated-shell.post-on .integrated-count-chip.is-post-stamp::after,
+  .integrated-shell.post-on .integrated-count-chip.is-post-stamp .integrated-count-check,
+  .integrated-shell.post-on .integrated-post-select-halo,
+  .integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-axis-label,
+  .integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-point-label,
+  .integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-rank-name,
+  .integrated-shell.post-on .integrated-svg.is-post-abstract .integrated-rank-metric,
+  .integrated-shell.post-on .integrated-view-title.is-post-abstract,
+  .integrated-shell.post-on .integrated-related-list.is-post-connect,
+  .integrated-shell.post-on .integrated-related-arc.is-post-connect {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .integrated-shell.pre-on .integrated-button.subtle:hover,
+  .integrated-shell.pre-on .integrated-text:hover,
+  .integrated-shell.pre-on .integrated-range:hover,
+  .integrated-shell.pre-on .integrated-range.is-hot {
+    box-shadow: none;
+  }
+
+  .integrated-shell.juicy-1.pre-on .integrated-lines-layer-base {
+    transition: none !important;
+  }
+}
