@@ -65,9 +65,19 @@
   z-index: 12;
   width: min(760px, calc(100% - 120px));
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.integrated-region-legend::-webkit-scrollbar {
+  height: 0;
 }
 
 .integrated-region-chip {

@@ -1566,14 +1566,25 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const handleRankingPointerMove = (event: ReactPointerEvent<SVGGElement>) => {
     const stage = stageRef.current
     if (!stage || topRows.length === 0 || rowH <= 0) return
-    const rect = stage.getBoundingClientRect()
-    const localY = event.clientY - rect.top - viewCTop
+    const pointer = toSvgPoint(event.clientX, event.clientY)
+    if (!pointer) return
+
+    const inViewCX = pointer.x >= rightX0 && pointer.x <= rightX0 + rightW
+    if (!inViewCX) {
+      commitHoveredKey(null)
+      if (detailLevel >= 1) scheduleTooltip(null)
+      return
+    }
+
+    const localY = pointer.y - viewCTop
     const index = Math.floor((localY - rowTop) / rowH)
     if (index < 0 || index >= topRows.length) {
       commitHoveredKey(null)
       if (detailLevel >= 1) scheduleTooltip(null)
       return
     }
+
+    const rect = stage.getBoundingClientRect()
     const row = topRows[index]
     if (!row) return
     if (preOn) setPreRegion('viewC')
