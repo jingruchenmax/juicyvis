@@ -42,6 +42,30 @@
   isolation: isolate;
 }
 
+.integrated-post-badge-layer {
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  z-index: 11;
+}
+
+.integrated-post-badge {
+  position: absolute;
+  max-width: 168px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(113, 148, 214, 0.62);
+  background: rgba(245, 250, 255, 0.96);
+  color: #1f3f66;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+}
+
 .integrated-stage-status {
   position: absolute;
   inset: 0;
