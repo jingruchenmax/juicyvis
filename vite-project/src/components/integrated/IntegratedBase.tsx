@@ -29,6 +29,7 @@ type SortMode = 'value' | 'growth' | 'volatility'
 type DetailLevel = 0 | 1 | 2
 type PreHintRegion = 'none' | 'explore' | 'filter' | 'viewA' | 'viewB' | 'viewC'
 type ScrubKind = 'none' | 'selection' | 'explore' | 'filter'
+type InBurstKind = 'none' | 'select' | 'explore' | 'filter' | 'reconfig' | 'encode' | 'abstract' | 'connect'
 type HotControl = 'relatedCount' | 'focusYear' | 'windowStart' | 'windowEnd' | 'valueMin' | 'valueMax'
 type RegionName = 'Africa' | 'Asia' | 'Europe' | 'North America' | 'Oceania' | 'South America' | 'Unknown'
 
@@ -207,6 +208,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const [histTipRenderData, setHistTipRenderData] = useState<HistTooltip | null>(null)
   const [isScrubbing, setIsScrubbing] = useState(false)
   const [activeScrubKind, setActiveScrubKind] = useState<ScrubKind>('none')
+  const [inBurstKind, setInBurstKind] = useState<InBurstKind>('none')
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null)
   const [previewSortMode, setPreviewSortMode] = useState<SortMode | null>(null)
@@ -240,10 +242,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const [relatedPulseNonce, setRelatedPulseNonce] = useState(0)
   const [countPulseNonce, setCountPulseNonce] = useState(0)
   const [previewRepresentation, setPreviewRepresentation] = useState<Representation | null>(null)
-  const [focusPulseNonce, setFocusPulseNonce] = useState(0)
-  const [windowPulseNonce, setWindowPulseNonce] = useState(0)
   const [attentionTarget, setAttentionTarget] = useState<'focus' | 'window' | null>(null)
-  const [reorderNonce, setReorderNonce] = useState(0)
   const [postEncodeNonce, setPostEncodeNonce] = useState(0)
   const [postReconfigNonce, setPostReconfigNonce] = useState(0)
   const [postExploreNonce, setPostExploreNonce] = useState(0)
@@ -289,6 +288,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const lastFilterPostTsRef = useRef(0)
   const toastTimeoutRef = useRef<number | null>(null)
   const filterTimeoutRef = useRef<number | null>(null)
+  const inBurstTimeoutRef = useRef<number | null>(null)
   const encodeTimeoutRef = useRef<number | null>(null)
   const selectTimeoutRef = useRef<number | null>(null)
   const connectTimeoutRef = useRef<number | null>(null)
@@ -492,6 +492,20 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     }
   }, [motionAllowed, preOn])
 
+  const triggerInBurst = useCallback((kind: InBurstKind, ms = 180) => {
+    if (!inOn || kind === 'none') return
+    clearTimeoutRef(inBurstTimeoutRef)
+    if (!motionAllowed) {
+      setInBurstKind('none')
+      return
+    }
+    setInBurstKind(kind)
+    inBurstTimeoutRef.current = window.setTimeout(() => {
+      setInBurstKind('none')
+      inBurstTimeoutRef.current = null
+    }, Math.max(1, ms))
+  }, [inOn, motionAllowed])
+
   const emitIn = useCallback((kind: string) => {
     if (!inOn) return
     if (!IN_EVENT_KINDS.has(kind)) return
@@ -507,10 +521,6 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     if (!motionAllowed) return
     if (kind === 'select_commit' || kind === 'explore_scrub' || kind === 'reconfig_reorder' || kind === 'encode_switch' || kind === 'filter_apply') {
       setImpactNonce(previous => previous + 1)
-    }
-    if (kind === 'explore_scrub') {
-      setFocusPulseNonce(previous => previous + 1)
-      setWindowPulseNonce(previous => previous + 1)
     }
   }, [inOn, motionAllowed])
 
@@ -539,6 +549,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     return () => {
       clearTimeoutRef(toastTimeoutRef)
       clearTimeoutRef(filterTimeoutRef)
+      clearTimeoutRef(inBurstTimeoutRef)
       clearTimeoutRef(encodeTimeoutRef)
       clearTimeoutRef(selectTimeoutRef)
       clearTimeoutRef(connectTimeoutRef)
@@ -1047,19 +1058,20 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     }
   }, [activeCount, emitPost, postOn])
 
-  const triggerFilterDone = useCallback(() => {
+  const triggerFilterDone = useCallback((options?: { burst?: boolean }) => {
     emitIn('filter_apply')
+    if (options?.burst) triggerInBurst('filter', 150)
     clearTimeoutRef(filterTimeoutRef)
     filterTimeoutRef.current = window.setTimeout(() => {
       finalizeFilterPost()
       filterTimeoutRef.current = null
     }, 350)
-  }, [emitIn, finalizeFilterPost])
+  }, [emitIn, finalizeFilterPost, triggerInBurst])
 
   const toggleRegion = useCallback((region: RegionName) => {
     if (region === 'Unknown') return
     setEnabledRegions(previous => ({ ...previous, [region]: !previous[region] }))
-    triggerFilterDone()
+    triggerFilterDone({ burst: true })
   }, [triggerFilterDone])
 
   const scheduleRegionHover = useCallback((nextRegion: RegionName | null) => {
@@ -1119,6 +1131,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       // Ignore capture failures in browsers that disallow capture on range controls.
     }
     if (controlId) activateHotControl(controlId)
+    clearTimeoutRef(inBurstTimeoutRef)
+    setInBurstKind('none')
     setIsScrubbing(true)
     setActiveScrubKind(kind)
   }
@@ -1212,6 +1226,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       setSelectCommitNonce(previous => previous + 1)
     }
     emitIn('select_commit')
+    triggerInBurst('select', 220)
     clearTimeoutRef(selectTimeoutRef)
     selectTimeoutRef.current = window.setTimeout(() => {
       emitPost('select_settle')
@@ -1220,6 +1235,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     }, 120)
     clearTimeoutRef(connectTimeoutRef)
     connectTimeoutRef.current = window.setTimeout(() => {
+      triggerInBurst('connect', 200)
       emitPost('connect_reveal')
       if (postOn) {
         setPostConnectNonce(previous => previous + 1)
@@ -1227,7 +1243,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       }
       connectTimeoutRef.current = null
     }, 180)
-  }, [emitIn, emitPost, inOn, postOn])
+  }, [emitIn, emitPost, inOn, postOn, triggerInBurst])
 
   const handleBinMove = (event: ReactMouseEvent<SVGRectElement, MouseEvent>, bar: HistogramBar) => {
     setHoveredBinIndex(previous => (previous === bar.index ? previous : bar.index))
@@ -1258,8 +1274,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     if (sortMode === nextMode) return
     setPreviewSortMode(null)
     setSortMode(nextMode)
-    setReorderNonce(previous => previous + 1)
     emitIn('reconfig_reorder')
+    triggerInBurst('reconfig', 220)
     clearTimeoutRef(reconfigTimeoutRef)
     reconfigTimeoutRef.current = window.setTimeout(() => {
       emitPost('reconfig_done', { label: nextMode })
@@ -1274,6 +1290,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     setPreviewRepresentation(null)
     setEncodeSwitching(true)
     emitIn('encode_switch')
+    triggerInBurst('encode', 260)
     clearTimeoutRef(encodeTimeoutRef)
     encodeTimeoutRef.current = window.setTimeout(() => {
       setEncodeSwitching(false)
@@ -1291,6 +1308,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     setPreviewDetailLevel(null)
     setDetailLevel(next)
     emitIn('abstract_adjust')
+    triggerInBurst('abstract', 180)
     clearTimeoutRef(abstractTimeoutRef)
     abstractTimeoutRef.current = window.setTimeout(() => {
       emitPost('abstract_set')
@@ -1318,7 +1336,6 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       const nextEnd = nearestYear(cfg.xScaleYear.invert(selection[1]), cfg.years)
       cfg.clampWindow(nextStart, nextEnd)
       cfg.emitIn('explore_scrub')
-      if (inOn) setWindowPulseNonce(previous => previous + 1)
     }
 
     const scheduleBrushUpdate = (selection: [number, number]) => {
@@ -1343,6 +1360,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     const brush = d3.brushX()
       .extent([[leftX0, y0], [leftX0 + leftW, y1]])
       .on('start', event => {
+        clearTimeoutRef(inBurstTimeoutRef)
+        setInBurstKind('none')
         setIsScrubbing(true)
         setActiveScrubKind('explore')
         if (!event.sourceEvent) return
@@ -1423,14 +1442,25 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     setPreHintRegion('none')
     setShowFilterGuides(false)
     hoveredControlRef.current = null
+    clearTimeoutRef(inBurstTimeoutRef)
+    setInBurstKind('none')
     setIsScrubbing(false)
     setActiveScrubKind('none')
     setSelectCommitPoint(null)
     finalizeFilterPost(activeCount)
   }
 
+  const isInActive = inOn && (isScrubbing || inBurstKind !== 'none')
+  const inActiveClass = isInActive ? `is-in-active ${isScrubbing ? `is-in-${activeScrubKind}` : `is-in-${inBurstKind}`}` : ''
   const vignetteOn = inOn && isScrubbing
   const scrubbingClass = inOn && isScrubbing ? 'is-scrubbing' : ''
+  const isExploreInScrub = inOn && isScrubbing && activeScrubKind === 'explore'
+  const isSelectionInScrub = inOn && isScrubbing && activeScrubKind === 'selection'
+  const isFilterInScrub = inOn && isScrubbing && activeScrubKind === 'filter'
+  const showExploreBand = isExploreInScrub || (inOn && inBurstKind === 'explore')
+  const showInBrushHandle = showExploreBand
+  const shouldDrawRelatedArcs = isSelectionInScrub || (inOn && inBurstKind === 'select') || (inOn && inBurstKind === 'connect')
+  const showImpactFlash = isInActive && impactNonce > 0
   const encodePostOn = postOn && postEncodeNonce > 0
   const reconfigPostOn = postOn && postReconfigNonce > 0
   const explorePostOn = postOn && postExploreNonce > 0
@@ -1442,9 +1472,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const instructionWidth = Math.min(760, Math.max(360, chartWidth - 140))
   const instructionX = chartWidth / 2 - instructionWidth / 2
   const viewCClipId = `integrated-view-c-clip-${Math.max(0, Math.round(chartWidth))}`
-  const showSelectCommitRing = inOn && selectCommitNonce > 0 && selectCommitPoint !== null
+  const showSelectCommitRing = inOn && inBurstKind === 'select' && selectCommitNonce > 0 && selectCommitPoint !== null
   const showEncodePreview = preOn && previewRepresentation !== null && previewRepresentation !== representation
-  const showBridge = !isPlainMode && Boolean(bridge)
+  const showBridge = preOn && Boolean(bridge)
   const hasRegionHover = Boolean(regionHoverKeySet && regionHoverKeySet.size > 0)
   const isRelatedCountHot = preOn && hotControl === 'relatedCount'
   const isFocusHot = preOn && hotControl === 'focusYear'
@@ -1454,7 +1484,6 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const isExploreHot = isFocusHot || isWindowHot
   const isFilterHot = preOn && (hotControl === 'valueMin' || hotControl === 'valueMax')
   const isPreStageHotOutline = preOn && (isExploreHot || isFilterHot)
-  const isFilterInScrub = inOn && isScrubbing && activeScrubKind === 'filter'
   const showFilterGuideLines = isFilterInScrub || isFilterHot || (preOn && showFilterGuides)
   const showExplorePreHint = preOn && (preHintRegion === 'explore' || isExploreHot) && !isScrubbing
   const brushHintStartX = xScaleYear(startYear)
@@ -1605,17 +1634,17 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   }
 
   return (
-    <div className={`integrated-layout ${scrubbingClass}`}>
+    <div className={`integrated-layout ${scrubbingClass} ${inActiveClass}`.trim()}>
       <div className="integrated-stage-wrap">
         <div
-          className={`integrated-stage ${scrubbingClass} ${showExplorePreHint ? 'is-pre-explore' : ''} ${isPreStageHotOutline ? 'is-pre-hot-outline' : ''}`}
+          className={`integrated-stage ${scrubbingClass} ${inActiveClass} ${showExplorePreHint ? 'is-pre-explore' : ''} ${isPreStageHotOutline ? 'is-pre-hot-outline' : ''}`.trim()}
           ref={stageRef}
           onPointerDown={handleStagePress}
           onPointerMove={handleStagePointerMove}
           onPointerLeave={handleStagePointerLeave}
         >
           {vignetteOn && <div className="ig-vignette" />}
-          {inOn && impactNonce > 0 && <div key={`impact-${impactNonce}`} className="ig-impact-flash" />}
+          {showImpactFlash && <div key={`impact-${impactNonce}`} className="ig-impact-flash" />}
           {postOn && settleNonce > 0 && <div key={`settle-${settleNonce}`} className="ig-settle-glow" />}
           {preOn && ripplePoint && rippleNonce > 0 && (
             <div key={`ripple-${rippleNonce}`} className="ig-pointer-ripple" style={{ '--ripple-x': `${ripplePoint.x}px`, '--ripple-y': `${ripplePoint.y}px` } as CSSProperties} />
@@ -1732,9 +1761,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                 <text className={`integrated-axis-label ${abstractPostOn ? 'is-post-abstract' : ''}`} key={`axis-x-${postAbstractNonce}`} x={leftX0 + leftW / 2} y={viewBBottom + 46} textAnchor="middle">Year window</text>
                 <text className={`integrated-axis-label ${abstractPostOn ? 'is-post-abstract' : ''}`} key={`axis-y-${postAbstractNonce}`} transform={`translate(${leftX0 - 50}, ${(viewBTop + viewBBottom) / 2}) rotate(-90)`} textAnchor="middle">Internet use (%)</text>
 
-                <line className={`integrated-focus-line ${inOn && focusPulseNonce > 0 ? 'is-pulse' : ''} ${attentionTarget === 'focus' ? 'is-attention' : ''} ${isFocusHot ? 'is-pre-hot' : ''}`} x1={focusX} x2={focusX} y1={viewBTop} y2={viewBBottom} />
-                <line className={`integrated-window-line ${inOn && windowPulseNonce > 0 ? 'is-pulse' : ''} ${attentionTarget === 'window' ? 'is-attention' : ''} ${isWindowStartHot ? 'is-pre-hot' : ''}`} x1={xScaleYear(startYear)} x2={xScaleYear(startYear)} y1={viewBTop} y2={viewBBottom} />
-                <line className={`integrated-window-line ${inOn && windowPulseNonce > 0 ? 'is-pulse' : ''} ${attentionTarget === 'window' ? 'is-attention' : ''} ${isWindowEndHot ? 'is-pre-hot' : ''}`} x1={xScaleYear(endYear)} x2={xScaleYear(endYear)} y1={viewBTop} y2={viewBBottom} />
+                <line className={`integrated-focus-line ${isExploreInScrub ? 'is-pulse' : ''} ${attentionTarget === 'focus' ? 'is-attention' : ''} ${isFocusHot ? 'is-pre-hot' : ''}`} x1={focusX} x2={focusX} y1={viewBTop} y2={viewBBottom} />
+                <line className={`integrated-window-line ${isExploreInScrub ? 'is-pulse' : ''} ${attentionTarget === 'window' ? 'is-attention' : ''} ${isWindowStartHot ? 'is-pre-hot' : ''}`} x1={xScaleYear(startYear)} x2={xScaleYear(startYear)} y1={viewBTop} y2={viewBBottom} />
+                <line className={`integrated-window-line ${isExploreInScrub ? 'is-pulse' : ''} ${attentionTarget === 'window' ? 'is-attention' : ''} ${isWindowEndHot ? 'is-pre-hot' : ''}`} x1={xScaleYear(endYear)} x2={xScaleYear(endYear)} y1={viewBTop} y2={viewBBottom} />
                 {isJuicyOne && preOn && (
                   <g className="integrated-pre-arrows" pointerEvents="none">
                     {isFocusHot && (
@@ -1766,7 +1795,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                     <line ref={preGuideHBRef} className="integrated-pre-guide-line is-view-b-h" x1={leftX0} x2={leftX0 + leftW} y1={viewBTop} y2={viewBTop} />
                   </g>
                 )}
-                {inOn && (
+                {showExploreBand && (
                   <g className="integrated-explore-band">
                     <rect x={leftX0 + 2} y={viewBBottom - 30} width={Math.max(1, leftW - 4)} height={20} rx={5} ry={5} className="integrated-explore-band-box" />
                     <text x={leftX0 + leftW / 2} y={viewBBottom - 16} textAnchor="middle" className="integrated-explore-band-label">Drag to set year window</text>
@@ -1892,9 +1921,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                   )}
                 </g>
 
-                <g className="integrated-arc-layer">{arcs.map(arc => <path key={`${postConnectNonce}-${relatedPulseNonce}-${arc.key}`} d={arc.d} className={`integrated-related-arc ${inOn ? 'is-draw' : ''} ${connectPostOn ? 'is-post-connect' : ''}`} style={{ '--ig-accent': arc.color, '--arc-delay': `${arc.delay}ms` } as CSSProperties} />)}</g>
-                {showBridge && bridge && <path key={`bridge-${hoveredKey ?? 'none'}`} className={`integrated-bridge ${inOn ? 'is-drift' : ''} ${preOn ? 'is-pre-link' : ''}`} d={bridge} />}
-                <g ref={brushLayerRef} className={`integrated-brush-layer ${showExplorePreHint ? 'is-pre-hint' : ''} ${inOn ? 'is-in-on' : ''}`} />
+                <g className="integrated-arc-layer">{arcs.map(arc => <path key={`${postConnectNonce}-${relatedPulseNonce}-${arc.key}`} d={arc.d} className={`integrated-related-arc ${shouldDrawRelatedArcs ? 'is-draw' : ''} ${connectPostOn ? 'is-post-connect' : ''}`} style={{ '--ig-accent': arc.color, '--arc-delay': `${arc.delay}ms` } as CSSProperties} />)}</g>
+                {showBridge && bridge && <path key={`bridge-${hoveredKey ?? 'none'}`} className={`integrated-bridge ${preOn ? 'is-pre-link' : ''}`} d={bridge} />}
+                <g ref={brushLayerRef} className={`integrated-brush-layer ${showExplorePreHint ? 'is-pre-hint' : ''} ${showInBrushHandle ? 'is-in-on' : ''}`} />
 
                 <g className="integrated-ranking-layer" transform={`translate(${rightX0}, ${viewCTop})`} onPointerMove={handleRankingPointerMove} onPointerLeave={handleRankingPointerLeave}>
                   {preOn && previewSortMode && <rect x={2} y={rowTop - 3} width={Math.max(1, rightW - 4)} height={Math.max(1, viewCHeight - rowTop - 5)} className="integrated-rank-preview-frame" />}
@@ -1913,7 +1942,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                       const isRegionDim = hasRegionHover && !isRegionHovered
                       return (
                         <g key={`${postReconfigNonce}-${row.key}`} transform={`translate(0 ${y})`}>
-                          <g className={`integrated-rank-row ${inOn && reorderNonce > 0 ? 'is-reorder' : ''} ${reconfigPostOn ? 'is-post-settle' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`} style={{ '--row-delay': `${index * 14}ms` } as CSSProperties}>
+                          <g className={`integrated-rank-row ${inOn && inBurstKind === 'reconfig' ? 'is-reorder' : ''} ${reconfigPostOn ? 'is-post-settle' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`} style={{ '--row-delay': `${index * 14}ms` } as CSSProperties}>
                             <rect x={2} y={0} width={Math.max(1, rightW - 4)} height={Math.max(1, rowH - 0.8)} className={`integrated-rank-hit ${isActive ? '' : 'is-inactive'} ${isSelected ? 'is-selected' : ''} ${isRelated ? 'is-related' : ''} ${isHovered ? 'is-hovered' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`} onPointerDown={handleSelectPress} onClick={() => selectCountry(row.key)} />
                             <text key={`rn-${postAbstractNonce}-${row.key}`} x={8} y={Math.max(8, rowH - 2)} className={`integrated-rank-name ${abstractPostOn ? 'is-post-abstract' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`}>{row.country.entity}</text>
                             <rect x={barX} y={Math.max(0.8, rowH * 0.22)} width={barW} height={Math.max(0.8, rowH * 0.56)} className={`integrated-rank-bar ${isSelected ? 'is-selected' : isRelated ? 'is-related' : ''} ${isHovered && !isSelected ? 'is-hovered' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`} style={{ '--ig-accent': accentFor(row.key) } as CSSProperties} />
@@ -2207,7 +2236,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
             placeholder='e.g. "Uni"'
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
               setCountryPrefix(event.target.value)
-              triggerFilterDone()
+              triggerFilterDone({ burst: true })
             }}
             onMouseEnter={() => emitPre('filter_focus')}
             disabled={loading || Boolean(error)}
@@ -2220,6 +2249,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
               onChange={(event: ChangeEvent<HTMLInputElement>) => {
                 setShowContext(event.target.checked)
                 emitIn('filter_apply')
+                triggerInBurst('filter', 150)
                 finalizeFilterPost(activeCount)
               }}
             />
