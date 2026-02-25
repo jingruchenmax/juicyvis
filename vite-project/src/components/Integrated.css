@@ -523,6 +523,31 @@
   pointer-events: none;
 }
 
+.integrated-post-fireworks,
+.integrated-post-select-frames,
+.integrated-post-year-flash-layer {
+  pointer-events: none;
+}
+
+.integrated-post-firework-particle {
+  pointer-events: none;
+}
+
+.integrated-post-select-frame,
+.integrated-post-reconfig-frame {
+  pointer-events: none;
+}
+
+.integrated-post-year-flash {
+  pointer-events: none;
+}
+
+.integrated-post-explore-sweep,
+.integrated-post-viewb-flash,
+.integrated-post-filter-sweep-b {
+  pointer-events: none;
+}
+
 .integrated-selected-year-dot {
   fill: #4f46e5;
   opacity: 0.88;

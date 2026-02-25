@@ -738,6 +738,135 @@
   opacity: 1;
 }
 
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-filter .integrated-post-filter-sweep-a,
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-filter .integrated-post-filter-sweep-b {
+  fill: rgba(180, 40, 40, 0.24);
+  stroke: rgba(240, 70, 60, 0.97);
+  stroke-width: 1.3;
+  filter: drop-shadow(0 0 10px rgba(215, 62, 53, 0.62));
+  animation: ig-post-filter-sweep 500ms ease-out forwards;
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-explore .integrated-post-explore-sweep {
+  fill: rgba(180, 40, 40, 0.23);
+  stroke: rgba(240, 70, 60, 0.96);
+  stroke-width: 1.3;
+  filter: drop-shadow(0 0 10px rgba(215, 62, 53, 0.6));
+  animation: ig-post-explore-sweep 520ms ease-out forwards;
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-explore .integrated-post-viewb-flash {
+  fill: rgba(255, 124, 92, 0.22);
+  stroke: rgba(255, 128, 106, 0.55);
+  stroke-width: 0.7;
+  opacity: 0;
+  animation: ig-post-viewb-flash 160ms ease-out forwards;
+  animation-delay: 360ms;
+}
+
+.integrated-shell.juicy-3.post-on .integrated-post-firework-particle {
+  fill: rgba(241, 91, 58, 0.92);
+  stroke: rgba(255, 224, 210, 0.74);
+  stroke-width: 0.3;
+  opacity: 0;
+  filter: drop-shadow(0 0 4px rgba(245, 96, 66, 0.48));
+  animation: ig-post-firework 650ms cubic-bezier(0.2, 0.82, 0.24, 1) both;
+  animation-delay: var(--p-delay, 0ms);
+}
+
+.integrated-shell.juicy-3.post-on .integrated-post-firework-particle:nth-child(3n) {
+  fill: rgba(104, 126, 242, 0.9);
+}
+
+.integrated-shell.juicy-3.post-on .integrated-post-firework-particle:nth-child(4n) {
+  fill: rgba(255, 176, 72, 0.9);
+}
+
+.integrated-shell.juicy-3.post-on .integrated-post-select-frame {
+  fill: none;
+  stroke: rgba(240, 70, 60, 0.95);
+  stroke-width: 1.3;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ig-post-select-frame 2500ms ease-out both;
+  animation-delay: var(--post-frame-delay, 0ms);
+}
+
+.integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-line.is-selected,
+.integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-line.is-related {
+  filter: drop-shadow(0 0 8px rgba(233, 73, 59, 0.55));
+  animation: ig-post-blink 1100ms ease-in-out infinite;
+}
+
+.integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .ig-dot.is-selected,
+.integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .ig-dot.is-related,
+.integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-focus-marker.is-selected,
+.integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-focus-marker.is-related {
+  filter: drop-shadow(0 0 7px rgba(233, 73, 59, 0.48));
+  animation: ig-post-blink 1100ms ease-in-out infinite;
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-rank-bar.is-post-reconfig-bounce {
+  transform-origin: left center;
+  transform-box: fill-box;
+  animation: ig-reconfig-bounce 420ms cubic-bezier(0.22, 0.86, 0.3, 1.06) both;
+  animation-delay: calc(500ms + var(--row-delay, 0ms));
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-post-reconfig-frame {
+  fill: none;
+  stroke: rgba(240, 70, 60, 0.95);
+  stroke-width: 1.2;
+  opacity: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: ig-post-reconfig-frame 420ms ease-out both;
+  animation-delay: calc(500ms + var(--row-delay, 0ms));
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-encode .ig-bin.is-post-encode-triplet {
+  transform-origin: center bottom;
+  transform-box: fill-box;
+  animation: ig-post-encode-hist-triplet 3000ms ease-in-out both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-encode .ig-dot.is-post-encode-sparkle {
+  animation:
+    ig-dot-pop 320ms cubic-bezier(0.2, 0.9, 0.25, 1.2) both,
+    ig-post-dot-sparkle 2200ms ease-in-out both;
+  animation-delay:
+    var(--enter-delay, 0ms),
+    calc(1000ms + var(--sparkle-delay, 0ms));
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-abstract .integrated-rank-metric.is-post-abstract-metric-flash {
+  font-weight: 700;
+  animation: ig-post-abstract-metric-flash 520ms ease-out both;
+  animation-delay: calc(650ms + var(--row-delay, 0ms));
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-abstract .integrated-post-year-flash {
+  fill: rgba(226, 53, 45, 0.96);
+  font-weight: 700;
+  opacity: 0;
+  animation: ig-post-year-flash 420ms ease-out both;
+  animation-delay: calc(650ms + var(--tick-delay, 0ms));
+}
+
+.integrated-shell.juicy-3.post-on .integrated-bridge.is-post-persist {
+  stroke: rgba(238, 82, 41, 0.94);
+  stroke-width: 2.2;
+  stroke-dasharray: 0.035 0.03;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 7px rgba(233, 79, 48, 0.46));
+  animation:
+    ig-post-bridge-draw 320ms ease-out both,
+    ig-post-bridge-flow 900ms linear infinite 320ms,
+    ig-post-bridge-blink 1100ms ease-in-out infinite 320ms;
+}
+
 .integrated-shell.in-on .integrated-stage.is-in-active.is-in-select .integrated-line.is-selected,
 .integrated-shell.in-on .integrated-stage.is-in-active.is-in-select .integrated-line.is-related,
 .integrated-shell.in-on .integrated-stage.is-in-active.is-in-selection .integrated-line.is-selected,
@@ -1070,6 +1199,146 @@
   100% { opacity: 0; transform: scale(1.26); }
 }
 
+@keyframes ig-post-firework {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.8);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(calc(var(--p-dx, 0px) * 0.28), calc(var(--p-dy, 0px) * 0.28)) scale(1.04);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--p-dx, 0px), var(--p-dy, 0px)) scale(0.72);
+  }
+}
+
+@keyframes ig-post-select-frame {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes ig-post-blink {
+  0% { opacity: 0.78; filter: brightness(0.98); }
+  50% { opacity: 1; filter: brightness(1.12); }
+  100% { opacity: 0.78; filter: brightness(0.98); }
+}
+
+@keyframes ig-post-explore-sweep {
+  0% { opacity: 0; transform: translateX(0); }
+  26% { opacity: 0.98; }
+  88% { opacity: 0.84; }
+  100% { opacity: 0; transform: translateX(var(--post-explore-sweep-dx, 0px)); }
+}
+
+@keyframes ig-post-viewb-flash {
+  0% { opacity: 0; }
+  45% { opacity: 0.26; }
+  100% { opacity: 0; }
+}
+
+@keyframes ig-reconfig-bounce {
+  0% { transform: scaleX(1); }
+  45% { transform: scaleX(1.08); }
+  78% { transform: scaleX(0.98); }
+  100% { transform: scaleX(1); }
+}
+
+@keyframes ig-post-reconfig-frame {
+  0% {
+    opacity: 0;
+    transform: scale(0.986);
+  }
+  38% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes ig-post-encode-hist-triplet {
+  0% { filter: brightness(1); transform: translateY(0) scaleY(1); }
+  8% { filter: brightness(1.35); transform: translateY(-1px) scaleY(1.08); }
+  16% { filter: brightness(1); transform: translateY(0) scaleY(1); }
+  33% { filter: brightness(1); transform: translateY(0) scaleY(1); }
+  41% { filter: brightness(1.35); transform: translateY(-1px) scaleY(1.08); }
+  49% { filter: brightness(1); transform: translateY(0) scaleY(1); }
+  66% { filter: brightness(1); transform: translateY(0) scaleY(1); }
+  74% { filter: brightness(1.35); transform: translateY(-1px) scaleY(1.08); }
+  82% { filter: brightness(1); transform: translateY(0) scaleY(1); }
+  100% { filter: brightness(1); transform: translateY(0) scaleY(1); }
+}
+
+@keyframes ig-post-dot-sparkle {
+  0% { filter: brightness(1); opacity: 1; }
+  8% { filter: brightness(1.42); opacity: 1; }
+  16% { filter: brightness(1); opacity: 1; }
+  50% { filter: brightness(1); opacity: 1; }
+  58% { filter: brightness(1.42); opacity: 1; }
+  66% { filter: brightness(1); opacity: 1; }
+  100% { filter: brightness(1); opacity: 1; }
+}
+
+@keyframes ig-post-abstract-metric-flash {
+  0% {
+    fill: rgba(30, 58, 96, 1);
+    opacity: 0.7;
+    transform: translateX(2px);
+  }
+  45% {
+    fill: rgba(226, 53, 45, 0.98);
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    fill: rgba(30, 58, 96, 1);
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ig-post-year-flash {
+  0% { opacity: 0; transform: translateY(1px); }
+  40% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(0); }
+}
+
+@keyframes ig-post-bridge-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.92;
+  }
+}
+
+@keyframes ig-post-bridge-flow {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -0.13; }
+}
+
+@keyframes ig-post-bridge-blink {
+  0% { opacity: 0.72; filter: brightness(0.98); }
+  50% { opacity: 0.96; filter: brightness(1.16); }
+  100% { opacity: 0.72; filter: brightness(0.98); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .integrated-shell.pre-on .ig-pointer-ripple::before,
   .integrated-shell.pre-on .integrated-filter-guides.is-pre-hover .integrated-filter-guide-line,
@@ -1127,7 +1396,26 @@
   .integrated-shell.post-on .integrated-layout.post-active.post-connect .integrated-related-list.is-post-connect,
   .integrated-shell.post-on .integrated-layout.post-active.post-connect .integrated-related-arc.is-post-connect,
   .integrated-shell.post-on .integrated-layout.post-active.post-connect .integrated-post-connect-ping,
-  .integrated-shell.post-on .integrated-layout.post-active.post-connect .integrated-post-connect-row-ping {
+  .integrated-shell.post-on .integrated-layout.post-active.post-connect .integrated-post-connect-row-ping,
+  .integrated-shell.juicy-3.post-on .integrated-post-firework-particle,
+  .integrated-shell.juicy-3.post-on .integrated-post-select-frame,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-line.is-selected,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-line.is-related,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .ig-dot.is-selected,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .ig-dot.is-related,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-focus-marker.is-selected,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-focus-marker.is-related,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-explore .integrated-post-explore-sweep,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-explore .integrated-post-viewb-flash,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-rank-bar.is-post-reconfig-bounce,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-post-reconfig-frame,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-encode .ig-bin.is-post-encode-triplet,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-encode .ig-dot.is-post-encode-sparkle,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-abstract .integrated-rank-metric.is-post-abstract-metric-flash,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-abstract .integrated-post-year-flash,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-filter .integrated-post-filter-sweep-a,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-filter .integrated-post-filter-sweep-b,
+  .integrated-shell.juicy-3.post-on .integrated-bridge.is-post-persist {
     animation: none !important;
     transition: none !important;
   }
@@ -1159,5 +1447,20 @@
   .integrated-shell.juicy-2.in-on input[type='range'].integrated-range.is-in-scrub::-webkit-slider-thumb,
   .integrated-shell.juicy-2.in-on input[type='range'].integrated-range.is-in-scrub::-moz-range-thumb {
     animation: none !important;
+  }
+
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-line.is-selected,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-line.is-related,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .ig-dot.is-selected,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .ig-dot.is-related,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-focus-marker.is-selected,
+  .integrated-shell.juicy-3.post-on .integrated-stage.is-post-persist-select .integrated-focus-marker.is-related {
+    filter: drop-shadow(0 0 4px rgba(233, 73, 59, 0.35));
+    opacity: 1;
+  }
+
+  .integrated-shell.juicy-3.post-on .integrated-post-select-frame,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-post-reconfig-frame {
+    opacity: 0.42;
   }
 }
