@@ -1,7 +1,7 @@
 # Credits
 
 ## Data sources
-This project uses publicly available datasets. Unless otherwise noted, data were downloaded from Our World in Data (Grapher) and include the processing described in each dataset's metadata.
+This project uses publicly available datasets. Unless otherwise noted, data were downloaded from "Our World in Data" (Grapher) and include the processing described in each dataset's metadata. 
 
 - **AI training compute vs. parameters (by researcher affiliation)** - Epoch AI (2025), with major processing by Our World in Data. (File: `ai-training-computation-vs-parameters-by-researcher-affiliation.csv`)
 - **Child mortality rate** - Gapminder (2015); UN Inter-agency Group for Child Mortality Estimation (2025) - processed by Our World in Data. (Files: `child-mortality.csv`, `child-mortality.metadata.json`)
