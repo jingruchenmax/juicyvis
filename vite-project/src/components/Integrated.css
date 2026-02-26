@@ -544,7 +544,9 @@
 
 .integrated-post-explore-sweep,
 .integrated-post-viewb-flash,
-.integrated-post-filter-sweep-b {
+.integrated-post-filter-sweep-b,
+.integrated-post-filter-legend-outline,
+.integrated-post-filter-legend-flash {
   pointer-events: none;
 }
 

@@ -765,21 +765,12 @@
 }
 
 .integrated-shell.juicy-3.post-on .integrated-post-firework-particle {
-  fill: rgba(241, 91, 58, 0.92);
-  stroke: rgba(255, 224, 210, 0.74);
-  stroke-width: 0.3;
+  fill: rgba(241, 91, 58, 0.95);
+  stroke: none;
   opacity: 0;
   filter: drop-shadow(0 0 4px rgba(245, 96, 66, 0.48));
   animation: ig-post-firework 650ms cubic-bezier(0.2, 0.82, 0.24, 1) both;
   animation-delay: var(--p-delay, 0ms);
-}
-
-.integrated-shell.juicy-3.post-on .integrated-post-firework-particle:nth-child(3n) {
-  fill: rgba(104, 126, 242, 0.9);
-}
-
-.integrated-shell.juicy-3.post-on .integrated-post-firework-particle:nth-child(4n) {
-  fill: rgba(255, 176, 72, 0.9);
 }
 
 .integrated-shell.juicy-3.post-on .integrated-post-select-frame {
@@ -812,6 +803,30 @@
   transform-box: fill-box;
   animation: ig-reconfig-bounce 420ms cubic-bezier(0.22, 0.86, 0.3, 1.06) both;
   animation-delay: calc(500ms + var(--row-delay, 0ms));
+}
+
+.integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-select .integrated-rank-bar.is-post-select-bounce {
+  transform-origin: left center;
+  transform-box: fill-box;
+  animation: ig-post-select-bounce 480ms cubic-bezier(0.22, 0.86, 0.3, 1.06) both;
+  animation-delay: calc(600ms + var(--post-select-delay, 0ms));
+}
+
+.integrated-shell.juicy-3.post-on .integrated-post-filter-legend-outline {
+  fill: none;
+  stroke: rgba(238, 82, 41, 0.96);
+  stroke-width: 8;
+  opacity: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  filter: drop-shadow(0 0 12px rgba(238, 82, 41, 0.55));
+  animation: ig-post-legend-outline 420ms ease-out both;
+}
+
+.integrated-shell.juicy-3.post-on .integrated-post-filter-legend-flash {
+  fill: rgba(238, 82, 41, 0.14);
+  opacity: 0;
+  animation: ig-post-legend-flash 220ms ease-out both;
 }
 
 .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-post-reconfig-frame {
@@ -1206,11 +1221,11 @@
   }
   18% {
     opacity: 1;
-    transform: translate(calc(var(--p-dx, 0px) * 0.28), calc(var(--p-dy, 0px) * 0.28)) scale(1.04);
+    transform: translate(calc(var(--p-dx, 0px) * 0.28), calc(var(--p-dy, 0px) * 0.28)) scale(1.08);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--p-dx, 0px), var(--p-dy, 0px)) scale(0.72);
+    transform: translate(var(--p-dx, 0px), var(--p-dy, 0px)) scale(0.78);
   }
 }
 
@@ -1253,6 +1268,42 @@
   45% { transform: scaleX(1.08); }
   78% { transform: scaleX(0.98); }
   100% { transform: scaleX(1); }
+}
+
+@keyframes ig-post-select-bounce {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  55% {
+    transform: scale(1.08);
+    filter: brightness(1.18);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes ig-post-legend-outline {
+  0% {
+    opacity: 0;
+    transform: scale(0.995);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes ig-post-legend-flash {
+  0% { opacity: 0; }
+  45% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 @keyframes ig-post-reconfig-frame {
@@ -1408,6 +1459,7 @@
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-explore .integrated-post-explore-sweep,
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-explore .integrated-post-viewb-flash,
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-rank-bar.is-post-reconfig-bounce,
+  .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-select .integrated-rank-bar.is-post-select-bounce,
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-reconfigure .integrated-post-reconfig-frame,
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-encode .ig-bin.is-post-encode-triplet,
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-encode .ig-dot.is-post-encode-sparkle,
@@ -1415,6 +1467,8 @@
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-abstract .integrated-post-year-flash,
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-filter .integrated-post-filter-sweep-a,
   .integrated-shell.juicy-3.post-on .integrated-layout.post-active.post-filter .integrated-post-filter-sweep-b,
+  .integrated-shell.juicy-3.post-on .integrated-post-filter-legend-outline,
+  .integrated-shell.juicy-3.post-on .integrated-post-filter-legend-flash,
   .integrated-shell.juicy-3.post-on .integrated-bridge.is-post-persist {
     animation: none !important;
     transition: none !important;
