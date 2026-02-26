@@ -206,11 +206,14 @@ const truncateBadgeText = (value: string, max = 32): string => {
 }
 
 export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
-  const { loading, error, countries, years, valueDomain, metadata } = useInternetData()
+  const { loading, error, countries, years, valueDomain, metadata } = useInternetData(juicyLevel)
 
   const { preOn, inOn, postOn, isPurePre, isPurePost } = getJuicyCaps(juicyLevel)
   const baselineHoverLike = !preOn
   const useReadableViewALabel = baselineHoverLike || isPurePre
+  const displayTitle = metadata?.title ?? 'Loading...'
+  const displayUnit = metadata?.unit ?? '%'
+  const displayAxisLabel = metadata ? `${metadata.title} (${displayUnit})` : `Value (${displayUnit})`
 
   const [chartWidth, setChartWidth] = useState(DEFAULT_WIDTH)
   const [focusYear, setFocusYear] = useState(2015)
@@ -2189,9 +2192,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
             </div>
           )}
 
-          {loading && <div className="integrated-stage-status">Loading internet-use dataset...</div>}
+          {loading && <div className="integrated-stage-status">Loading dataset...</div>}
           {error && !loading && <div className="integrated-stage-status is-error">Error loading data: {error}</div>}
-          {!loading && !error && countries.length === 0 && <div className="integrated-stage-status is-error">No usable rows found in internet-use dataset.</div>}
+          {!loading && !error && countries.length === 0 && <div className="integrated-stage-status is-error">No usable rows found in dataset.</div>}
 
           {!loading && !error && countries.length > 0 && (
             <>
@@ -2201,7 +2204,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                     <rect x={2} y={rowTop - 1} width={Math.max(1, rightW - 4)} height={Math.max(1, viewCHeight - rowTop - 5)} />
                   </clipPath>
                 </defs>
-                <text x={chartWidth / 2} y={26} className="integrated-title" textAnchor="middle">Internet use</text>
+                <text x={chartWidth / 2} y={26} className="integrated-title" textAnchor="middle">{displayTitle}</text>
                 <rect x={instructionX} y={45} width={instructionWidth} height={26} rx={9} ry={9} className="integrated-instruction-box" />
                 <text x={chartWidth / 2} y={62} className="integrated-instruction" textAnchor="middle">
                   Hover links views. Click selects. Drag/brush explores. Toggle representation encodes. Controls filter/reconfigure/abstract/connect.
@@ -2268,7 +2271,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                   </g>
                 ))}
 
-                <text className="integrated-axis-label" x={leftX0 + leftW / 2} y={viewABottom + 14} textAnchor="middle">Internet users (% of population)</text>
+                <text className="integrated-axis-label" x={leftX0 + leftW / 2} y={viewABottom + 14} textAnchor="middle">{displayAxisLabel}</text>
 
                 <line className="integrated-axis-line" x1={leftX0} x2={leftX0 + leftW} y1={viewBBottom} y2={viewBBottom} />
                 <line className="integrated-axis-line" x1={leftX0} x2={leftX0} y1={viewBTop} y2={viewBBottom} />
@@ -2294,7 +2297,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                 ))}
 
                 <text className={`integrated-axis-label ${isPostAbstract ? 'is-post-abstract' : ''} ${isPostExplore ? 'is-post-pulse' : ''}`} x={leftX0 + leftW / 2} y={viewBBottom + 46} textAnchor="middle">Year window</text>
-                <text className={`integrated-axis-label ${isPostAbstract ? 'is-post-abstract' : ''}`} transform={`translate(${leftX0 - 50}, ${(viewBTop + viewBBottom) / 2}) rotate(-90)`} textAnchor="middle">Internet use (%)</text>
+                <text className={`integrated-axis-label ${isPostAbstract ? 'is-post-abstract' : ''}`} transform={`translate(${leftX0 - 50}, ${(viewBTop + viewBBottom) / 2}) rotate(-90)`} textAnchor="middle">{displayAxisLabel}</text>
 
                 <line className={`integrated-focus-line ${isExploreInScrub ? 'is-pulse' : ''} ${isPostExplore ? 'is-post-settle' : ''} ${attentionTarget === 'focus' ? 'is-attention' : ''} ${isFocusHot ? 'is-pre-hot' : ''}`} x1={focusX} x2={focusX} y1={viewBTop} y2={viewBBottom} />
                 <line className={`integrated-window-line ${isExploreInScrub ? 'is-pulse' : ''} ${isPostExplore ? 'is-post-settle' : ''} ${attentionTarget === 'window' ? 'is-attention' : ''} ${isWindowStartHot ? 'is-pre-hot' : ''}`} x1={xScaleYear(startYear)} x2={xScaleYear(startYear)} y1={viewBTop} y2={viewBBottom} />

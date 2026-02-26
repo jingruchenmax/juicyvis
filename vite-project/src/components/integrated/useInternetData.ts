@@ -1,12 +1,5 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as d3 from 'd3'
-
-interface InternetCsvRow {
-  Entity: string
-  Code: string
-  Year: string
-  'Share of the population using the Internet': string
-}
 
 interface InternetMetadataColumn {
   titleShort?: string
@@ -69,31 +62,22 @@ interface CountryBuilder {
 }
 
 const DEFAULT_DOMAIN: [number, number] = [0, 100]
+const FALLBACK_SLUG = 'share-of-individuals-using-the-internet'
+const DATASET_BY_JUICY_LEVEL = new Map<number, string>([
+  [0, 'share-of-the-population-with-access-to-electricity'],
+  [1, 'access-to-clean-fuels-and-technologies-for-cooking'],
+  [2, 'share-electricity-renewables'],
+  [3, 'share-of-population-urban'],
+  [4, 'share-of-urban-population-living-in-slums'],
+  [5, 'share-of-adults-who-smoke'],
+  [6, 'share-of-adults-defined-as-obese'],
+  [7, 'share-of-individuals-using-the-internet']
+])
 
-const parseNumber = (value: string): number | null => {
+const parseNumber = (value: string | undefined | null): number | null => {
   const parsed = Number((value ?? '').trim())
   if (!Number.isFinite(parsed)) return null
   return parsed
-}
-
-const parseRow = (row: InternetCsvRow): ParsedRow | null => {
-  const entity = (row.Entity ?? '').trim()
-  const code = (row.Code ?? '').trim()
-  const yearValue = parseNumber(row.Year ?? '')
-  const shareValue = parseNumber(row['Share of the population using the Internet'] ?? '')
-
-  if (!entity || !code || code.startsWith('OWID')) return null
-  if (yearValue === null || shareValue === null) return null
-
-  const year = Math.trunc(yearValue)
-  if (!Number.isFinite(year)) return null
-
-  return {
-    entity,
-    code,
-    year,
-    value: shareValue
-  }
 }
 
 const buildCountries = (rows: ParsedRow[]): { countries: InternetCountrySeries[]; years: number[] } => {
@@ -141,19 +125,20 @@ const buildCountries = (rows: ParsedRow[]): { countries: InternetCountrySeries[]
   }
 }
 
-const parseMetadata = (raw: InternetMetadataRaw): InternetMetadata => {
+const parseMetadata = (raw: InternetMetadataRaw, valueColumn: string): InternetMetadata => {
   const firstColumn = raw.columns ? Object.values(raw.columns)[0] : undefined
+  const columnMeta = raw.columns?.[valueColumn] ?? firstColumn
 
   return {
-    title: firstColumn?.titleShort ?? raw.chart?.title ?? 'Share of the population using the Internet',
-    unit: firstColumn?.unit ?? '% of population',
-    timespan: firstColumn?.timespan ?? 'N/A',
-    lastUpdated: firstColumn?.lastUpdated ?? 'N/A',
-    citation: firstColumn?.citationShort ?? raw.chart?.citation ?? 'N/A'
+    title: raw.chart?.title ?? columnMeta?.titleShort ?? valueColumn ?? 'N/A',
+    unit: columnMeta?.unit ?? '%',
+    timespan: columnMeta?.timespan ?? 'N/A',
+    lastUpdated: columnMeta?.lastUpdated ?? 'N/A',
+    citation: columnMeta?.citationShort ?? raw.chart?.citation ?? 'N/A'
   }
 }
 
-export function useInternetData(): InternetDataResult {
+export function useInternetData(juicyLevel: number): InternetDataResult {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rows, setRows] = useState<ParsedRow[]>([])
@@ -161,32 +146,62 @@ export function useInternetData(): InternetDataResult {
 
   useEffect(() => {
     let cancelled = false
+    const slug = DATASET_BY_JUICY_LEVEL.get(juicyLevel) ?? FALLBACK_SLUG
+
+    setLoading(true)
+    setError(null)
+    setRows([])
+    setMetadata(null)
 
     const load = async () => {
       try {
         const [csvResponse, metadataResponse] = await Promise.all([
-          fetch(`${import.meta.env.BASE_URL}share-of-individuals-using-the-internet.csv`),
-          fetch(`${import.meta.env.BASE_URL}share-of-individuals-using-the-internet.metadata.json`)
+          fetch(`${import.meta.env.BASE_URL}${slug}.csv`),
+          fetch(`${import.meta.env.BASE_URL}${slug}.metadata.json`)
         ])
 
         if (!csvResponse.ok) {
-          throw new Error(`Failed to load internet-use CSV (${csvResponse.status})`)
+          throw new Error(`Failed to load CSV for ${slug} (${csvResponse.status})`)
         }
         if (!metadataResponse.ok) {
-          throw new Error(`Failed to load internet-use metadata (${metadataResponse.status})`)
+          throw new Error(`Failed to load metadata for ${slug} (${metadataResponse.status})`)
         }
 
         const [csvText, metadataText] = await Promise.all([csvResponse.text(), metadataResponse.text()])
         if (cancelled) return
 
-        const parsedRows = d3
-          .csvParse(csvText, raw => parseRow(raw as unknown as InternetCsvRow))
+        const parsed = d3.csvParse(csvText)
+        const valueColumn = parsed.columns.find(column => column !== 'Entity' && column !== 'Code' && column !== 'Year')
+        if (!valueColumn) {
+          throw new Error(`Could not detect value column for ${slug}`)
+        }
+
+        const parsedRows = parsed
+          .map(row => {
+            const entity = (row.Entity ?? '').trim()
+            const code = (row.Code ?? '').trim()
+            const yearValue = parseNumber(row.Year)
+            const metricValue = parseNumber(row[valueColumn])
+
+            if (!entity || !code || code.startsWith('OWID')) return null
+            if (yearValue === null || metricValue === null) return null
+
+            const year = Math.trunc(yearValue)
+            if (!Number.isFinite(year)) return null
+
+            return {
+              entity,
+              code,
+              year,
+              value: metricValue
+            } satisfies ParsedRow
+          })
           .filter((row): row is ParsedRow => row !== null)
 
         const metadataRaw = JSON.parse(metadataText) as InternetMetadataRaw
 
         setRows(parsedRows)
-        setMetadata(parseMetadata(metadataRaw))
+        setMetadata(parseMetadata(metadataRaw, valueColumn))
         setError(null)
         setLoading(false)
       } catch (loadError) {
@@ -203,7 +218,7 @@ export function useInternetData(): InternetDataResult {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [juicyLevel])
 
   const built = useMemo(() => buildCountries(rows), [rows])
 
