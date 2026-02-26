@@ -68,7 +68,7 @@ const DATASET_BY_JUICY_LEVEL = new Map<number, string>([
   [1, 'access-to-clean-fuels-and-technologies-for-cooking'],
   [2, 'share-electricity-renewables'],
   [3, 'share-of-population-urban'],
-  [4, 'share-of-urban-population-living-in-slums'],
+  [4, 'share-of-children-immunized-dtp3'],
   [5, 'share-of-adults-who-smoke'],
   [6, 'share-of-adults-defined-as-obese'],
   [7, 'share-of-individuals-using-the-internet']
