@@ -11,8 +11,8 @@ const isIn = (value: number, list: number[]): boolean => {
 }
 
 export default function Integrated({ juicyLevel }: IntegratedProps) {
-  const preOn = isIn(juicyLevel, [1, 4, 5, 7])
-  const inOn = isIn(juicyLevel, [2, 4, 6, 7])
+  const preOn = isIn(juicyLevel, [1, 4, 6, 7])
+  const inOn = isIn(juicyLevel, [2, 4, 5, 7])
   const postOn = isIn(juicyLevel, [3, 5, 6, 7])
 
   return (

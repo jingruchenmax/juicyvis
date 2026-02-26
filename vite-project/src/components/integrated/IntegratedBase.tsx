@@ -120,6 +120,8 @@ const HOVER_THROTTLE = 90
 const DRAG_THROTTLE = 70
 const POST_TOAST_THROTTLE = 350
 const POST_SELECT_DING_DELAY_MS = 560
+const CLICK_BRIDGE_BURST_MS = 820
+const POST_PERSIST_BRIDGE_DELAY_MS = 900
 const IN_EVENT_KINDS = new Set(['select_commit', 'explore_scrub', 'reconfig_reorder', 'encode_switch', 'filter_apply', 'abstract_adjust'])
 
 const MARGIN = { top: 118, right: 28, bottom: 66, left: 72 }
@@ -191,13 +193,14 @@ const truncateBadgeText = (value: string, max = 32): string => {
 export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const { loading, error, countries, years, valueDomain, metadata } = useInternetData()
 
-  const isJuicyOne = juicyLevel === 1
-  const isJuicyThree = juicyLevel === 3
-  const baselineHoverLike = juicyLevel === 0 || juicyLevel === 2 || juicyLevel === 3
-  const useReadableViewALabel = baselineHoverLike || isJuicyOne
-  const preOn = juicyLevel === 1 || juicyLevel === 4 || juicyLevel === 5 || juicyLevel === 7
-  const inOn = juicyLevel === 2 || juicyLevel === 4 || juicyLevel === 6 || juicyLevel === 7
+  const preOn = juicyLevel === 1 || juicyLevel === 4 || juicyLevel === 6 || juicyLevel === 7
+  const inOn = juicyLevel === 2 || juicyLevel === 4 || juicyLevel === 5 || juicyLevel === 7
   const postOn = juicyLevel === 3 || juicyLevel === 5 || juicyLevel === 6 || juicyLevel === 7
+  const isPurePre = juicyLevel === 1
+  const isPureIn = juicyLevel === 2
+  const isPurePost = juicyLevel === 3
+  const baselineHoverLike = !preOn
+  const useReadableViewALabel = baselineHoverLike || isPurePre
 
   const [chartWidth, setChartWidth] = useState(DEFAULT_WIDTH)
   const [focusYear, setFocusYear] = useState(2015)
@@ -270,6 +273,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const [clickBridge, setClickBridge] = useState<{ ds: string[]; nonce: number } | null>(null)
   const [persistSelectKey, setPersistSelectKey] = useState<string | null>(null)
   const [postBridgeNonce, setPostBridgeNonce] = useState(0)
+  const [postBridgeReady, setPostBridgeReady] = useState(false)
   const [postFilterSweepMask, setPostFilterSweepMask] = useState<PostFilterSweepMask>('A')
   const [postSelectFxActive, setPostSelectFxActive] = useState(false)
   const [postSelectFxNonce, setPostSelectFxNonce] = useState(0)
@@ -326,6 +330,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const postTimeoutRef = useRef<number | null>(null)
   const filterRegionFxTimeoutRef = useRef<number | null>(null)
   const clickBridgeTimeoutRef = useRef<number | null>(null)
+  const postBridgeDelayTimeoutRef = useRef<number | null>(null)
   const reconfigTailSoundTimeoutRef = useRef<number | null>(null)
   const postSelectFxTimeoutRef = useRef<number | null>(null)
   const postLegendFilterFxTimeoutRef = useRef<number | null>(null)
@@ -438,26 +443,21 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     clearTimeoutRef(postTimeoutRef)
     clearTimeoutRef(filterTimeoutRef)
     clearTimeoutRef(reconfigTailSoundTimeoutRef)
+    clearTimeoutRef(postBridgeDelayTimeoutRef)
     clearTimeoutRef(postSelectFxTimeoutRef)
     clearTimeoutRef(postLegendFilterFxTimeoutRef)
     clearTimeoutRef(postSelectDingTimeoutRef)
     setPostKind('none')
     setPostBadge(null)
-    setPostSelectFxActive(false)
-    setPostLegendFilterFxActive(false)
-  }, [postOn])
-
-  useEffect(() => {
-    if (isJuicyThree) return
-    clearTimeoutRef(postSelectFxTimeoutRef)
-    clearTimeoutRef(filterTimeoutRef)
-    clearTimeoutRef(postLegendFilterFxTimeoutRef)
-    clearTimeoutRef(postSelectDingTimeoutRef)
-    setPostSelectFxActive(false)
-    setPostLegendFilterFxActive(false)
     setPersistSelectKey(null)
+    setPostBridgeReady(false)
+    setPostBridgeNonce(0)
     setPostFilterSweepMask('A')
-  }, [isJuicyThree])
+    setPostSelectFxActive(false)
+    setPostSelectFxNonce(0)
+    setPostLegendFilterFxActive(false)
+    setPostLegendFilterFxNonce(0)
+  }, [postOn])
 
   useEffect(() => {
     const stage = stageRef.current
@@ -617,13 +617,13 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   }, [])
 
   const schedulePostSelectDing = useCallback(() => {
-    if (!isJuicyThree) return
+    if (!postOn) return
     clearTimeoutRef(postSelectDingTimeoutRef)
     postSelectDingTimeoutRef.current = window.setTimeout(() => {
       playDingdong2()
       postSelectDingTimeoutRef.current = null
     }, POST_SELECT_DING_DELAY_MS)
-  }, [isJuicyThree, playDingdong2])
+  }, [playDingdong2, postOn])
 
   const emitIn = useCallback((kind: string) => {
     if (!inOn) return
@@ -644,12 +644,11 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   }, [inOn, motionAllowed])
 
   const emitFocusYearScrub = useCallback(() => {
-    const isJuicy2FocusYearScrub = juicyLevel === 2
-      && inOn
+    const isInFocusYearScrub = (isPureIn || inOn)
       && isScrubbing
       && activeScrubKind === 'explore'
       && activeRangeControl === 'focusYear'
-    if (!isJuicy2FocusYearScrub) {
+    if (!isInFocusYearScrub) {
       emitIn('explore_scrub')
       return
     }
@@ -659,14 +658,14 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     playFocusYearScrubClick8()
     if (!motionAllowed) return
     setImpactNonce(previous => previous + 1)
-  }, [activeRangeControl, activeScrubKind, emitIn, inOn, isScrubbing, juicyLevel, motionAllowed, playFocusYearScrubClick8])
+  }, [activeRangeControl, activeScrubKind, emitIn, inOn, isPureIn, isScrubbing, motionAllowed, playFocusYearScrubClick8])
 
   const emitPost = useCallback((kind: string, payload?: { start?: number; end?: number; count?: number; label?: string }, options?: { suppressSound?: boolean }) => {
     if (!postOn) return
-    const shouldDeferJuicy3SelectDing = isJuicyThree && kind === 'select_settle'
-    if (!options?.suppressSound && !shouldDeferJuicy3SelectDing) {
+    const shouldDeferPostSelectDing = postOn && kind === 'select_settle'
+    if (!options?.suppressSound && !shouldDeferPostSelectDing) {
       if (kind === 'connect_reveal') playWhooshSound()
-      else if (isJuicyThree) playDingdong2()
+      else if (postOn) playDingdong2()
       else playDingdong1Sound()
     }
 
@@ -678,7 +677,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     else if (kind === 'select_settle') pushToast('Selection updated')
     else if (kind === 'connect_reveal') pushToast('Related countries revealed')
 
-  }, [detailLevel, endYear, isJuicyThree, playDingdong2, postOn, pushToast, representation, sortMode, startYear])
+  }, [detailLevel, endYear, playDingdong2, postOn, pushToast, representation, sortMode, startYear])
 
   useEffect(() => {
     hoveredKeyRef.current = hoveredKey
@@ -698,6 +697,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       clearTimeoutRef(postTimeoutRef)
       clearTimeoutRef(filterRegionFxTimeoutRef)
       clearTimeoutRef(clickBridgeTimeoutRef)
+      clearTimeoutRef(postBridgeDelayTimeoutRef)
       clearTimeoutRef(reconfigTailSoundTimeoutRef)
       clearTimeoutRef(postSelectFxTimeoutRef)
       clearTimeoutRef(postLegendFilterFxTimeoutRef)
@@ -1144,7 +1144,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const hoveredBinTitle = hoveredBin ? `${fmt(hoveredBin.v0)}% To ${fmt(hoveredBin.v1)}%` : ''
   const shouldShowMainTip = detailLevel >= 1 && Boolean(tooltip && tooltipCountry)
   const shouldShowHistTip = representation === 'histogram' && Boolean(histTooltip && hoveredBin)
-  const animateTips = isJuicyOne && !prefersReducedMotion
+  const animateTips = preOn && !prefersReducedMotion
   const renderedTooltip = animateTips ? tipRenderData : tooltip
   const renderedTooltipCountry = renderedTooltip ? countryByKey.get(renderedTooltip.key) ?? null : null
   const renderedTooltipMetric = renderedTooltipCountry ? metrics.find(row => row.key === renderedTooltipCountry.key) ?? null : null
@@ -1257,8 +1257,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const finalizeExplorePost = useCallback((range?: { start: number; end: number }) => {
     const payload = range ?? { start: startYear, end: endYear }
     emitPost('explore_set', payload)
-    triggerPost('explore', { duration: isJuicyThree ? 900 : 700, badge: { view: 'B', text: '\u2713 Updated' } })
-  }, [emitPost, endYear, isJuicyThree, startYear, triggerPost])
+    triggerPost('explore', { duration: postOn ? 900 : 700, badge: { view: 'B', text: '\u2713 Updated' } })
+  }, [emitPost, endYear, postOn, startYear, triggerPost])
 
   const finalizeFilterPost = useCallback((options?: { count?: number; source?: FilterPostSource }) => {
     const count = options?.count ?? activeCount
@@ -1267,13 +1267,13 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     clearTimeoutRef(postLegendFilterFxTimeoutRef)
     setPostLegendFilterFxActive(false)
     clearTimeoutRef(prefixPostTimeoutRef)
-    if (isJuicyThree) {
+    if (postOn) {
       if (source === 'legend') setPostFilterSweepMask('none')
       else setPostFilterSweepMask('AB')
     } else {
       setPostFilterSweepMask('A')
     }
-    if (isJuicyThree && source === 'legend') {
+    if (postOn && source === 'legend') {
       filterTimeoutRef.current = window.setTimeout(() => {
         emitPost('filter_done', { count })
         triggerPost('filter', { duration: 900, badge: { view: 'A', text: '\u2713 Filtered' } })
@@ -1289,8 +1289,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       return
     }
     emitPost('filter_done', { count })
-    triggerPost('filter', { duration: 700, badge: { view: 'A', text: '\u2713 Filtered' } })
-  }, [activeCount, emitPost, isJuicyThree, triggerPost])
+    triggerPost('filter', { duration: postOn ? 900 : 700, badge: { view: 'A', text: '\u2713 Filtered' } })
+  }, [activeCount, emitPost, postOn, triggerPost])
 
   const triggerFilterDone = useCallback((options?: { burst?: boolean }) => {
     emitIn('filter_apply')
@@ -1464,9 +1464,10 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     const nextSelectedKey = selectedKey === key ? null : key
     setSelectedKey(nextSelectedKey)
     clearTimeoutRef(postSelectDingTimeoutRef)
-    if (isJuicyThree) {
+    if (postOn) {
       setPersistSelectKey(nextSelectedKey)
-      setPostBridgeNonce(previous => previous + 1)
+      clearTimeoutRef(postBridgeDelayTimeoutRef)
+      setPostBridgeReady(false)
       clearTimeoutRef(postSelectFxTimeoutRef)
       setPostSelectFxActive(Boolean(nextSelectedKey))
       if (nextSelectedKey) {
@@ -1475,17 +1476,28 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
           setPostSelectFxActive(false)
           postSelectFxTimeoutRef.current = null
         }, 3200)
+        const readyPostBridge = () => {
+          setPostBridgeReady(true)
+          setPostBridgeNonce(previous => previous + 1)
+          postBridgeDelayTimeoutRef.current = null
+        }
+        if (inOn) {
+          postBridgeDelayTimeoutRef.current = window.setTimeout(readyPostBridge, POST_PERSIST_BRIDGE_DELAY_MS)
+        } else {
+          readyPostBridge()
+        }
       }
     }
     if (inOn && motionAllowed) {
       const ds = buildBridgePaths(key)
+      const clickBridgeBurstMs = postOn && !isPurePost ? CLICK_BRIDGE_BURST_MS : 800
       clearTimeoutRef(clickBridgeTimeoutRef)
       if (ds.length > 0) {
         setClickBridge(previous => ({ ds, nonce: (previous?.nonce ?? 0) + 1 }))
         clickBridgeTimeoutRef.current = window.setTimeout(() => {
           setClickBridge(null)
           clickBridgeTimeoutRef.current = null
-        }, 800)
+        }, clickBridgeBurstMs)
       } else {
         setClickBridge(null)
       }
@@ -1504,7 +1516,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       schedulePostSelectDing()
       const nextEntity = nextSelectedKey ? countryByKey.get(nextSelectedKey)?.entity : null
       const badgeText = nextEntity ? truncateBadgeText(`\u2713 Selected: ${nextEntity}`) : '\u2713 Selected'
-      triggerPost('select', { duration: isJuicyThree ? 1400 : 650, badge: { view: 'A', text: badgeText } })
+      triggerPost('select', { duration: postOn ? 1400 : 650, badge: { view: 'A', text: badgeText } })
       selectTimeoutRef.current = null
     }, 120)
     clearTimeoutRef(connectTimeoutRef)
@@ -1514,15 +1526,17 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
         emitPost('connect_reveal')
         triggerPost('connect', { duration: 700, badge: { view: 'C', text: '\u2713 Linked' } })
         connectTimeoutRef.current = null
-      }, isJuicyThree ? 1600 : 360)
+      }, postOn ? 1600 : 360)
     }
-  }, [buildBridgePaths, countryByKey, emitIn, emitPost, inOn, isJuicyThree, motionAllowed, schedulePostSelectDing, selectedKey, triggerInBurst, triggerPost])
+  }, [buildBridgePaths, countryByKey, emitIn, emitPost, inOn, isPurePost, motionAllowed, postOn, schedulePostSelectDing, selectedKey, triggerInBurst, triggerPost])
 
   const clearSelection = useCallback(() => {
     setSelectedKey(null)
     clearTimeoutRef(postSelectDingTimeoutRef)
-    if (isJuicyThree) {
+    if (postOn) {
       setPersistSelectKey(null)
+      clearTimeoutRef(postBridgeDelayTimeoutRef)
+      setPostBridgeReady(false)
       clearTimeoutRef(postSelectFxTimeoutRef)
       setPostSelectFxActive(false)
     }
@@ -1535,7 +1549,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     emitPost('select_settle')
     schedulePostSelectDing()
     triggerPost('select', { duration: 650, badge: { view: 'A', text: '\u2713 Selected' } })
-  }, [commitHoveredKey, emitPost, isJuicyThree, schedulePostSelectDing, scheduleTooltip, triggerPost])
+  }, [commitHoveredKey, emitPost, postOn, schedulePostSelectDing, scheduleTooltip, triggerPost])
 
   const handleBinMove = (event: ReactMouseEvent<SVGRectElement, MouseEvent>, bar: HistogramBar) => {
     setHoveredBinIndex(previous => (previous === bar.index ? previous : bar.index))
@@ -1577,9 +1591,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     reconfigPostRafRef.current = window.requestAnimationFrame(() => {
       reconfigPostRafRef.current = null
       reconfigTimeoutRef.current = window.setTimeout(() => {
-        emitPost('reconfig_done', { label: nextMode }, { suppressSound: isJuicyThree })
-        triggerPost('reconfigure', { duration: isJuicyThree ? 2200 : 900, badge: { view: 'C', text: '\u2713 Sorted' } })
-        if (isJuicyThree) {
+        emitPost('reconfig_done', { label: nextMode }, { suppressSound: postOn })
+        triggerPost('reconfigure', { duration: postOn ? 2200 : 900, badge: { view: 'C', text: '\u2713 Sorted' } })
+        if (postOn) {
           clearTimeoutRef(reconfigTailSoundTimeoutRef)
           const tailDelay = 500 + (Math.max(1, topRows.length) - 1) * 14 + 420
           reconfigTailSoundTimeoutRef.current = window.setTimeout(() => {
@@ -1610,7 +1624,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       setEncodeSwitching(false)
       setEncodeFrom(null)
       emitPost('encode_done')
-      triggerPost('encode', { duration: isJuicyThree ? 3600 : 900, badge: { view: 'A', text: next === 'histogram' ? '\u2713 Histogram' : '\u2713 Beeswarm' } })
+      triggerPost('encode', { duration: postOn ? 3600 : 900, badge: { view: 'A', text: next === 'histogram' ? '\u2713 Histogram' : '\u2713 Beeswarm' } })
       encodeTimeoutRef.current = null
     }, 260)
   }
@@ -1620,11 +1634,11 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     setPreviewDetailLevel(null)
     setDetailLevel(next)
     emitIn('abstract_adjust')
-    triggerInBurst('abstract', juicyLevel === 2 ? 520 : 180)
+    triggerInBurst('abstract', inOn ? 520 : 180)
     clearTimeoutRef(abstractTimeoutRef)
     abstractTimeoutRef.current = window.setTimeout(() => {
       emitPost('abstract_set')
-      triggerPost('abstract', { duration: isJuicyThree && next === 2 ? 1900 : 650, badge: { view: 'C', text: `\u2713 Detail ${next}` } })
+      triggerPost('abstract', { duration: postOn && next === 2 ? 1900 : 650, badge: { view: 'C', text: `\u2713 Detail ${next}` } })
       abstractTimeoutRef.current = null
     }, 260)
   }
@@ -1765,6 +1779,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     setClickBridge(null)
     setPersistSelectKey(null)
     setPostBridgeNonce(0)
+    setPostBridgeReady(false)
     setPostFilterSweepMask('A')
     setPostSelectFxActive(false)
     setPostSelectFxNonce(0)
@@ -1776,6 +1791,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     clearTimeoutRef(filterTimeoutRef)
     clearTimeoutRef(filterRegionFxTimeoutRef)
     clearTimeoutRef(clickBridgeTimeoutRef)
+    clearTimeoutRef(postBridgeDelayTimeoutRef)
     clearTimeoutRef(reconfigTailSoundTimeoutRef)
     clearTimeoutRef(postSelectFxTimeoutRef)
     clearTimeoutRef(postLegendFilterFxTimeoutRef)
@@ -1805,12 +1821,12 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const isPostEncode = postFxActive && postKind === 'encode'
   const isPostAbstract = postFxActive && postKind === 'abstract'
   const isPostConnect = postFxActive && postKind === 'connect'
-  const hasPersistSelect = isJuicyThree && persistSelectKey !== null
-  const showPostSelectFx = isJuicyThree && postSelectFxActive
+  const hasPersistSelect = postOn && persistSelectKey !== null
+  const showPostSelectFx = postOn && postSelectFxActive
   const showPostFilterSweepA = isPostFilter && (postFilterSweepMask === 'A' || postFilterSweepMask === 'AB')
   const showPostFilterSweepB = isPostFilter && (postFilterSweepMask === 'B' || postFilterSweepMask === 'AB')
-  const showPostExploreSweep = isJuicyThree && isPostExplore
-  const showPostAbstractDetail2 = isJuicyThree && isPostAbstract && detailLevel === 2
+  const showPostExploreSweep = postOn && isPostExplore
+  const showPostAbstractDetail2 = postOn && isPostAbstract && detailLevel === 2
 
   const instructionWidth = Math.min(760, Math.max(360, chartWidth - 140))
   const instructionX = chartWidth / 2 - instructionWidth / 2
@@ -1818,7 +1834,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const showSelectCommitRing = inOn && inBurstKind === 'select' && selectCommitNonce > 0 && selectCommitPoint !== null
   const showEncodePreview = preOn && previewRepresentation !== null && previewRepresentation !== representation
   const showEncodeCrossfade = inOn && motionAllowed && encodeSwitching && encodeFrom !== null
-  const showBridge = preOn && bridgePaths.length > 0
+  const suppressHoverBridgeForPersist = postOn && postBridgeReady && selectedKey !== null && hoveredKey === selectedKey
+  const showBridge = preOn && bridgePaths.length > 0 && !suppressHoverBridgeForPersist
   const hasRegionHover = Boolean(regionHoverKeySet && regionHoverKeySet.size > 0)
   const isRelatedCountHot = preOn && hotControl === 'relatedCount'
   const isFocusHot = preOn && hotControl === 'focusYear'
@@ -1833,8 +1850,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const brushHintStartX = xScaleYear(startYear)
   const brushHintEndX = xScaleYear(endYear)
   const isExploreRangeScrub = activeRangeControl === 'focusYear' || activeRangeControl === 'windowStart' || activeRangeControl === 'windowEnd'
-  const showViewBExploreOutline = juicyLevel === 2 && inOn && motionAllowed && isScrubbing && activeScrubKind === 'explore' && isExploreRangeScrub
-  const showAbstractReveal = juicyLevel === 2 && inOn && motionAllowed && inBurstKind === 'abstract' && detailLevel === 2
+  const showViewBExploreOutline = inOn && motionAllowed && isScrubbing && activeScrubKind === 'explore' && isExploreRangeScrub
+  const showAbstractReveal = inOn && motionAllowed && inBurstKind === 'abstract' && detailLevel === 2
   const arrowY = (viewBTop + viewBBottom) / 2
   const abstractPreviewZoneH = previewDetailLevel === 2 ? 68 : previewDetailLevel === 1 ? 52 : 36
   const isRangeSelectionScrub = inOn && isScrubbing && activeRangeControl === 'relatedCount'
@@ -1904,9 +1921,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     [postSelectFrameEntries]
   )
   const persistentBridgePaths = useMemo(() => {
-    if (!isJuicyThree || !selectedKey) return []
+    if (!postOn || !selectedKey || !postBridgeReady) return []
     return buildBridgePaths(selectedKey)
-  }, [buildBridgePaths, isJuicyThree, selectedKey])
+  }, [buildBridgePaths, postBridgeReady, postOn, selectedKey])
   const postBadgePosition = useMemo(() => {
     if (!postBadge) return null
     if (postBadge.view === 'A') return { left: leftX0 + leftW - 130, top: viewATop + 4 }
@@ -1917,11 +1934,11 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   // Moving lines between back/front groups with different keys caused mass unmount/remount on legend hover.
   // Render base lines once with stable keys and draw hovered-region lines in a non-interactive overlay.
   const regionHoverLines = useMemo(() => (
-    isJuicyOne && regionHoverKeySet?.size
+    preOn && regionHoverKeySet?.size
       ? lines.filter(line => regionHoverKeySet.has(line.key))
       : []
-  ), [isJuicyOne, lines, regionHoverKeySet])
-  const showRegionLineOverlay = isJuicyOne && regionHoverLines.length > 0
+  ), [lines, preOn, regionHoverKeySet])
+  const showRegionLineOverlay = preOn && regionHoverLines.length > 0
 
   const getViewALabelGeometry = useCallback((node: BeeswarmNode) => {
     const labelW = clamp(node.entity.length * 7.4 + 14, 52, 196)
@@ -2066,7 +2083,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
         const isPlainConnectHover = baselineHoverLike && isHovered
         const isRegionHovered = Boolean(regionHoverKeySet?.has(node.key))
         const isRegionDim = hasRegionHover && !isRegionHovered
-        const isPostEncodeSparkle = isJuicyThree && isPostEncode && representation === 'beeswarm'
+        const isPostEncodeSparkle = postOn && isPostEncode && representation === 'beeswarm'
         const sparkleDelay = Math.round(clamp(((node.x - leftX0) / Math.max(1, leftW)) * 420, 0, 420))
         const dotRadius = isPlainConnectHover ? 7.9 : isSelected || isHovered ? 6 : isRelated ? 5.2 : DOT_R
         const cls = ['ig-dot', isActive ? 'ig-dot--active' : 'is-inactive', isSelected ? 'is-selected' : '', isRelated ? 'is-related' : '', isHovered ? 'is-hovered' : '', isPlainConnectHover ? 'is-plain-connect-hover' : '', isRegionHovered ? 'is-region-hovered' : '', isRegionDim ? 'is-region-dim' : '', isPostEncode ? 'is-post-encode-dot' : '', isPostEncodeSparkle ? 'is-post-encode-sparkle' : ''].filter(Boolean).join(' ')
@@ -2093,7 +2110,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       {histBars.map(bar => {
         const hasRegionInBin = Boolean(regionHoverKeySet && bar.keys.some(key => regionHoverKeySet.has(key)))
         const isRegionDim = hasRegionHover && !hasRegionInBin
-        const isPostEncodeTriplet = isJuicyThree && isPostEncode && representation === 'histogram'
+        const isPostEncodeTriplet = postOn && isPostEncode && representation === 'histogram'
         const cls = ['ig-bin', bar.active > 0 ? 'ig-bin--active' : 'is-inactive', hoveredBinIndex === bar.index ? 'is-hovered' : '', hasRegionInBin ? 'is-region-hovered' : '', isRegionDim ? 'is-region-dim' : '', isPostEncode ? 'is-post-encode-bar' : '', isPostEncodeTriplet ? 'is-post-encode-triplet' : ''].filter(Boolean).join(' ')
         return <rect key={`${keyPrefix}-bin-${encodeFadeNonce}-${bar.index}`} className={cls} x={bar.x0 + 1} y={bar.y} width={Math.max(1, bar.x1 - bar.x0 - 2)} height={Math.max(0, bar.h)} style={{ '--enter-delay': `${bar.index * 18}ms` } as CSSProperties} onPointerDown={handleSelectPress} onMouseMove={event => handleBinMove(event, bar)} onMouseLeave={() => handleBinLeave(bar.index)} />
       })}
@@ -2199,7 +2216,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                 )}
                 {showPostFilterSweepA && <rect key={`post-filter-sweep-a-${postNonce}`} className="integrated-post-filter-sweep integrated-post-filter-sweep-a" x={leftX0 + 2} y={viewATop + 4} width={14} height={Math.max(1, viewAHeight - 8)} rx={4} ry={4} style={{ '--post-filter-sweep-dx': `${Math.max(0, leftW - 18)}px` } as CSSProperties} />}
                 {showPostFilterSweepB && <rect key={`post-filter-sweep-b-${postNonce}`} className="integrated-post-filter-sweep integrated-post-filter-sweep-b" x={leftX0 + 2} y={viewBTop + 4} width={14} height={Math.max(1, viewBHeight - 8)} rx={4} ry={4} style={{ '--post-filter-sweep-dx': `${Math.max(0, leftW - 18)}px` } as CSSProperties} />}
-                {isJuicyThree && postLegendFilterFxActive && (
+                {postOn && postLegendFilterFxActive && (
                   <g key={`post-filter-legend-outline-${postLegendFilterFxNonce}`}>
                     <rect className="integrated-post-filter-legend-outline" x={leftX0 + 1} y={viewATop + 1} width={Math.max(1, leftW - 2)} height={Math.max(1, viewAHeight - 2)} rx={10} ry={10} pointerEvents="none" />
                     <rect className="integrated-post-filter-legend-flash" x={leftX0 + 1} y={viewATop + 1} width={Math.max(1, leftW - 2)} height={Math.max(1, viewAHeight - 2)} rx={10} ry={10} pointerEvents="none" />
@@ -2276,7 +2293,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                 <line className={`integrated-focus-line ${isExploreInScrub ? 'is-pulse' : ''} ${isPostExplore ? 'is-post-settle' : ''} ${attentionTarget === 'focus' ? 'is-attention' : ''} ${isFocusHot ? 'is-pre-hot' : ''}`} x1={focusX} x2={focusX} y1={viewBTop} y2={viewBBottom} />
                 <line className={`integrated-window-line ${isExploreInScrub ? 'is-pulse' : ''} ${isPostExplore ? 'is-post-settle' : ''} ${attentionTarget === 'window' ? 'is-attention' : ''} ${isWindowStartHot ? 'is-pre-hot' : ''}`} x1={xScaleYear(startYear)} x2={xScaleYear(startYear)} y1={viewBTop} y2={viewBBottom} />
                 <line className={`integrated-window-line ${isExploreInScrub ? 'is-pulse' : ''} ${isPostExplore ? 'is-post-settle' : ''} ${attentionTarget === 'window' ? 'is-attention' : ''} ${isWindowEndHot ? 'is-pre-hot' : ''}`} x1={xScaleYear(endYear)} x2={xScaleYear(endYear)} y1={viewBTop} y2={viewBBottom} />
-                {isJuicyOne && preOn && (
+                {preOn && (
                   <g className="integrated-pre-arrows" pointerEvents="none">
                     {isFocusHot && (
                       <>
@@ -2392,16 +2409,16 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                       />
                     )
                   })}
-                  {!isJuicyThree && isPostSelect && selectedMarkerY !== null && selectedKey && (
+                  {!postOn && isPostSelect && selectedMarkerY !== null && selectedKey && (
                     <circle key={`halo-${postNonce}-${selectedKey}`} cx={focusX} cy={selectedMarkerY} r={7.2} className="integrated-post-select-halo" style={{ '--ig-accent': accentFor(selectedKey) } as CSSProperties} />
                   )}
                 </g>
 
                 <g className="integrated-arc-layer">{arcs.map(arc => <path key={`arc-${arc.key}`} d={arc.d} className={`integrated-related-arc ${shouldDrawRelatedArcs ? 'is-draw' : ''} ${isPostConnect ? 'is-post-connect' : ''}`} style={{ '--ig-accent': arc.color, '--arc-delay': `${arc.delay}ms` } as CSSProperties} />)}</g>
-                {!isJuicyThree && isPostSelect && selectedAnchor && (
+                {!postOn && isPostSelect && selectedAnchor && (
                   <circle key={`post-select-anchor-${postNonce}`} className="integrated-post-select-pulse" cx={selectedAnchor.x} cy={selectedAnchor.y} r={7.1} />
                 )}
-                {isJuicyThree && showPostSelectFx && selectedAnchor && (
+                {postOn && showPostSelectFx && selectedAnchor && (
                   <g key={`post-fireworks-${postSelectFxNonce}`} className="integrated-post-fireworks">
                     {postFireworkParticles.map(particle => (
                       <circle
@@ -2415,7 +2432,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                     ))}
                   </g>
                 )}
-                {isJuicyThree && showPostSelectFx && postSelectFrameEntries.length > 0 && rowH > 0 && (
+                {postOn && showPostSelectFx && postSelectFrameEntries.length > 0 && rowH > 0 && (
                   <g className="integrated-post-select-frames">
                     {postSelectFrameEntries.map(entry => (
                       <rect
@@ -2432,7 +2449,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                     ))}
                   </g>
                 )}
-                {!isJuicyThree && isPostSelect && selectedTopRowIndex !== undefined && rowH > 0 && (
+                {!postOn && isPostSelect && selectedTopRowIndex !== undefined && rowH > 0 && (
                   <rect
                     key={`post-select-row-${postNonce}`}
                     className="integrated-post-select-row-pulse"
@@ -2497,14 +2514,14 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                       const isRegionHovered = Boolean(regionHoverKeySet?.has(row.key))
                       const isRegionDim = hasRegionHover && !isRegionHovered
                       const postSelectDelay = postSelectDelayByKey.get(row.key)
-                      const isPostSelectBounce = isJuicyThree && isPostSelect && postSelectDelay !== undefined
+                      const isPostSelectBounce = postOn && isPostSelect && postSelectDelay !== undefined
                       return (
                         <g key={row.key} transform={`translate(0 ${y})`}>
                           <g className={`integrated-rank-row ${inOn && inBurstKind === 'reconfig' ? 'is-reorder' : ''} ${showAbstractReveal ? 'is-abstract-reveal' : ''} ${isPostReconfigure ? 'is-post-settle' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`} style={{ '--row-delay': `${index * 14}ms`, transform: rankFlipDelta ? `translateY(${rankFlipDelta}px)` : undefined } as CSSProperties}>
                             <rect x={2} y={0} width={Math.max(1, rightW - 4)} height={Math.max(1, rowH - 0.8)} className={`integrated-rank-hit ${isActive ? '' : 'is-inactive'} ${isSelected ? 'is-selected' : ''} ${isRelated ? 'is-related' : ''} ${isHovered ? 'is-hovered' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`} onPointerDown={handleSelectPress} onClick={() => selectCountry(row.key)} />
                             <text key={`rn-${row.key}`} x={8} y={Math.max(8, rowH - 2)} className={`integrated-rank-name ${isPostAbstract ? 'is-post-abstract' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''}`}>{row.country.entity}</text>
-                            <rect x={barX} y={Math.max(0.8, rowH * 0.22)} width={barW} height={Math.max(0.8, rowH * 0.56)} className={`integrated-rank-bar ${isSelected ? 'is-selected' : isRelated ? 'is-related' : ''} ${isHovered && !isSelected ? 'is-hovered' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''} ${isJuicyThree && isPostReconfigure ? 'is-post-reconfig-bounce' : ''} ${isPostSelectBounce ? 'is-post-select-bounce' : ''}`} style={{ '--ig-accent': accentFor(row.key), '--post-select-delay': `${postSelectDelay ?? 0}ms` } as CSSProperties} />
-                            {isJuicyThree && isPostReconfigure && <rect x={2} y={0} width={Math.max(1, rightW - 4)} height={Math.max(1, rowH - 0.8)} rx={5} ry={5} className="integrated-post-reconfig-frame" />}
+                            <rect x={barX} y={Math.max(0.8, rowH * 0.22)} width={barW} height={Math.max(0.8, rowH * 0.56)} className={`integrated-rank-bar ${isSelected ? 'is-selected' : isRelated ? 'is-related' : ''} ${isHovered && !isSelected ? 'is-hovered' : ''} ${isRegionHovered ? 'is-region-hovered' : ''} ${isRegionDim ? 'is-region-dim' : ''} ${postOn && isPostReconfigure ? 'is-post-reconfig-bounce' : ''} ${isPostSelectBounce ? 'is-post-select-bounce' : ''}`} style={{ '--ig-accent': accentFor(row.key), '--post-select-delay': `${postSelectDelay ?? 0}ms` } as CSSProperties} />
+                            {postOn && isPostReconfigure && <rect x={2} y={0} width={Math.max(1, rightW - 4)} height={Math.max(1, rowH - 0.8)} rx={5} ry={5} className="integrated-post-reconfig-frame" />}
                             {(inOn || detailLevel === 2) && <text key={`rm-${row.key}`} x={rightW - 8} y={Math.max(8, rowH - 2)} className={`integrated-rank-metric ${isPostAbstract ? 'is-post-abstract' : ''} ${inOn ? `ig-abstract-fade ${detailLevel === 2 ? 'is-on' : 'is-off'}` : ''} ${showPostAbstractDetail2 ? 'is-post-abstract-metric-flash' : ''}`} textAnchor="end">v:{fmt(row.focusValue ?? 0)} g:{fmt(row.growth)} s:{fmt(row.volatility)}</text>}
                           </g>
                         </g>
