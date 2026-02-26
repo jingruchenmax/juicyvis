@@ -12,7 +12,6 @@
 import * as d3 from 'd3'
 import {
   playClick5TickSound,
-  playDingdong1Sound,
   playPop1Sound,
   playPop4Sound,
   playPopHoverRandomSound,
@@ -144,6 +143,22 @@ const clearTimeoutRef = (ref: React.MutableRefObject<number | null>) => {
   }
 }
 
+const isIn = (value: number, list: number[]): boolean => list.includes(value)
+
+const getJuicyCaps = (juicyLevel: number): { preOn: boolean; inOn: boolean; postOn: boolean; isPurePre: boolean; isPureIn: boolean; isPurePost: boolean } => {
+  const preOn = isIn(juicyLevel, [1, 4, 6, 7])
+  const inOn = isIn(juicyLevel, [2, 4, 5, 7])
+  const postOn = isIn(juicyLevel, [3, 5, 6, 7])
+  return {
+    preOn,
+    inOn,
+    postOn,
+    isPurePre: juicyLevel === 1,
+    isPureIn: juicyLevel === 2,
+    isPurePost: juicyLevel === 3
+  }
+}
+
 const normalizeEntityName = (value: string): string =>
   value
     .trim()
@@ -193,12 +208,7 @@ const truncateBadgeText = (value: string, max = 32): string => {
 export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const { loading, error, countries, years, valueDomain, metadata } = useInternetData()
 
-  const preOn = juicyLevel === 1 || juicyLevel === 4 || juicyLevel === 6 || juicyLevel === 7
-  const inOn = juicyLevel === 2 || juicyLevel === 4 || juicyLevel === 5 || juicyLevel === 7
-  const postOn = juicyLevel === 3 || juicyLevel === 5 || juicyLevel === 6 || juicyLevel === 7
-  const isPurePre = juicyLevel === 1
-  const isPureIn = juicyLevel === 2
-  const isPurePost = juicyLevel === 3
+  const { preOn, inOn, postOn, isPurePre, isPurePost } = getJuicyCaps(juicyLevel)
   const baselineHoverLike = !preOn
   const useReadableViewALabel = baselineHoverLike || isPurePre
 
@@ -594,10 +604,10 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     }, duration)
   }, [postOn])
 
-  const playFocusYearScrubClick8 = useCallback(() => {
+  const playLocalAudio = useCallback((file: string, volume: number) => {
     try {
-      const audio = new Audio(`${import.meta.env.BASE_URL}click8.mp3`)
-      audio.volume = 0.92
+      const audio = new Audio(`${import.meta.env.BASE_URL}${file}`)
+      audio.volume = volume
       audio.currentTime = 0
       void audio.play().catch(() => {})
     } catch {
@@ -605,16 +615,13 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     }
   }, [])
 
+  const playFocusYearScrubClick8 = useCallback(() => {
+    playLocalAudio('click8.mp3', 0.92)
+  }, [playLocalAudio])
+
   const playDingdong2 = useCallback(() => {
-    try {
-      const audio = new Audio(`${import.meta.env.BASE_URL}dingdong2.mp3`)
-      audio.volume = 0.88
-      audio.currentTime = 0
-      void audio.play().catch(() => {})
-    } catch {
-      // ignore audio failures
-    }
-  }, [])
+    playLocalAudio('dingdong2.mp3', 0.88)
+  }, [playLocalAudio])
 
   const schedulePostSelectDing = useCallback(() => {
     if (!postOn) return
@@ -644,7 +651,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   }, [inOn, motionAllowed])
 
   const emitFocusYearScrub = useCallback(() => {
-    const isInFocusYearScrub = (isPureIn || inOn)
+    const isInFocusYearScrub = inOn
       && isScrubbing
       && activeScrubKind === 'explore'
       && activeRangeControl === 'focusYear'
@@ -658,15 +665,14 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     playFocusYearScrubClick8()
     if (!motionAllowed) return
     setImpactNonce(previous => previous + 1)
-  }, [activeRangeControl, activeScrubKind, emitIn, inOn, isPureIn, isScrubbing, motionAllowed, playFocusYearScrubClick8])
+  }, [activeRangeControl, activeScrubKind, emitIn, inOn, isScrubbing, motionAllowed, playFocusYearScrubClick8])
 
   const emitPost = useCallback((kind: string, payload?: { start?: number; end?: number; count?: number; label?: string }, options?: { suppressSound?: boolean }) => {
     if (!postOn) return
     const shouldDeferPostSelectDing = postOn && kind === 'select_settle'
     if (!options?.suppressSound && !shouldDeferPostSelectDing) {
       if (kind === 'connect_reveal') playWhooshSound()
-      else if (postOn) playDingdong2()
-      else playDingdong1Sound()
+      else playDingdong2()
     }
 
     if (kind === 'filter_done') pushToast(`Filter applied: ${payload?.count ?? 0} countries`)

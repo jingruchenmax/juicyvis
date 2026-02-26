@@ -45,8 +45,8 @@ const formatNumber = (num: number | null): string => {
 }
 
 const COLORS: Record<string, string> = {
-  'Academia': '#00B7EB', // 鲜艳青蓝色
-  'Industry': '#E53935', // 更鲜明的红色
+  'Academia': '#00B7EB', // vivid cyan-blue
+  'Industry': '#E53935', // vivid red
   'Academia and industry collaboration': '#70AD47',
   'Government': '#D62728',
   'Other': '#7030A0',
