@@ -15,6 +15,7 @@ import FilterJuicy from './components/FilterJuicy'
 import Connect from './components/Connect'
 import ConnectJuicy from './components/ConnectJuicy'
 import Integrated from './components/Integrated'
+import IntegratedIntensity from './components/IntegratedIntensity'
 import { parseCsv, toNumber } from './utils/csv'
 import './App.css'
 
@@ -163,6 +164,15 @@ function App() {
     return (
       <div className="app">
         <Integrated juicyLevel={juicyLevel} />
+      </div>
+    )
+  }
+
+  if (chart === '9') {
+    const intensityLevel = clampInt(Number.parseInt(juicyRaw, 10), 0, 3)
+    return (
+      <div className="app">
+        <IntegratedIntensity intensityLevel={intensityLevel} />
       </div>
     )
   }
