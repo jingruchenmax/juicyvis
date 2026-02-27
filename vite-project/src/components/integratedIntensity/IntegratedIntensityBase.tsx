@@ -205,10 +205,8 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
   const preOn = intensityLevel > 0
   const inOn = intensityLevel > 0
   const postOn = intensityLevel > 0
-  const isPurePre = false
-  const isPurePost = false
   const baselineHoverLike = !preOn
-  const useReadableViewALabel = baselineHoverLike || isPurePre
+  const useReadableViewALabel = baselineHoverLike
   const displayTitle = metadata?.title ?? 'Loading...'
   const displayUnit = metadata?.unit ?? '%'
   const displayAxisLabel = metadata ? `${metadata.title} (${displayUnit})` : `Value (${displayUnit})`
@@ -1586,7 +1584,7 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     }
     if (inOn && motionAllowed) {
       const ds = buildBridgePaths(key)
-      const clickBridgeBurstMs = postOn && !isPurePost ? CLICK_BRIDGE_BURST_MS : 800
+      const clickBridgeBurstMs = postOn ? CLICK_BRIDGE_BURST_MS : 800
       clearTimeoutRef(clickBridgeTimeoutRef)
       if (ds.length > 0) {
         setClickBridge(previous => ({ ds, nonce: (previous?.nonce ?? 0) + 1 }))
@@ -1624,7 +1622,7 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
         connectTimeoutRef.current = null
       }, Math.max(1, scaleMs(postOn ? 1600 : 360)))
     }
-  }, [buildBridgePaths, countryByKey, emitIn, emitPost, inOn, isPurePost, motionAllowed, postOn, scaleMs, schedulePostSelectDing, selectedKey, triggerInBurst, triggerPost])
+  }, [buildBridgePaths, countryByKey, emitIn, emitPost, inOn, motionAllowed, postOn, scaleMs, schedulePostSelectDing, selectedKey, triggerInBurst, triggerPost])
 
   const clearSelection = useCallback(() => {
     setSelectedKey(null)
