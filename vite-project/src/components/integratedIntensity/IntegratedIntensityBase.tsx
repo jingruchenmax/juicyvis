@@ -10,14 +10,6 @@
   type PointerEvent as ReactPointerEvent
 } from 'react'
 import * as d3 from 'd3'
-import {
-  playClick5TickSound,
-  playPop1Sound,
-  playPop4Sound,
-  playPopHoverRandomSound,
-  playPreviewCueSound,
-  playWhooshSound
-} from '../../utils/soundUtils'
 import { getPreset } from './intensityPresets'
 import { useIntensityData, type InternetCountrySeries, type InternetPoint } from './useIntensityData'
 
@@ -96,6 +88,12 @@ interface HistTooltip {
   index: number
   x: number
   y: number
+}
+
+interface PendingBinHover {
+  index: number
+  keys: string[]
+  tooltip?: HistTooltip
 }
 
 interface PendingTooltip {
@@ -202,7 +200,6 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
   }, [preset.vfxMul])
   const canPlaySound = intensityLevel > 0
   const isLow = intensityLevel === 1
-  const isMed = intensityLevel === 2
   const isHigh = intensityLevel === 3
 
   const preOn = intensityLevel > 0
@@ -355,6 +352,8 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
   const reconfigLayerSoundTimeoutRef = useRef<number | null>(null)
   const encodeLayerSoundTimeoutRef = useRef<number | null>(null)
   const filterLayerSoundTimeoutRef = useRef<number | null>(null)
+  const binHoverRafRef = useRef<number | null>(null)
+  const pendingBinHoverRef = useRef<PendingBinHover | null>(null)
 
   const motionAllowed = !prefersReducedMotion
 
@@ -578,6 +577,30 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     })
   }, [])
 
+  const scheduleBinHover = useCallback((next: PendingBinHover) => {
+    pendingBinHoverRef.current = next
+    if (binHoverRafRef.current !== null) return
+    binHoverRafRef.current = window.requestAnimationFrame(() => {
+      binHoverRafRef.current = null
+      const pending = pendingBinHoverRef.current
+      if (!pending) return
+      setHoveredBinIndex(previous => (previous === pending.index ? previous : pending.index))
+      setHoveredGroupKeys(previous => {
+        if (previous.length === pending.keys.length && previous.every((key, index) => key === pending.keys[index])) return previous
+        return pending.keys
+      })
+      if (pending.tooltip !== undefined) {
+        setHistTooltip(previous => {
+          const nextTip = pending.tooltip
+          if (!nextTip) return null
+          if (!previous) return nextTip
+          if (previous.index === nextTip.index && Math.abs(previous.x - nextTip.x) < 2 && Math.abs(previous.y - nextTip.y) < 2) return previous
+          return nextTip
+        })
+      }
+    })
+  }, [])
+
   const triggerInBurst = useCallback((kind: InBurstKind, ms = 180) => {
     if (!inOn || kind === 'none') return
     clearTimeoutRef(inBurstTimeoutRef)
@@ -606,21 +629,6 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     }, duration)
   }, [postOn, scaleMs])
 
-  const playCore = useCallback((fn: () => void) => {
-    if (!canPlaySound) return
-    fn()
-  }, [canPlaySound])
-
-  const playHighLayer = useCallback((ref: React.MutableRefObject<number | null>, fn: () => void, prob = 0.45, delayMs = 50) => {
-    if (!isHigh || !canPlaySound) return
-    if (Math.random() >= prob) return
-    clearTimeoutRef(ref)
-    ref.current = window.setTimeout(() => {
-      fn()
-      ref.current = null
-    }, Math.max(1, scaleMs(delayMs)))
-  }, [canPlaySound, isHigh, scaleMs])
-
   const playLocalAudio = useCallback((file: string, volume: number, useIntensityMul = false) => {
     try {
       const audio = new Audio(`${import.meta.env.BASE_URL}${file}`)
@@ -633,9 +641,39 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     }
   }, [preset.audioMul])
 
-  const playDingdong2 = useCallback(() => {
-    playLocalAudio('dingdong2.mp3', 0.7, true)
-  }, [playLocalAudio])
+  type SoundKey = 'hoverData' | 'selectPress' | 'commitAction' | 'scrubTick' | 'confirm' | 'connectReveal'
+  const playSound = useCallback((key: SoundKey, layer?: { ref: React.MutableRefObject<number | null>; prob?: number; delayMs?: number }) => {
+    if (!canPlaySound) return
+
+    let file = 'pop2.mp3'
+    let base = 0.55
+    if (key === 'selectPress') {
+      file = 'pop1.mp3'
+      base = 0.7
+    } else if (key === 'commitAction') {
+      file = 'pop4.mp3'
+      base = 0.7
+    } else if (key === 'scrubTick') {
+      file = 'click5.mp3'
+      base = 0.35
+    } else if (key === 'confirm') {
+      file = 'dingdong2.mp3'
+      base = isLow ? 0.42 : 0.7
+    } else if (key === 'connectReveal') {
+      file = 'folding2.mp3'
+      base = 0.64
+    }
+
+    playLocalAudio(file, base, true)
+
+    if (!isHigh || !layer) return
+    if (Math.random() >= (layer.prob ?? 0.35)) return
+    clearTimeoutRef(layer.ref)
+    layer.ref.current = window.setTimeout(() => {
+      playLocalAudio(file, base * 0.6, true)
+      layer.ref.current = null
+    }, Math.max(1, scaleMs(layer.delayMs ?? 45)))
+  }, [canPlaySound, isHigh, isLow, playLocalAudio, scaleMs])
 
   const emitPre = useCallback((kind: string, payload?: { x?: number; y?: number }) => {
     if (!preOn) return
@@ -646,15 +684,9 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     }
 
     if (kind === 'select_press') {
-      if (isLow) playCore(playClick5TickSound)
-      else playCore(playPop1Sound)
-    } else if (isLow) {
-      playCore(playPreviewCueSound)
-    } else if (isMed) {
-      playCore(playPopHoverRandomSound)
+      playSound('selectPress', { ref: selectLayerSoundTimeoutRef, prob: 0.35, delayMs: 40 })
     } else {
-      playCore(playPopHoverRandomSound)
-      playHighLayer(hoverLayerSoundTimeoutRef, playPop1Sound, 0.35, 40)
+      playSound('hoverData', { ref: hoverLayerSoundTimeoutRef, prob: 0.35, delayMs: 40 })
     }
 
     if (!motionAllowed) return
@@ -662,16 +694,16 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
       setRipplePoint({ x: payload.x, y: payload.y })
       setRippleNonce(previous => previous + 1)
     }
-  }, [isLow, isMed, motionAllowed, playCore, playHighLayer, preOn])
+  }, [motionAllowed, playSound, preOn])
 
   const schedulePostSelectDing = useCallback(() => {
     if (!postOn) return
     clearTimeoutRef(postSelectDingTimeoutRef)
     postSelectDingTimeoutRef.current = window.setTimeout(() => {
-      playCore(playDingdong2)
+      playSound('confirm')
       postSelectDingTimeoutRef.current = null
     }, scaleMs(POST_SELECT_DING_DELAY_MS))
-  }, [playCore, playDingdong2, postOn, scaleMs])
+  }, [playSound, postOn, scaleMs])
 
   const emitIn = useCallback((kind: string) => {
     if (!inOn) return
@@ -680,24 +712,20 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
       const now = performance.now()
       if (now - dragTsRef.current < DRAG_THROTTLE) return
       dragTsRef.current = now
-      if (isLow) playCore(() => playLocalAudio('click5.mp3', 0.22, true))
-      else playCore(playClick5TickSound)
-      playHighLayer(scrubLayerSoundTimeoutRef, playClick5TickSound, 0.25, 50)
+      playSound('scrubTick', { ref: scrubLayerSoundTimeoutRef, prob: 0.25, delayMs: 50 })
     } else {
-      if (isLow) playCore(playClick5TickSound)
-      else playCore(playPop4Sound)
-      if (kind === 'select_commit') playHighLayer(selectLayerSoundTimeoutRef, playPop1Sound, 0.55, 45)
-      if (kind === 'reconfig_reorder') playHighLayer(reconfigLayerSoundTimeoutRef, playPop1Sound, 0.55, 45)
-      if (kind === 'encode_switch') playHighLayer(encodeLayerSoundTimeoutRef, playPop1Sound, 0.55, 45)
-      if (kind === 'abstract_adjust') playHighLayer(encodeLayerSoundTimeoutRef, playPop1Sound, 0.55, 45)
-      if (kind === 'filter_apply') playHighLayer(filterLayerSoundTimeoutRef, playPop1Sound, 0.55, 45)
+      if (kind === 'select_commit') playSound('commitAction', { ref: selectLayerSoundTimeoutRef, prob: 0.35, delayMs: 45 })
+      else if (kind === 'reconfig_reorder') playSound('commitAction', { ref: reconfigLayerSoundTimeoutRef, prob: 0.35, delayMs: 45 })
+      else if (kind === 'encode_switch' || kind === 'abstract_adjust') playSound('commitAction', { ref: encodeLayerSoundTimeoutRef, prob: 0.35, delayMs: 45 })
+      else if (kind === 'filter_apply') playSound('commitAction', { ref: filterLayerSoundTimeoutRef, prob: 0.35, delayMs: 45 })
+      else playSound('commitAction')
     }
 
     if (!motionAllowed) return
     if (kind === 'select_commit' || kind === 'explore_scrub' || kind === 'reconfig_reorder' || kind === 'encode_switch' || kind === 'filter_apply') {
       setImpactNonce(previous => previous + 1)
     }
-  }, [inOn, isLow, motionAllowed, playCore, playHighLayer, playLocalAudio])
+  }, [inOn, motionAllowed, playSound])
 
   const emitFocusYearScrub = useCallback(() => {
     const isInFocusYearScrub = inOn
@@ -711,21 +739,19 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     const now = performance.now()
     if (now - dragTsRef.current < DRAG_THROTTLE) return
     dragTsRef.current = now
-    if (isLow) playCore(() => playLocalAudio('click5.mp3', 0.22, true))
-    else playCore(playClick5TickSound)
-    playHighLayer(scrubLayerSoundTimeoutRef, playClick5TickSound, 0.25, 50)
+    playSound('scrubTick', { ref: scrubLayerSoundTimeoutRef, prob: 0.25, delayMs: 50 })
     if (!motionAllowed) return
     setImpactNonce(previous => previous + 1)
-  }, [activeRangeControl, activeScrubKind, emitIn, inOn, isLow, isScrubbing, motionAllowed, playCore, playHighLayer, playLocalAudio])
+  }, [activeRangeControl, activeScrubKind, emitIn, inOn, isScrubbing, motionAllowed, playSound])
 
   const emitPost = useCallback((kind: string, payload?: { start?: number; end?: number; count?: number; label?: string }, options?: { suppressSound?: boolean }) => {
     if (!postOn) return
     const shouldDeferPostSelectDing = postOn && kind === 'select_settle'
     if (!options?.suppressSound && !shouldDeferPostSelectDing) {
       if (kind === 'connect_reveal') {
-        playCore(playWhooshSound)
+        playSound('connectReveal')
       } else {
-        playCore(playDingdong2)
+        playSound('confirm')
       }
     }
 
@@ -737,7 +763,7 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     else if (kind === 'select_settle') pushToast('Selection updated')
     else if (kind === 'connect_reveal') pushToast('Related countries revealed')
 
-  }, [detailLevel, endYear, playCore, playDingdong2, postOn, pushToast, representation, sortMode, startYear])
+  }, [detailLevel, endYear, playSound, postOn, pushToast, representation, sortMode, startYear])
 
   useEffect(() => {
     hoveredKeyRef.current = hoveredKey
@@ -777,6 +803,10 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
       if (tipShowRafRef.current !== null) window.cancelAnimationFrame(tipShowRafRef.current)
       if (histTipShowRafRef.current !== null) window.cancelAnimationFrame(histTipShowRafRef.current)
       if (brushRafRef.current !== null) window.cancelAnimationFrame(brushRafRef.current)
+      if (binHoverRafRef.current !== null) {
+        window.cancelAnimationFrame(binHoverRafRef.current)
+        pendingBinHoverRef.current = null
+      }
       if (rankFlipRafRef.current !== null) window.cancelAnimationFrame(rankFlipRafRef.current)
       if (reconfigPostRafRef.current !== null) window.cancelAnimationFrame(reconfigPostRafRef.current)
     }
@@ -1618,25 +1648,21 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
   }, [commitHoveredKey, emitPost, postOn, schedulePostSelectDing, scheduleTooltip, triggerPost])
 
   const handleBinMove = (event: ReactMouseEvent<SVGRectElement, MouseEvent>, bar: HistogramBar) => {
-    setHoveredBinIndex(previous => (previous === bar.index ? previous : bar.index))
-    setHoveredGroupKeys(previous => {
-      if (previous.length === bar.keys.length && previous.every((key, index) => key === bar.keys[index])) return previous
-      return bar.keys
-    })
+    const pending: PendingBinHover = { index: bar.index, keys: bar.keys }
     const stage = stageRef.current
-    if (!stage) return
-    const rect = stage.getBoundingClientRect()
-    if (detailLevel >= 1) {
-      const next = { index: bar.index, x: clamp(event.clientX - rect.left + 14, 8, rect.width - 260), y: clamp(event.clientY - rect.top + 8, 8, rect.height - 180) }
-      setHistTooltip(previous => {
-        if (!previous) return next
-        if (previous.index === next.index && Math.abs(previous.x - next.x) < 2 && Math.abs(previous.y - next.y) < 2) return previous
-        return next
-      })
+    if (detailLevel >= 1 && stage) {
+      const rect = stage.getBoundingClientRect()
+      pending.tooltip = { index: bar.index, x: clamp(event.clientX - rect.left + 14, 8, rect.width - 260), y: clamp(event.clientY - rect.top + 8, 8, rect.height - 180) }
     }
+    scheduleBinHover(pending)
   }
 
   const handleBinLeave = (index: number) => {
+    if (binHoverRafRef.current !== null) {
+      window.cancelAnimationFrame(binHoverRafRef.current)
+      binHoverRafRef.current = null
+      pendingBinHoverRef.current = null
+    }
     setHoveredBinIndex(previous => (previous === index ? null : previous))
     setHoveredGroupKeys([])
     setHistTooltip(previous => (previous?.index === index ? null : previous))
@@ -1663,7 +1689,7 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
           clearTimeoutRef(reconfigTailSoundTimeoutRef)
           const tailDelay = 500 + (Math.max(1, topRows.length) - 1) * 14 + 420
           reconfigTailSoundTimeoutRef.current = window.setTimeout(() => {
-            playCore(playDingdong2)
+            playSound('confirm')
             reconfigTailSoundTimeoutRef.current = null
           }, Math.max(1, scaleMs(tailDelay)))
         }
@@ -1799,6 +1825,11 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
   }, [endYear, startYear, xScaleYear])
 
   const resetAll = () => {
+    if (binHoverRafRef.current !== null) {
+      window.cancelAnimationFrame(binHoverRafRef.current)
+      binHoverRafRef.current = null
+      pendingBinHoverRef.current = null
+    }
     setFocusYear(defaultFocusYear)
     setStartYear(defaultWindow.start)
     setEndYear(defaultWindow.end)
@@ -2987,3 +3018,4 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
     </div>
   )
 }
+

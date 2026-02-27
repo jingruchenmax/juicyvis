@@ -41,7 +41,8 @@ export default function IntegratedIntensity({ intensityLevel }: IntegratedIntens
         ['--ji-scanA' as string]: preset.scanA,
         ['--ji-scanW' as string]: preset.scanW,
         ['--ji-sliderHandleA' as string]: preset.sliderHandleA,
-        ['--ji-sliderHandleW' as string]: preset.sliderHandleW
+        ['--ji-sliderHandleW' as string]: preset.sliderHandleW,
+        ['--ji-encodePop' as string]: preset.encodePop
       }}
     >
       <IntegratedIntensityBase intensityLevel={intensityLevel} />

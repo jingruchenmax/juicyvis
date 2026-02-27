@@ -23,6 +23,7 @@ export type IntensityPreset = {
   scanW: number
   sliderHandleA: number
   sliderHandleW: number
+  encodePop: number
 }
 
 export const INTENSITY_PRESETS: Record<number, IntensityPreset> = {
@@ -50,33 +51,35 @@ export const INTENSITY_PRESETS: Record<number, IntensityPreset> = {
     scanA: 0.0,
     scanW: 0.0,
     sliderHandleA: 0.0,
-    sliderHandleW: 0.0
+    sliderHandleW: 0.0,
+    encodePop: 0.0
   },
   1: {
     animMul: 0.25,
     vfxMul: 0.18,
     timeMul: 0.45,
     audioMul: 0.35,
-    glowA: 0.18,
-    flashA: 0.16,
-    outlineA: 0.55,
+    glowA: 0.14,
+    flashA: 0.12,
+    outlineA: 0.45,
     overshoot: 0.14,
     blinkMin: 0.3,
     blinkMax: 0.62,
     previewA: 0.55,
     reconfigFrameA: 0.14,
     reconfigBounce: 0.12,
-    filterHiOp: 0.62,
-    filterDimOp: 0.48,
+    filterHiOp: 0.47,
+    filterDimOp: 0.6,
     selectHiOp: 0.68,
     selectBaseOp: 0.6,
     bridgeA: 0.16,
-    bridgeFlow: 3.0,
-    crosshairA: 0.22,
-    scanA: 0.08,
-    scanW: 0.55,
+    bridgeFlow: 4.5,
+    crosshairA: 0.16,
+    scanA: 0.045,
+    scanW: 0.45,
     sliderHandleA: 0.22,
-    sliderHandleW: 0.7
+    sliderHandleW: 0.7,
+    encodePop: 0.1
   },
   2: {
     animMul: 1.0,
@@ -102,16 +105,17 @@ export const INTENSITY_PRESETS: Record<number, IntensityPreset> = {
     scanA: 0.8,
     scanW: 1.0,
     sliderHandleA: 0.55,
-    sliderHandleW: 1.0
+    sliderHandleW: 1.0,
+    encodePop: 1.0
   },
   3: {
     animMul: 1.9,
     vfxMul: 2.6,
     timeMul: 1.55,
     audioMul: 1.35,
-    glowA: 2.0,
-    flashA: 1.85,
-    outlineA: 2.0,
+    glowA: 2.25,
+    flashA: 2.1,
+    outlineA: 2.25,
     overshoot: 2.2,
     blinkMin: 0.05,
     blinkMax: 1.0,
@@ -128,7 +132,8 @@ export const INTENSITY_PRESETS: Record<number, IntensityPreset> = {
     scanA: 1.15,
     scanW: 1.35,
     sliderHandleA: 0.92,
-    sliderHandleW: 1.6
+    sliderHandleW: 1.6,
+    encodePop: 1.8
   }
 }
 
