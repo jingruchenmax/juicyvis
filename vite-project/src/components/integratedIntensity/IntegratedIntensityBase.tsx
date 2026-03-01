@@ -206,7 +206,9 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
   const inOn = intensityLevel > 0
   const postOn = intensityLevel > 0
   const baselineHoverLike = !preOn
-  const useReadableViewALabel = baselineHoverLike
+  const hoverVisualParityOn = intensityLevel > 0
+  const hoverVisualLikeBaseline = baselineHoverLike || hoverVisualParityOn
+  const useReadableViewALabel = hoverVisualLikeBaseline
   const displayTitle = metadata?.title ?? 'Loading...'
   const displayUnit = metadata?.unit ?? '%'
   const displayAxisLabel = metadata ? `${metadata.title} (${displayUnit})` : `Value (${displayUnit})`
@@ -1164,12 +1166,12 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
       const value = countryByKey.get(key)?.valueByYear.get(focusYear)
       if (value !== undefined) list.push({ key, kind: 'related', y: yScale(value) })
     })
-    if ((detailLevel >= 1 || baselineHoverLike) && hoveredKey && hoveredKey !== selectedKey) {
+    if ((detailLevel >= 1 || hoverVisualLikeBaseline) && hoveredKey && hoveredKey !== selectedKey) {
       const value = countryByKey.get(hoveredKey)?.valueByYear.get(focusYear)
       if (value !== undefined) list.push({ key: hoveredKey, kind: 'hovered', y: yScale(value) })
     }
     return list
-  }, [baselineHoverLike, countryByKey, detailLevel, focusYear, hoveredKey, relatedKeys, selectedKey, yScale])
+  }, [countryByKey, detailLevel, focusYear, hoverVisualLikeBaseline, hoveredKey, relatedKeys, selectedKey, yScale])
 
   const selectedMarkerY = useMemo(() => {
     if (!selectedKey) return null
@@ -2195,7 +2197,7 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
         const isSelected = selectedKey === node.key
         const isRelated = relatedKeySet.has(node.key)
         const isHovered = hoveredKey === node.key || hoveredGroupSet.has(node.key)
-        const isPlainConnectHover = baselineHoverLike && isHovered
+        const isPlainConnectHover = hoverVisualLikeBaseline && isHovered
         const isRegionHovered = Boolean(regionHoverKeySet?.has(node.key))
         const isRegionDim = hasRegionHover && !isRegionHovered
         const isPostEncodeSparkle = postOn && isPostEncode && representation === 'beeswarm' && shouldShowEncodeSparkle(node.key)
@@ -2511,7 +2513,7 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
 
                 <g className="integrated-markers-layer">
                   {markers.map(marker => {
-                    const isPlainConnectHover = baselineHoverLike && marker.kind === 'hovered'
+                    const isPlainConnectHover = hoverVisualLikeBaseline && marker.kind === 'hovered'
                     const radius = marker.kind === 'selected' ? 6.4 : marker.kind === 'related' ? 5.1 : isPlainConnectHover ? 9 : 5.6
                     return (
                       <circle

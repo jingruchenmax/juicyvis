@@ -210,7 +210,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
 
   const { preOn, inOn, postOn, isPurePre, isPurePost } = getJuicyCaps(juicyLevel)
   const baselineHoverLike = !preOn
-  const useReadableViewALabel = baselineHoverLike || isPurePre
+  const hoverVisualParityOn = isIn(juicyLevel, [4, 6, 7])
+  const hoverVisualLikeBaseline = baselineHoverLike || hoverVisualParityOn
+  const useReadableViewALabel = hoverVisualLikeBaseline || isPurePre
   const displayTitle = metadata?.title ?? 'Loading...'
   const displayUnit = metadata?.unit ?? '%'
   const displayAxisLabel = metadata ? `${metadata.title} (${displayUnit})` : `Value (${displayUnit})`
@@ -1079,12 +1081,12 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
       const value = countryByKey.get(key)?.valueByYear.get(focusYear)
       if (value !== undefined) list.push({ key, kind: 'related', y: yScale(value) })
     })
-    if ((detailLevel >= 1 || baselineHoverLike) && hoveredKey && hoveredKey !== selectedKey) {
+    if ((detailLevel >= 1 || hoverVisualLikeBaseline) && hoveredKey && hoveredKey !== selectedKey) {
       const value = countryByKey.get(hoveredKey)?.valueByYear.get(focusYear)
       if (value !== undefined) list.push({ key: hoveredKey, kind: 'hovered', y: yScale(value) })
     }
     return list
-  }, [baselineHoverLike, countryByKey, detailLevel, focusYear, hoveredKey, relatedKeys, selectedKey, yScale])
+  }, [countryByKey, detailLevel, focusYear, hoverVisualLikeBaseline, hoveredKey, relatedKeys, selectedKey, yScale])
 
   const selectedMarkerY = useMemo(() => {
     if (!selectedKey) return null
@@ -2089,7 +2091,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
         const isSelected = selectedKey === node.key
         const isRelated = relatedKeySet.has(node.key)
         const isHovered = hoveredKey === node.key || hoveredGroupSet.has(node.key)
-        const isPlainConnectHover = baselineHoverLike && isHovered
+        const isPlainConnectHover = hoverVisualLikeBaseline && isHovered
         const isRegionHovered = Boolean(regionHoverKeySet?.has(node.key))
         const isRegionDim = hasRegionHover && !isRegionHovered
         const isPostEncodeSparkle = postOn && isPostEncode && representation === 'beeswarm'
@@ -2405,7 +2407,7 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
 
                 <g className="integrated-markers-layer">
                   {markers.map(marker => {
-                    const isPlainConnectHover = baselineHoverLike && marker.kind === 'hovered'
+                    const isPlainConnectHover = hoverVisualLikeBaseline && marker.kind === 'hovered'
                     const radius = marker.kind === 'selected' ? 6.4 : marker.kind === 'related' ? 5.1 : isPlainConnectHover ? 9 : 5.6
                     return (
                       <circle
