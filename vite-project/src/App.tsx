@@ -16,6 +16,7 @@ import Connect from './components/Connect'
 import ConnectJuicy from './components/ConnectJuicy'
 import Integrated from './components/Integrated'
 import IntegratedIntensity from './components/IntegratedIntensity'
+import SpeakerTest from './components/SpeakerTest'
 import { parseCsv, toNumber } from './utils/csv'
 import './App.css'
 
@@ -158,6 +159,14 @@ function App() {
   const params = new URLSearchParams(window.location.search)
   const juicyRaw = params.get('juicy') ?? '0'
   const chart = params.get('chart') || '1'
+
+  if (chart === '0') {
+    return (
+      <div className="app">
+        <SpeakerTest />
+      </div>
+    )
+  }
 
   if (chart === '8') {
     const juicyLevel = clampInt(Number.parseInt(juicyRaw, 10), 0, 7)
