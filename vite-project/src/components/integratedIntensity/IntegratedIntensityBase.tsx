@@ -947,12 +947,7 @@ export default function IntegratedIntensityBase({ intensityLevel }: IntegratedBa
 
   const entriesA = useMemo(() => focusEntries.filter(entry => showKey(entry.key)), [focusEntries, showKey])
 
-  /*
-   * Profiling checklist:
-   * 1) Chrome Performance: inspect mousemove/hover for long tasks and layout thrash.
-   * 2) React Profiler: verify hover only updates style state, not full geometry memos.
-   * 3) Wrap expensive blocks (beeswarm, line paths, ranking sort) with performance.mark/measure when tuning.
-   */
+  // Keep beeswarm geometry memoized to avoid recomputation on hover-only updates.
   const beeswarmNodes = useMemo<BeeswarmNode[]>(() => {
     const needsBeeswarmNodes = representation === 'beeswarm' || (preOn && previewRepresentation === 'beeswarm')
     if (!needsBeeswarmNodes) return []

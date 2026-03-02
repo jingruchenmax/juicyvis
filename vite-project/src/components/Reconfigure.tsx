@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import * as d3 from 'd3'
 import './Reconfigure.css'
 
@@ -78,22 +78,21 @@ function Reconfigure({ data }: ReconfigureProps) {
     return () => observer.disconnect()
   }, [])
 
-  // Get latest year data for the top countries
-  const getLatestYearData = () => {
+  const latestData = useMemo(() => {
+    if (data.length === 0) return []
+
     const latestYear = Math.max(...data.map(d => d.Year))
     const latestData = data.filter(d => d.Year === latestYear)
-    
-    // Filter to main countries (exclude regions without proper data)
-    const mainCountries = ['United States', 'United Kingdom', 'World', 'China', 'India', 'France', 
-                          'Germany', 'Sweden', 'South Africa', 'Japan', 'Brazil', 'Canada', 'Australia',
-                          'Mexico', 'Russia', 'South Korea', 'Italy', 'Spain', 'Netherlands', 'Norway']
-    
-    return latestData.filter(d => mainCountries.includes(d.Entity))
-  }
+    const mainCountries = ['United States', 'United Kingdom', 'World', 'China', 'India', 'France',
+      'Germany', 'Sweden', 'South Africa', 'Japan', 'Brazil', 'Canada', 'Australia',
+      'Mexico', 'Russia', 'South Korea', 'Italy', 'Spain', 'Netherlands', 'Norway']
 
-  const sortData = (dataToSort: EnergyData[]) => {
-    const sorted = [...dataToSort]
-    
+    return latestData.filter(d => mainCountries.includes(d.Entity))
+  }, [data])
+
+  const sortedData = useMemo(() => {
+    const sorted = [...latestData]
+
     if (sortConfig.type === 'total') {
       sorted.sort((a, b) => {
         const totalA = ENERGY_SOURCES.reduce((sum, source) => sum + (a[source] || 0), 0)
@@ -108,12 +107,9 @@ function Reconfigure({ data }: ReconfigureProps) {
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA
       })
     }
-    
-    return sorted
-  }
 
-  const latestData = getLatestYearData()
-  const sortedData = sortData(latestData)
+    return sorted
+  }, [latestData, sortConfig.direction, sortConfig.type])
 
   useEffect(() => {
     if (!sortedData || sortedData.length === 0) return
@@ -338,13 +334,11 @@ function Reconfigure({ data }: ReconfigureProps) {
   }, [sortedData, sortConfig.type, highlightedSource, svgWidth])
 
   const handleSortChange = (type: SortConfig['type']) => {
-    // Only update selection, do NOT sort yet
     setHighlightedSource(type)
     setSliderPosition('middle')
   }
 
   const handleSort = (type: SortConfig['type'], direction: 'asc' | 'desc') => {
-    // Execute the actual sort when slider is dragged
     setSortConfig({
       type,
       direction

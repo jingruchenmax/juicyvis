@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import * as d3 from 'd3'
 import './ReconfigureJuicy.css'
 import { playMinimalistSound, playClickSound, playAfricanSound } from '../utils/soundUtils'
@@ -107,22 +107,21 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
     return () => observer.disconnect()
   }, [])
 
-  // Get latest year data for the top countries
-  const getLatestYearData = () => {
+  const latestData = useMemo(() => {
+    if (data.length === 0) return []
+
     const latestYear = Math.max(...data.map(d => d.Year))
     const latestData = data.filter(d => d.Year === latestYear)
-    
-    // Filter to main countries (exclude regions without proper data)
-    const mainCountries = ['United States', 'United Kingdom', 'World', 'China', 'India', 'France', 
-                          'Germany', 'Sweden', 'South Africa', 'Japan', 'Brazil', 'Canada', 'Australia',
-                          'Mexico', 'Russia', 'South Korea', 'Italy', 'Spain', 'Netherlands', 'Norway']
-    
-    return latestData.filter(d => mainCountries.includes(d.Entity))
-  }
+    const mainCountries = ['United States', 'United Kingdom', 'World', 'China', 'India', 'France',
+      'Germany', 'Sweden', 'South Africa', 'Japan', 'Brazil', 'Canada', 'Australia',
+      'Mexico', 'Russia', 'South Korea', 'Italy', 'Spain', 'Netherlands', 'Norway']
 
-  const sortData = (dataToSort: EnergyData[]) => {
-    const sorted = [...dataToSort]
-    
+    return latestData.filter(d => mainCountries.includes(d.Entity))
+  }, [data])
+
+  const sortedData = useMemo(() => {
+    const sorted = [...latestData]
+
     if (sortConfig.type === 'total') {
       sorted.sort((a, b) => {
         const totalA = ENERGY_SOURCES.reduce((sum, source) => sum + (a[source] || 0), 0)
@@ -137,15 +136,11 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
         return sortConfig.direction === 'asc' ? valA - valB : valB - valA
       })
     }
-    
-    return sorted
-  }
 
-  const latestData = getLatestYearData()
-  const sortedData = sortData(latestData)
-  
-  // Use animated data if available (during wave animation), otherwise use sorted data
-  const displayData = animatedData || sortedData
+    return sorted
+  }, [latestData, sortConfig.direction, sortConfig.type])
+
+  const displayData = useMemo(() => animatedData || sortedData, [animatedData, sortedData])
 
 
   useEffect(() => {
@@ -245,10 +240,9 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       .attr('stroke', '#e0e0e0')
       .attr('stroke-dasharray', '4')
 
-    // Create stacked data with highlighted source at the bottom - ONLY if slider has been dragged
     const orderedKeys = (highlightedSource !== 'total' && sliderPosition !== 'middle')
-      ? /**Highlighted source moves to bottom ONLY after dragging slider */ [highlightedSource as EnergySource, ...ENERGY_SOURCES.filter(s => s !== highlightedSource)]
-      : ENERGY_SOURCES /**Keep original order until slider is dragged */
+      ? [highlightedSource as EnergySource, ...ENERGY_SOURCES.filter(s => s !== highlightedSource)]
+      : ENERGY_SOURCES
     
     const stackedData = d3.stack<EnergyData, EnergySource>()
       .keys(orderedKeys as any)
@@ -416,12 +410,9 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
         .text(item.name)
     })
 
-    // Render preview layer if previewData exists and highlightedSource is set
-    // Always remove old preview layer first
     g.selectAll('g.preview-layer').remove()
     
     if (previewData && highlightedSource !== 'total') {
-      // Create preview layer stacked data - put highlighted source at bottom
       const previewOrderedKeys = [highlightedSource as EnergySource, ...ENERGY_SOURCES.filter(s => s !== highlightedSource)]
       
       const previewStackedData = d3.stack<EnergyData, EnergySource>()
@@ -853,20 +844,11 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
   }
 
   const handleSortChange = (type: SortConfig['type']) => {
-    // Play click sound
     playClickSound()
-    
-    // Update highlighted source for visual feedback (highlight bars, show color on slider)
     setHighlightedSource(type)
-    setDimLevel(0.7) // Dim level for non-selected categories when selected
-    
-    // Reset slider to middle position when selecting a new type
+    setDimLevel(0.7)
     setSliderPosition('middle')
-    setSliderProgress(50) // Position handle at middle
-    
-    // Do NOT update sortConfig - data order stays the same until slider is dragged
-    // Only apply visual changes: highlight bars, show black borders, change slider color
-    // User must drag slider to trigger actual sorting and animation
+    setSliderProgress(50)
   }
 
   const sortOptions: Array<{ type: SortConfig['type']; label: string; color: string }> = [

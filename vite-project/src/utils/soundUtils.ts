@@ -27,7 +27,7 @@ const createPlayer = (fileName: string, volume = 0.9, options?: PlayerOptions) =
 
       const playPromise = audio.play()
       if (playPromise !== undefined) {
-        playPromise.catch(err => console.debug('Audio play blocked:', err))
+        playPromise.catch(() => undefined)
       }
 
       if (fadeInMs > 0) {
@@ -67,8 +67,8 @@ const createPlayer = (fileName: string, volume = 0.9, options?: PlayerOptions) =
           audio.currentTime = 0
         }, maxDurationMs)
       }
-    } catch (e) {
-      console.debug('Audio error:', e)
+    } catch {
+      // Ignore audio creation/playback failures to keep UI interactions resilient.
     }
   }
 }
