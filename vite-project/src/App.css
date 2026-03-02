@@ -1,3 +1,7 @@
+:root {
+  --instruction-purple: #3b1d6b;
+}
+
 .app {
   width: 100%;
   height: 100%;
@@ -20,4 +24,19 @@
 
 .subtitle {
   display: none;
+}
+
+.juicyvis-instruction-box {
+  fill: none !important;
+  stroke: none !important;
+  stroke-width: 0 !important;
+}
+
+.juicyvis-instruction-text {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  fill: var(--instruction-purple) !important;
+  stroke: none !important;
+  stroke-width: 0 !important;
+  paint-order: normal;
 }

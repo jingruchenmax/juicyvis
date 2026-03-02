@@ -53,6 +53,13 @@ interface TooltipData {
   value: number
 }
 
+interface ParticleBurst {
+  id: number
+  tx: number
+  ty: number
+  delayMs: number
+}
+
 function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
   const svgRef = useRef<SVGSVGElement>(null)
   const chartHostRef = useRef<HTMLDivElement>(null)
@@ -61,12 +68,13 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
   const dimResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [sortConfig, setSortConfig] = useState<SortConfig>({ type: 'total', direction: 'desc' })
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
-  const [hoveredBar, setHoveredBar] = useState<string | null>(null)
   const [sliderHovered, setSliderHovered] = useState(false)
   const [isWaveAnimating, setIsWaveAnimating] = useState(false)
   const [animatedData, setAnimatedData] = useState<EnergyData[] | null>(null)
   const [sliderProgress, setSliderProgress] = useState(sortConfig.direction === 'desc' ? 0 : 100)
   const [showParticles, setShowParticles] = useState(false)
+  const [particleBursts, setParticleBursts] = useState<ParticleBurst[]>([])
+  const [particleColor, setParticleColor] = useState('#666666')
   const [particlePos, setParticlePos] = useState({ x: 0, y: 0 })
   const [flickerOpacity, setFlickerOpacity] = useState(1)
   const [highlightedSource, setHighlightedSource] = useState<SortConfig['type']>('total')
@@ -183,23 +191,19 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
     const instructionBoxX = svgWidth / 2 - instructionBoxW / 2
 
     svg.append('rect')
+      .attr('class', 'juicyvis-instruction-box')
       .attr('x', instructionBoxX)
       .attr('y', instructionBoxY)
       .attr('width', instructionBoxW)
       .attr('height', instructionBoxH)
       .attr('rx', 8)
       .attr('ry', 8)
-      .attr('stroke', '#8fb3e8')
-      .attr('stroke-width', 1.5)
-      .attr('fill', '#ffffff')
 
     svg.append('text')
+      .attr('class', 'juicyvis-instruction-text')
       .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
-      .style('font-size', '14px')
-      .style('font-weight', '600')
-      .style('text-anchor', 'middle')
-      .style('fill', '#244a7a')
+      .attr('text-anchor', 'middle')
       .text('Select an energy source below, then drag the slider to reorder the countries.')
 
     const g = svg
@@ -292,9 +296,6 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       .attr('data-source', d => d.sourceKey)
       .on('mouseover', function(_event, d) {
         const entity = (d.interval as any).data.Entity
-        const barKey = `${entity}-${d.sourceKey}`
-        setHoveredBar(barKey)
-        
         const value = (d.interval as any)[1] - (d.interval as any)[0]
         
         const rect = d3.select(this as SVGRectElement)
@@ -320,11 +321,8 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
           source: d.sourceKey,
           value: value
         })
-        
       })
       .on('mouseout', function(_event, d) {
-        setHoveredBar(null)
-        
         d3.select(this as SVGRectElement)
           .transition()
           .duration(150)
@@ -333,6 +331,13 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
           .attr('stroke-width', (d.sourceKey === highlightedSource) ? 2 : 0)
         
         setTooltip(null)
+      })
+      .on('click', (_event, d) => {
+        playClickSound()
+        setHighlightedSource(d.sourceKey)
+        setDimLevel(0.7)
+        setSliderPosition('middle')
+        setSliderProgress(50)
       })
       .style('cursor', 'pointer')
 
@@ -370,6 +375,14 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       const legendItem = legend.append('g')
         .attr('class', 'legend-item-juicy')
         .attr('transform', `translate(${col * 90}, ${row * 24})`)
+        .style('cursor', 'pointer')
+        .on('click', () => {
+          playClickSound()
+          setHighlightedSource(item.name)
+          setDimLevel(0.7)
+          setSliderPosition('middle')
+          setSliderProgress(50)
+        })
 
       // Add background box for selected source
       if (item.name === highlightedSource) {
@@ -402,18 +415,6 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
         .style('fill', '#333')
         .text(item.name)
     })
-
-    // Slow idle blink animation on highlighted bars when hovering slider in middle state
-    if (sliderHovered && !isWaveAnimating && highlightedSource !== 'total' && sliderPosition === 'middle') {
-      const popBars = g.selectAll<SVGRectElement, any>('rect.bar-rect')
-        .filter((d: any) => d && d.sourceKey === highlightedSource)
-
-      popBars.classed('bar-pop-animate', true)
-    } else {
-      // Remove animation when conditions are no longer met
-      const allBars = g.selectAll<SVGRectElement, any>('rect.bar-rect')
-      allBars.classed('bar-pop-animate', false)
-    }
 
     // Render preview layer if previewData exists and highlightedSource is set
     // Always remove old preview layer first
@@ -456,7 +457,14 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       }
     }
 
-  }, [displayData, hoveredBar, highlightedSource, dimLevel, sliderHovered, previewData, sliderProgress, sliderPosition, svgWidth])
+  }, [displayData, highlightedSource, dimLevel, previewData, sliderPosition, svgWidth, isWaveAnimating])
+
+  useEffect(() => {
+    if (!svgRef.current) return
+    const shouldAnimate = sliderHovered && !isWaveAnimating && highlightedSource !== 'total' && sliderPosition === 'middle'
+    const bars = d3.select(svgRef.current).selectAll<SVGRectElement, any>('rect.bar-rect')
+    bars.classed('bar-pop-animate', d => Boolean(shouldAnimate && d && d.sourceKey === highlightedSource))
+  }, [sliderHovered, isWaveAnimating, highlightedSource, sliderPosition, displayData, previewData, svgWidth])
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -591,7 +599,7 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
     // Create mapping from item to value rank (highest=n, lowest=1)
     const itemToValueRank = new Map<EnergyData, number>()
     ranked.forEach((r, idx) => {
-      itemToValueRank.set(r.item, n - idx) // idx=0 (highest) → n, idx=1 → n-1, ..., idx=n-1 (lowest) → 1
+      itemToValueRank.set(r.item, n - idx) // idx=0 (highest) -> n, idx=1 -> n-1, ..., idx=n-1 (lowest) -> 1
     })
 
     // Create reverse mapping from value rank to item
@@ -811,10 +819,26 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
           const handleX = rect.left + (toDir === 'asc' ? rect.width - 12 : 12)
           const handleY = rect.top + rect.height / 2
           setParticlePos({ x: handleX, y: handleY })
+          const nextParticleColor = type === 'total' ? '#666666' : COLORS[type as EnergySource]
+          const nextParticleBursts = Array.from({ length: 40 }, (_, index) => {
+            const angle = (index / 40) * Math.PI * 2
+            const distance = 10 + Math.random() * 60
+            return {
+              id: index,
+              tx: Math.cos(angle) * distance,
+              ty: Math.sin(angle) * distance,
+              delayMs: index * 10
+            }
+          })
+          setParticleColor(nextParticleColor)
+          setParticleBursts(nextParticleBursts)
           setShowParticles(true)
           
           // Hide particles after lingering - independent of other animations
-          setTimeout(() => setShowParticles(false), 1200)
+          setTimeout(() => {
+            setShowParticles(false)
+            setParticleBursts([])
+          }, 1200)
           
           // Restore dim level to 0.8 after 1 second
           if (dimResetTimeoutRef.current) {
@@ -863,12 +887,10 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
           onMouseMove={(event) => {
             const target = event.target as Element
             if (!target.closest('rect')) {
-              setHoveredBar(null)
               setTooltip(null)
             }
           }}
           onMouseLeave={() => {
-            setHoveredBar(null)
             setTooltip(null)
           }}
         >
@@ -916,10 +938,10 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
               <button
                 key={option.type}
                 type="button"
-                className={`sort-btn-juicy ${sortConfig.type === option.type ? 'active' : ''}`}
+                className={`sort-btn-juicy ${highlightedSource === option.type ? 'active' : ''}`}
                 onClick={() => handleSortChange(option.type)}
-                aria-pressed={sortConfig.type === option.type}
-                style={sortConfig.type === option.type ? {
+                aria-pressed={highlightedSource === option.type}
+                style={highlightedSource === option.type ? {
                   borderColor: option.color,
                   boxShadow: `0 0 0 2px ${option.color}33, 0 2px 8px rgba(0, 0, 0, 0.08)`
                 } : undefined}
@@ -1003,13 +1025,13 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
                             className="slider-arrow slider-arrow-left"
                             style={{ left: '25%', ['--slider-arrow-stroke' as any]: sliderColor }}
                           >
-                            ←
+                            {'\u2190'}
                           </div>
                           <div 
                             className="slider-arrow slider-arrow-right"
                             style={{ left: '75%', ['--slider-arrow-stroke' as any]: sliderColor }}
                           >
-                            →
+                            {'\u2192'}
                           </div>
                         </>
                       ) : (
@@ -1018,7 +1040,7 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
                           className={`slider-arrow ${sliderPosition === 'left' ? 'slider-arrow-left' : 'slider-arrow-right'}`}
                           style={{ ['--slider-arrow-stroke' as any]: sliderColor }}
                         >
-                          {sliderPosition === 'left' ? '→' : '←'}
+                          {sliderPosition === 'left' ? '\u2192' : '\u2190'}
                         </div>
                       )}
                     </>
@@ -1034,34 +1056,25 @@ function ReconfigureJuicy({ data }: ReconfigureJuicyProps) {
       {/* Particle Effect */}
       {showParticles && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1000 }}>
-          {Array.from({ length: 40 }).map((_, i) => {
-            const angle = (i / 40) * Math.PI * 2
-            const distance = 10 + Math.random() * 60
-            const endX = Math.cos(angle) * distance
-            const endY = Math.sin(angle) * distance
-            const color = sortConfig.type === 'total' ? '#666666' : COLORS[sortConfig.type as EnergySource]
-            const delay = i * 10 // Stagger particles
-            
-            return (
-              <div
-                key={i}
-                style={{
-                  position: 'fixed',
-                  left: `${particlePos.x}px`,
-                  top: `${particlePos.y}px`,
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: color,
-                  pointerEvents: 'none',
-                  animation: `particle-burst 0.8s ease-out ${delay}ms forwards`,
-                  transformOrigin: `0 0`,
-                  '--tx': `${endX}px`,
-                  '--ty': `${endY}px`
-                } as React.CSSProperties & { '--tx': string; '--ty': string }}
-              />
-            )
-          })}
+          {particleBursts.map(burst => (
+            <div
+              key={burst.id}
+              style={{
+                position: 'fixed',
+                left: `${particlePos.x}px`,
+                top: `${particlePos.y}px`,
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: particleColor,
+                pointerEvents: 'none',
+                animation: `particle-burst 0.8s ease-out ${burst.delayMs}ms forwards`,
+                transformOrigin: '0 0',
+                '--tx': `${burst.tx}px`,
+                '--ty': `${burst.ty}px`
+              } as React.CSSProperties & { '--tx': string; '--ty': string }}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -1095,3 +1108,4 @@ if (typeof document !== 'undefined') {
     document.head.appendChild(style)
   }
 }
+

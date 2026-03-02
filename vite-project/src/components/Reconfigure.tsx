@@ -152,23 +152,19 @@ function Reconfigure({ data }: ReconfigureProps) {
     const instructionBoxX = svgWidth / 2 - instructionBoxW / 2
 
     svg.append('rect')
+      .attr('class', 'juicyvis-instruction-box')
       .attr('x', instructionBoxX)
       .attr('y', instructionBoxY)
       .attr('width', instructionBoxW)
       .attr('height', instructionBoxH)
       .attr('rx', 8)
       .attr('ry', 8)
-      .attr('stroke', '#8fb3e8')
-      .attr('stroke-width', 1.5)
-      .attr('fill', '#ffffff')
 
     svg.append('text')
+      .attr('class', 'juicyvis-instruction-text')
       .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
-      .style('font-size', '14px')
-      .style('font-weight', '600')
-      .style('text-anchor', 'middle')
-      .style('fill', '#244a7a')
+      .attr('text-anchor', 'middle')
       .text('Select an energy source below, then drag the slider to reorder the countries.')
 
     const g = svg
@@ -264,6 +260,10 @@ function Reconfigure({ data }: ReconfigureProps) {
         rect.attr('fill-opacity', 0.85).attr('stroke', 'none')
         setTooltip(null)
       })
+      .on('click', (_event, d) => {
+        setHighlightedSource(d.sourceKey)
+        setSliderPosition('middle')
+      })
       .style('cursor', 'pointer')
 
     // Add X axis
@@ -298,6 +298,11 @@ function Reconfigure({ data }: ReconfigureProps) {
       
       const legendItem = legend.append('g')
         .attr('transform', `translate(${col * 90}, ${row * 24})`)
+        .style('cursor', 'pointer')
+        .on('click', () => {
+          setHighlightedSource(item.name)
+          setSliderPosition('middle')
+        })
 
       // Add background box for selected source
       if (item.name === sortConfig.type) {

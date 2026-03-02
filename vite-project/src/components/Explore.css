@@ -34,13 +34,14 @@
 .globe-instruction-pill {
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid #c9d8ee;
-  background: #f6f9ff;
-  color: #27456f;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.2;
-  white-space: nowrap;
+  border: none;
+  background: transparent;
+  color: var(--instruction-purple, #3b1d6b);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  white-space: normal;
 }
 
 .globe-canvas-wrapper {

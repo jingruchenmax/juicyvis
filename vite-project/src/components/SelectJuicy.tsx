@@ -165,23 +165,19 @@ function SelectJuicy({ data }: SelectProps) {
     const instructionBoxX = svgWidth / 2 - instructionBoxW / 2
 
     svg.append('rect')
+      .attr('class', 'juicyvis-instruction-box')
       .attr('x', instructionBoxX)
       .attr('y', instructionBoxY)
       .attr('width', instructionBoxW)
       .attr('height', instructionBoxH)
       .attr('rx', 8)
       .attr('ry', 8)
-      .attr('stroke', '#8fb3e8')
-      .attr('stroke-width', 1.5)
-      .attr('fill', '#ffffff')
 
     svg.append('text')
+      .attr('class', 'juicyvis-instruction-text')
       .attr('x', svgWidth / 2)
       .attr('y', instructionBoxY + 15)
-      .style('font-size', '16px')
-      .style('font-weight', '600')
-      .style('text-anchor', 'middle')
-      .style('fill', '#244a7a')
+      .attr('text-anchor', 'middle')
       .text('Click a point to view details and pin-highlight it.')
 
     // Clip path so dots don't overflow chart bounds during zoom

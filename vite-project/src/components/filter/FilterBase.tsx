@@ -618,12 +618,9 @@ export default function FilterBase({ juicy }: FilterBaseProps) {
                   <text x={chartWidth / 2} y={28} className="filter-title" textAnchor="middle">
                     Income inequality: Gini coefficient
                   </text>
-                  <text x={chartWidth / 2} y={49} className="filter-subtitle" textAnchor="middle">
-                    Filter
-                  </text>
 
                   <rect
-                    className="filter-instruction-box"
+                    className="filter-instruction-box juicyvis-instruction-box"
                     x={instructionX}
                     y={58}
                     width={instructionWidth}
@@ -631,7 +628,7 @@ export default function FilterBase({ juicy }: FilterBaseProps) {
                     rx={9}
                     ry={9}
                   />
-                  <text x={chartWidth / 2} y={74} className="filter-instruction" textAnchor="middle">
+                  <text x={chartWidth / 2} y={74} className="filter-instruction juicyvis-instruction-text" textAnchor="middle">
                     Adjust filters to show countries conditionally (range, region, prefix).
                   </text>
 

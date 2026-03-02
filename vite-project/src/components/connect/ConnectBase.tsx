@@ -668,12 +668,9 @@ export default function ConnectBase({ juicy }: ConnectBaseProps) {
                   <text x={chartWidth / 2} y={24} className="connect-title" textAnchor="middle">
                     Internet use
                   </text>
-                  <text x={chartWidth / 2} y={45} className="connect-subtitle" textAnchor="middle">
-                    Connect
-                  </text>
 
                   <rect
-                    className="connect-instruction-box"
+                    className="connect-instruction-box juicyvis-instruction-box"
                     x={instructionX}
                     y={54}
                     width={instructionWidth}
@@ -681,7 +678,7 @@ export default function ConnectBase({ juicy }: ConnectBaseProps) {
                     rx={9}
                     ry={9}
                   />
-                  <text x={chartWidth / 2} y={70} className="connect-instruction" textAnchor="middle">
+                  <text x={chartWidth / 2} y={70} className="connect-instruction juicyvis-instruction-text" textAnchor="middle">
                     Hover to link across views. Click a country to reveal related countries.
                   </text>
 

@@ -2131,6 +2131,39 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   return (
     <div className={`integrated-layout ${postOn ? 'post-on' : ''} ${postActiveClass} ${scrubbingClass} ${inActiveClass}`.trim()}>
       <div className="integrated-stage-wrap">
+        {!loading && !error && countries.length > 0 && (
+          <div className="integrated-legend-bar">
+            <div
+              className={`integrated-region-legend ${regionMapLoading ? 'is-loading' : ''}`}
+              onPointerDown={event => event.stopPropagation()}
+              onPointerEnter={event => event.stopPropagation()}
+              onPointerMove={event => event.stopPropagation()}
+              onMouseMove={event => event.stopPropagation()}
+            >
+              {LEGEND_REGIONS.map(region => {
+                const checked = enabledRegions[region]
+                const isHovered = preOn && hoverRegion === region
+                return (
+                  <label
+                    key={`region-${region}`}
+                    className={`integrated-region-chip ${checked ? 'is-enabled' : 'is-disabled'} ${isHovered ? 'is-hovered' : ''}`}
+                    onMouseEnter={() => handleRegionLegendEnter(region)}
+                    onMouseLeave={handleRegionLegendLeave}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleRegion(region)}
+                      aria-label={`Toggle ${region}`}
+                    />
+                    <span>{region}</span>
+                  </label>
+                )
+              })}
+              {regionMapError && <span className="integrated-region-error">Region map unavailable</span>}
+            </div>
+          </div>
+        )}
         <div
           className={`integrated-stage ${scrubbingClass} ${inActiveClass} ${showExplorePreHint ? 'is-pre-explore' : ''} ${isPreStageHotOutline ? 'is-pre-hot-outline' : ''} ${hasPersistSelect ? 'is-post-persist-select' : ''}`.trim()}
           ref={stageRef}
@@ -2162,37 +2195,6 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
               </div>
             </div>
           )}
-          {!loading && !error && countries.length > 0 && (
-            <div
-              className={`integrated-region-legend ${regionMapLoading ? 'is-loading' : ''}`}
-              onPointerDown={event => event.stopPropagation()}
-              onPointerEnter={event => event.stopPropagation()}
-              onPointerMove={event => event.stopPropagation()}
-              onMouseMove={event => event.stopPropagation()}
-            >
-              {LEGEND_REGIONS.map(region => {
-                const checked = enabledRegions[region]
-                const isHovered = preOn && hoverRegion === region
-                return (
-                  <label
-                    key={`region-${region}`}
-                    className={`integrated-region-chip ${checked ? 'is-enabled' : 'is-disabled'} ${isHovered ? 'is-hovered' : ''}`}
-                    onMouseEnter={() => handleRegionLegendEnter(region)}
-                    onMouseLeave={handleRegionLegendLeave}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleRegion(region)}
-                      aria-label={`Toggle ${region}`}
-                    />
-                    <span>{region}</span>
-                  </label>
-                )
-              })}
-              {regionMapError && <span className="integrated-region-error">Region map unavailable</span>}
-            </div>
-          )}
 
           {loading && <div className="integrated-stage-status">Loading dataset...</div>}
           {error && !loading && <div className="integrated-stage-status is-error">Error loading data: {error}</div>}
@@ -2207,8 +2209,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
                   </clipPath>
                 </defs>
                 <text x={chartWidth / 2} y={26} className="integrated-title" textAnchor="middle">{displayTitle}</text>
-                <rect x={instructionX} y={45} width={instructionWidth} height={26} rx={9} ry={9} className="integrated-instruction-box" />
-                <text x={chartWidth / 2} y={62} className="integrated-instruction" textAnchor="middle">
+                <rect x={instructionX} y={45} width={instructionWidth} height={26} rx={9} ry={9} className="integrated-instruction-box juicyvis-instruction-box" />
+                <text x={chartWidth / 2} y={62} className="integrated-instruction juicyvis-instruction-text" textAnchor="middle">
                   Hover links views. Click selects. Drag/brush explores. Toggle representation encodes. Controls filter/reconfigure/abstract/connect.
                 </text>
 
