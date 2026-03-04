@@ -219,8 +219,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
 
   const [chartWidth, setChartWidth] = useState(DEFAULT_WIDTH)
   const [focusYear, setFocusYear] = useState(2015)
-  const [startYear, setStartYear] = useState(1995)
-  const [endYear, setEndYear] = useState(2020)
+  const [startYear, setStartYear] = useState(() => years[0] ?? 1990)
+  const [endYear, setEndYear] = useState(() => years[years.length - 1] ?? 2024)
   const [representation, setRepresentation] = useState<Representation>('beeswarm')
   const [sortMode, setSortMode] = useState<SortMode>('value')
   const [detailLevel, setDetailLevel] = useState<DetailLevel>(1)
@@ -360,12 +360,8 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   }, [years])
 
   const defaultWindow = useMemo(() => {
-    if (years.length === 0) return { start: 1995, end: 2020 }
-    const minYear = years[0]
-    const maxYear = years[years.length - 1]
-    const start = nearestYear(clamp(Math.max(1995, minYear), minYear, maxYear), years)
-    const end = nearestYear(clamp(Math.min(2020, maxYear), minYear, maxYear), years)
-    return start <= end ? { start, end } : { start: end, end }
+    if (years.length === 0) return { start: 1990, end: 2024 }
+    return { start: years[0], end: years[years.length - 1] }
   }, [years])
 
   const minYear = years[0] ?? 1990
@@ -508,10 +504,9 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
 
   useEffect(() => {
     if (years.length === 0) return
-    if (!years.includes(startYear)) setStartYear(nearestYear(startYear, years))
-    if (!years.includes(endYear)) setEndYear(nearestYear(endYear, years))
-    if (startYear > endYear) setStartYear(endYear)
-  }, [endYear, startYear, years])
+    if (startYear !== minYear) setStartYear(minYear)
+    if (endYear !== maxYear) setEndYear(maxYear)
+  }, [endYear, maxYear, minYear, startYear, years.length])
 
   const pushToast = useCallback((text: string) => {
     const now = performance.now()
@@ -1245,20 +1240,14 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
     }, 170)
   }, [animateTips, histTooltip, shouldShowHistTip])
 
-  const clampWindow = useCallback((nextStart: number, nextEnd: number) => {
-    const s = nearestYear(clamp(nextStart, minYear, maxYear), years)
-    const e = nearestYear(clamp(nextEnd, minYear, maxYear), years)
-    if (s <= e) {
-      setStartYear(s)
-      setEndYear(e)
-      setFocusYear(previous => clamp(previous, s, e))
-      return { start: s, end: e }
-    }
-    setStartYear(e)
-    setEndYear(e)
-    setFocusYear(e)
-    return { start: e, end: e }
-  }, [maxYear, minYear, years])
+  const clampWindow = useCallback((_nextStart: number, _nextEnd: number) => {
+    const s = minYear
+    const e = maxYear
+    if (startYear !== s) setStartYear(s)
+    if (endYear !== e) setEndYear(e)
+    setFocusYear(previous => clamp(previous, s, e))
+    return { start: s, end: e }
+  }, [endYear, maxYear, minYear, startYear])
 
   const finalizeExplorePost = useCallback((range?: { start: number; end: number }) => {
     const payload = range ?? { start: startYear, end: endYear }
@@ -1862,8 +1851,6 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
   const abstractPreviewZoneH = previewDetailLevel === 2 ? 68 : previewDetailLevel === 1 ? 52 : 36
   const isRangeSelectionScrub = inOn && isScrubbing && activeRangeControl === 'relatedCount'
   const isRangeFocusScrub = inOn && isScrubbing && activeRangeControl === 'focusYear'
-  const isRangeWindowStartScrub = inOn && isScrubbing && activeRangeControl === 'windowStart'
-  const isRangeWindowEndScrub = inOn && isScrubbing && activeRangeControl === 'windowEnd'
   const isRangeValueMinScrub = inOn && isScrubbing && activeRangeControl === 'valueMin'
   const isRangeValueMaxScrub = inOn && isScrubbing && activeRangeControl === 'valueMax'
   const selectedAnchor = useMemo(() => {
@@ -2685,52 +2672,6 @@ export default function IntegratedBase({ juicyLevel }: IntegratedBaseProps) {
             onPointerDown={event => beginRangeScrub(event, 'explore', 'focusYear')}
             onPointerUp={event => { endRangeScrub(); finalizeHotControlOnPointerEnd('focusYear', event.currentTarget.matches(':hover')); finalizeExplorePost() }}
             onPointerCancel={event => { endRangeScrub(); finalizeHotControlOnPointerEnd('focusYear', event.currentTarget.matches(':hover')); finalizeExplorePost() }}
-            disabled={loading || Boolean(error) || years.length === 0}
-          />
-          <label className="integrated-control-label" htmlFor="integrated-start-year">Window start: <strong>{startYear}</strong></label>
-          <input
-            id="integrated-start-year"
-            className={`integrated-range ${preOn && hotControl === 'windowStart' ? 'is-hot' : ''} ${isRangeWindowStartScrub ? 'is-in-scrub' : ''}`}
-            type="range"
-            min={minYear}
-            max={maxYear}
-            step={1}
-            value={startYear}
-            style={{ '--ig-pct': toRangePct(startYear, minYear, maxYear) } as CSSProperties}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              const next = Number(event.target.value)
-              if (!Number.isFinite(next)) return
-              clampWindow(next, endYear)
-              emitIn('explore_scrub')
-            }}
-            onPointerEnter={() => { handleExploreGuideEnter('windowStart'); setAttentionTarget('window') }}
-            onPointerLeave={() => { handleExploreGuideLeave('windowStart'); setAttentionTarget(previous => (previous === 'window' ? null : previous)) }}
-            onPointerDown={event => beginRangeScrub(event, 'explore', 'windowStart')}
-            onPointerUp={event => { endRangeScrub(); finalizeHotControlOnPointerEnd('windowStart', event.currentTarget.matches(':hover')); finalizeExplorePost() }}
-            onPointerCancel={event => { endRangeScrub(); finalizeHotControlOnPointerEnd('windowStart', event.currentTarget.matches(':hover')); finalizeExplorePost() }}
-            disabled={loading || Boolean(error) || years.length === 0}
-          />
-          <label className="integrated-control-label" htmlFor="integrated-end-year">Window end: <strong>{endYear}</strong></label>
-          <input
-            id="integrated-end-year"
-            className={`integrated-range ${preOn && hotControl === 'windowEnd' ? 'is-hot' : ''} ${isRangeWindowEndScrub ? 'is-in-scrub' : ''}`}
-            type="range"
-            min={minYear}
-            max={maxYear}
-            step={1}
-            value={endYear}
-            style={{ '--ig-pct': toRangePct(endYear, minYear, maxYear) } as CSSProperties}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              const next = Number(event.target.value)
-              if (!Number.isFinite(next)) return
-              clampWindow(startYear, next)
-              emitIn('explore_scrub')
-            }}
-            onPointerEnter={() => { handleExploreGuideEnter('windowEnd'); setAttentionTarget('window') }}
-            onPointerLeave={() => { handleExploreGuideLeave('windowEnd'); setAttentionTarget(previous => (previous === 'window' ? null : previous)) }}
-            onPointerDown={event => beginRangeScrub(event, 'explore', 'windowEnd')}
-            onPointerUp={event => { endRangeScrub(); finalizeHotControlOnPointerEnd('windowEnd', event.currentTarget.matches(':hover')); finalizeExplorePost() }}
-            onPointerCancel={event => { endRangeScrub(); finalizeHotControlOnPointerEnd('windowEnd', event.currentTarget.matches(':hover')); finalizeExplorePost() }}
             disabled={loading || Boolean(error) || years.length === 0}
           />
         </section>
