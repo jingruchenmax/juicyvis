@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { DSVRowString } from 'd3'
 import Select from './components/Select'
 import SelectJuicy from './components/SelectJuicy'
@@ -17,6 +17,7 @@ import ConnectJuicy from './components/ConnectJuicy'
 import Integrated from './components/Integrated'
 import IntegratedIntensity from './components/IntegratedIntensity'
 import SpeakerTest from './components/SpeakerTest'
+import LandingPage from './components/LandingPage'
 import { parseCsv, toNumber } from './utils/csv'
 import './App.css'
 
@@ -81,7 +82,7 @@ const MEAT_VALUE_COLUMNS = [
 const readCell = (row: CsvRow, column: string): string => (row[column] ?? '').trim()
 
 const parseAiData = (csvText: string): DataRow[] => {
-  const parsed = parseCsv(csvText).map((row): DataRow => ({
+  const parsed = parseCsv(csvText).map((row: CsvRow): DataRow => ({
     Entity: readCell(row, 'Entity'),
     Day: readCell(row, 'Day'),
     'Training computation (petaFLOP)': toNumber(readCell(row, 'Training computation (petaFLOP)')),
@@ -90,7 +91,7 @@ const parseAiData = (csvText: string): DataRow[] => {
   }))
 
   return parsed.filter(
-    d =>
+    (d: DataRow) =>
       d['Training computation (petaFLOP)'] !== null &&
       d['Number of parameters'] !== null &&
       d['Training computation (petaFLOP)'] > 0 &&
@@ -99,7 +100,7 @@ const parseAiData = (csvText: string): DataRow[] => {
 }
 
 const parseEnergyData = (csvText: string): EnergyData[] => {
-  return parseCsv(csvText).map((row): EnergyData => {
+  return parseCsv(csvText).map((row: CsvRow): EnergyData => {
     const parsedRow: EnergyData = {
       Entity: readCell(row, 'Entity'),
       Code: readCell(row, 'Code'),
@@ -123,7 +124,7 @@ const parseEnergyData = (csvText: string): EnergyData[] => {
 }
 
 const parseMeatData = (csvText: string): MeatData[] => {
-  return parseCsv(csvText).map((row): MeatData => {
+  return parseCsv(csvText).map((row: CsvRow): MeatData => {
     const parsedRow: MeatData = {
       Entity: readCell(row, 'Entity'),
       Code: readCell(row, 'Code'),
@@ -158,32 +159,41 @@ function App() {
 
   const params = new URLSearchParams(window.location.search)
   const juicyRaw = params.get('juicy') ?? '0'
-  const chart = params.get('chart') || '1'
+  const chartParam = params.get('chart')
+
+  const goHome = () => {
+    const homeUrl = new URL(window.location.href)
+    homeUrl.search = ''
+    window.location.href = homeUrl.toString()
+  }
+
+  const renderChartPage = (content: ReactNode) => (
+    <div className="app">
+      <button type="button" className="home-button" onClick={goHome}>
+        ← Home
+      </button>
+      {content}
+    </div>
+  )
+
+  if (!chartParam) {
+    return <LandingPage />
+  }
+
+  const chart = chartParam
 
   if (chart === '0') {
-    return (
-      <div className="app">
-        <SpeakerTest />
-      </div>
-    )
+    return renderChartPage(<SpeakerTest />)
   }
 
   if (chart === '8') {
     const juicyLevel = clampInt(Number.parseInt(juicyRaw, 10), 0, 7)
-    return (
-      <div className="app">
-        <Integrated juicyLevel={juicyLevel} />
-      </div>
-    )
+    return renderChartPage(<Integrated juicyLevel={juicyLevel} />)
   }
 
   if (chart === '9') {
     const intensityLevel = clampInt(Number.parseInt(juicyRaw, 10), 0, 3)
-    return (
-      <div className="app">
-        <IntegratedIntensity intensityLevel={intensityLevel} />
-      </div>
-    )
+    return renderChartPage(<IntegratedIntensity intensityLevel={intensityLevel} />)
   }
 
   const juicy = juicyRaw === '1'
@@ -200,7 +210,7 @@ function App() {
     }
 
     const loadCsv = async (fileName: string): Promise<string> => {
-      const response = await fetch(`${import.meta.env.BASE_URL}${fileName}`)
+      const response = await fetch(new URL(fileName, document.baseURI).toString())
       if (!response.ok) {
         throw new Error(`Failed to load ${fileName} (${response.status})`)
       }
@@ -234,72 +244,72 @@ function App() {
   }, [chart])
 
   if (chart === '6') {
-    return (
-      <div className="app">
+    return renderChartPage(
+      <>
         <h1>Income inequality: Gini coefficient</h1>
         <p className="subtitle">Filter</p>
         {juicy ? <FilterJuicy /> : <Filter />}
-      </div>
+      </>
     )
   }
 
   if (chart === '7') {
-    return <div className="app">{juicy ? <ConnectJuicy /> : <Connect />}</div>
+    return renderChartPage(juicy ? <ConnectJuicy /> : <Connect />)
   }
 
   if (chart === '5') {
-    return (
-      <div className="app">
+    return renderChartPage(
+      <>
         <h1>Population</h1>
         <p className="subtitle">Abstract/Elaborate</p>
         {juicy ? <AbstractJuicy /> : <Abstract />}
-      </div>
+      </>
     )
   }
 
-  if (loading) return <div className="loading">Loading data...</div>
-  if (error) return <div className="error">Error: {error}</div>
+  if (loading) return renderChartPage(<div className="loading">Loading data...</div>)
+  if (error) return renderChartPage(<div className="error">Error: {error}</div>)
 
   // Chart 4: Meat Consumption
   if (chart === '4') {
-    return (
-      <div className="app">
+    return renderChartPage(
+      <>
         <h1>Per Capita Meat Consumption</h1>
         <p className="subtitle">By Meat Type</p>
         {meatData.length > 0 ? (juicy ? <EncodeJuicy data={meatData} /> : <Encode data={meatData} />) : <div className="loading">Loading meat data...</div>}
-      </div>
+      </>
     )
   }
 
   // Chart 3: Energy Stacked Bar Chart
   if (chart === '3') {
-    return (
-      <div className="app">
+    return renderChartPage(
+      <>
         <h1>Per Capita Energy Consumption</h1>
         <p className="subtitle">Stacked by Energy Source {juicy && '(Juicy Mode)'}</p>
         {energyData.length > 0 ? (juicy ? <ReconfigureJuicy data={energyData} /> : <Reconfigure data={energyData} />) : <div className="loading">Loading energy data...</div>}
-      </div>
+      </>
     )
   }
 
   // Chart 2: 3D World Map
   if (chart === '2') {
-    return (
-      <div className="app">
+    return renderChartPage(
+      <>
         <h1>3D Interactive World Map</h1>
         <p className="subtitle">Explore countries by dragging to rotate {juicy && '(Juicy Mode)'}</p>
         {juicy ? <ExploreJuicy /> : <Explore />}
-      </div>
+      </>
     )
   }
 
   // Chart 1: AI Training Computation vs Parameters (default)
-  return (
-    <div className="app">
+  return renderChartPage(
+    <>
       <h1>AI Training Computation vs Parameters</h1>
       <p className="subtitle">by Researcher Affiliation {juicy && '(Juicy Mode)'}</p>
       {juicy ? <SelectJuicy data={data} /> : <Select data={data} />}
-    </div>
+    </>
   )
 }
 

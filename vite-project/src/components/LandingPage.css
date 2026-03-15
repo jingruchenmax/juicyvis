@@ -1,0 +1,163 @@
+.landing {
+  min-height: 100vh;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 24px 64px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+.landing-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.landing-header h1 {
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: #3b1d6b;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.landing-header p {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  font-size: 1.05rem;
+  color: #6b5a8a;
+  margin: 0;
+}
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+}
+
+.chart-section {
+  display: contents;
+}
+
+/*
+  Each chart has two adjacent cards (normal + juicy).
+  We visually group them by giving them a shared background panel.
+  CSS subgrid isn't universally supported, so we use a wrapper div.
+*/
+.chart-group {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(59, 29, 107, 0.10);
+}
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px 24px 20px;
+  background: #ffffff;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  border: none;
+  border-right: 1px solid #ede8f5;
+  position: relative;
+}
+
+.chart-card:last-child {
+  border-right: none;
+}
+
+.chart-card:hover {
+  background: #f0eafc;
+  transform: translateY(-1px);
+  z-index: 1;
+}
+
+.chart-card:active {
+  background: #e4d9f8;
+  transform: translateY(0);
+}
+
+.card-number {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #a08cc0;
+}
+
+.card-title {
+  font-size: 1.0rem;
+  font-weight: 800;
+  color: #2a1052;
+  line-height: 1.25;
+}
+
+.card-subtitle {
+  font-size: 0.82rem;
+  color: #6b5a8a;
+  font-weight: 500;
+}
+
+.card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  width: fit-content;
+}
+
+.card-badge.normal {
+  background: #ede8f5;
+  color: #5a3e8a;
+}
+
+.card-badge.juicy {
+  background: #3b1d6b;
+  color: #e8d8ff;
+}
+
+.card-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.card-badge.normal .card-badge-dot {
+  background: #9b7fcc;
+}
+
+.card-badge.juicy .card-badge-dot {
+  background: #c89bff;
+}
+
+/* Separator stripe between normal and juicy halves of a group */
+.chart-group .chart-card:nth-child(2) {
+  background: #fdf8ff;
+}
+
+.chart-group .chart-card:nth-child(2):hover {
+  background: #f0e6ff;
+}
