@@ -1,0 +1,30 @@
+{
+  "chart": {
+    "title": "Share of the population with access to clean fuels for cooking",
+    "subtitle": "Access to [clean fuels or technologies](#dod:clean-cooking-fuels) such as natural gas, electricity, and clean cookstoves reduces exposure to indoor air pollutants, a leading cause of death in low-income households.",
+    "citation": "World Health Organization - Global Health Observatory (2025)",
+    "originalChartUrl": "https://ourworldindata.org/grapher/access-to-clean-fuels-and-technologies-for-cooking?v=1&csvType=full&useColumnShortNames=false&utm_source=chatgpt.com",
+    "selection": [
+      "World"
+    ]
+  },
+  "columns": {
+    "Proportion of population with primary reliance on clean fuels and technologies for cooking (%) - Residence area type: Total": {
+      "titleShort": "Proportion of population with primary reliance on clean fuels and technologies for cooking (%) - Residence area type: Total",
+      "titleLong": "Proportion of population with primary reliance on clean fuels and technologies for cooking (%) - Residence area type: Total",
+      "descriptionShort": "Proportion of population with primary reliance on clean fuels and technology is calculated as the number of people using clean fuels and technologies for cooking, heating and lighting divided by total population reporting that any cooking, heating or lighting, expressed as percentage. “Clean” is defined by the emission rate targets and specific fuel recommendations (i.e. against unprocessed coal and kerosene) included in the normative guidance WHO guidelines for indoor air quality: household fuel combustion.",
+      "unit": "%",
+      "timespan": "1990-2023",
+      "type": "Numeric",
+      "owidVariableId": 1061986,
+      "shortName": "proportion_of_population_with_primary_reliance_on_clean_fuels_and_technologies_for_cooking__pct__residence_area_type_total",
+      "lastUpdated": "2025-05-19",
+      "nextUpdate": "2026-05-19",
+      "citationShort": "World Health Organization - Global Health Observatory (2025) – processed by Our World in Data",
+      "citationLong": "World Health Organization - Global Health Observatory (2025) – processed by Our World in Data. “Proportion of population with primary reliance on clean fuels and technologies for cooking (%) - Residence area type: Total” [dataset]. World Health Organization, “Global Health Observatory” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1061986.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-02-26",
+  "activeFilters": {}
+}
