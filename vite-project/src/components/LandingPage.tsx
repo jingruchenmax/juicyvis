@@ -16,7 +16,7 @@ const CHARTS: ChartInfo[] = [
   },
   {
     id: 2,
-    title: '3D Interactive World Map',
+    title: '2D interactive world map',
     interaction: 'Explore',
     description: 'Drag to rotate and explore countries on a globe'
   },
@@ -46,7 +46,7 @@ const CHARTS: ChartInfo[] = [
   },
   {
     id: 7,
-    title: 'Global Development Indicators',
+    title: 'Global Internet Use Indicators',
     interaction: 'Connect',
     description: 'Connect related indicators across countries'
   }
